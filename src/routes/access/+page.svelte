@@ -437,6 +437,7 @@
 						count={data.busStopCount}
 						bind:checked={showBusStops}
 					/>
+					{#if data.metroStationCount > 0}
 					<MapLayerToggle
 						label="Metro stations"
 						color={TRANSIT_COLORS.metro}
@@ -448,6 +449,7 @@
 						color={TRANSIT_COLORS.metro}
 						bind:checked={showMetroLines}
 					/>
+					{/if}
 				</div>
 			</div>
 
@@ -487,10 +489,12 @@
 					<a href="https://github.com/Vonter/transitrouter" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">TransitRouter</a>
 					(MIT) — Bus stops &amp; routes
 				</p>
+				{#if data.metroStationCount > 0}
 				<p>
 					<a href="https://github.com/geohacker/namma-metro" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">Namma Metro</a>
 					— Station locations &amp; lines
 				</p>
+				{/if}
 			</div>
 		</div>
 	</aside>
