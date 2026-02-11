@@ -1,8 +1,8 @@
 {
   "crons": [
-    { "path": "/api/etl/sync-routes", "schedule": "0 */6 * * *" },
-    { "path": "/api/etl/sync-stats", "schedule": "0 */6 * * *" },
-    { "path": "/api/etl/sync-facilities", "schedule": "0 2 * * *" },
-    { "path": "/api/etl/sync-external", "schedule": "0 3 * * *" }
+    { "path": "/api/etl/sync-routes", "schedule": "0 0 * * *" },
+    { "path": "/api/etl/sync-stats", "schedule": "0 6 * * *" },
+    { "path": "/api/etl/sync-facilities", "schedule": "0 12 * * *" },
+    { "path": "/api/etl/sync-external", "schedule": "0 18 * * *" }
   ]
 }
