@@ -517,7 +517,14 @@
 				</div>
 			</div>
 		{:else}
-			{#await import('$lib/components/Map.svelte') then { default: Map }}
+			{#await import('$lib/components/Map.svelte')}
+				<div class="flex h-full items-center justify-center bg-surface-elevated">
+					<div class="text-center">
+						<i class="fa-solid fa-spinner fa-spin text-3xl text-text-secondary"></i>
+						<p class="mt-3 text-sm text-text-secondary">Loading map for {data.cityName}...</p>
+					</div>
+				</div>
+			{:then { default: Map }}
 				<Map center={data.cityCenter} zoom={data.cityZoom} onReady={onMapReady} />
 			{/await}
 		{/if}
