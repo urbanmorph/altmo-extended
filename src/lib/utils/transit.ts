@@ -25,6 +25,8 @@ export interface MetroLine {
 	name: string;
 	color: string;
 	coordinates: [number, number][];
+	/** Multiple disjoint segments — when set, rendered as MultiLineString */
+	segments?: [number, number][][];
 }
 
 export interface TransitData {
@@ -77,6 +79,8 @@ export const TRANSIT_COLORS = {
 	metroYellow: '#eab308',
 	metroPink: '#ec4899',
 	metroBlue: '#2563eb',
+	metroRed: '#dc2626',
+	metroAqua: '#06b6d4',
 	rail: '#dc2626',
 	catchmentWalk: '#ea580c',
 	catchmentCycle: '#000080'
@@ -376,8 +380,8 @@ function extractHyderabadLineColor(name: string): string {
  * Groups all segments sharing the same line (e.g., "Line 1 (red)") into consolidated lines.
  */
 export function parseHyderabadMetroRoutes(geojson: GeoJSON.FeatureCollection): MetroLine[] {
-	// Group segments by line color
-	const lineGroups = new Map<string, { name: string; coords: [number, number][] }>();
+	// Group segments by line color — keep each segment separate for MultiLineString
+	const lineGroups = new Map<string, { name: string; segments: [number, number][][] }>();
 
 	for (const feature of geojson.features) {
 		if (feature.geometry.type !== 'LineString') continue;
@@ -386,22 +390,24 @@ export function parseHyderabadMetroRoutes(geojson: GeoJSON.FeatureCollection): M
 		const colorKey = extractHyderabadLineColor(name);
 
 		if (!lineGroups.has(colorKey)) {
-			// Use a clean display name
 			const lineNum = name.match(/Line\s*(\d+)/i)?.[1] ?? '';
 			const displayName = lineNum
 				? `Line ${lineNum} (${colorKey.charAt(0).toUpperCase() + colorKey.slice(1)})`
 				: name;
-			lineGroups.set(colorKey, { name: displayName, coords: [] });
+			lineGroups.set(colorKey, { name: displayName, segments: [] });
 		}
 
 		const coords = feature.geometry.coordinates as [number, number][];
-		lineGroups.get(colorKey)!.coords.push(...coords);
+		if (coords.length > 1) {
+			lineGroups.get(colorKey)!.segments.push(coords);
+		}
 	}
 
-	return Array.from(lineGroups.entries()).map(([colorKey, { name, coords }]) => ({
+	return Array.from(lineGroups.entries()).map(([colorKey, { name, segments }]) => ({
 		name,
 		color: HYDERABAD_LINE_HEX[colorKey] ?? '#dc2626',
-		coordinates: coords
+		coordinates: segments.flat(),
+		segments
 	}));
 }
 
@@ -499,7 +505,13 @@ export function parseHyderabadMetroStations(
 		});
 	}
 
-	return stations;
+	// Deduplicate by name — multiple building footprints can exist per station
+	const seen = new Set<string>();
+	return stations.filter((s) => {
+		if (seen.has(s.name)) return false;
+		seen.add(s.name);
+		return true;
+	});
 }
 
 // --- GeoJSON Builders (for MapLibre) ---
@@ -532,7 +544,9 @@ export function metroLinesToGeoJSON(lines: MetroLine[]): GeoJSON.FeatureCollecti
 		features: lines.map((l) => ({
 			type: 'Feature' as const,
 			properties: { name: l.name, color: l.color },
-			geometry: { type: 'LineString' as const, coordinates: l.coordinates }
+			geometry: l.segments
+				? { type: 'MultiLineString' as const, coordinates: l.segments }
+				: { type: 'LineString' as const, coordinates: l.coordinates }
 		}))
 	};
 }

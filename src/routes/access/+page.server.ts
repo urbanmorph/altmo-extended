@@ -7,8 +7,8 @@ import {
 	metroLinesToGeoJSON
 } from '$lib/utils/transit';
 
-export const load: PageServerLoad = async ({ url }) => {
-	const cityId = url.searchParams.get('city') ?? 'bengaluru';
+export const load: PageServerLoad = async ({ url, cookies }) => {
+	const cityId = url.searchParams.get('city') ?? cookies.get('city') ?? 'bengaluru';
 	const city = getCityById(cityId);
 
 	// If city not found, fall back to Bengaluru

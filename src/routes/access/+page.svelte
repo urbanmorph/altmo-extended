@@ -157,6 +157,10 @@
 					TRANSIT_COLORS.metroPink,
 					'blue',
 					TRANSIT_COLORS.metroBlue,
+					'red',
+					TRANSIT_COLORS.metroRed,
+					'aqua',
+					TRANSIT_COLORS.metroAqua,
 					TRANSIT_COLORS.metroPurple
 				],
 				'circle-stroke-width': 2,
@@ -489,10 +493,15 @@
 					<a href="https://github.com/Vonter/transitrouter" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">TransitRouter</a>
 					(MIT) — Bus stops &amp; routes
 				</p>
-				{#if data.metroStationCount > 0}
+				{#if data.cityId === 'bengaluru'}
 				<p>
 					<a href="https://github.com/geohacker/namma-metro" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">Namma Metro</a>
 					— Station locations &amp; lines
+				</p>
+				{:else if data.metroStationCount > 0}
+				<p>
+					<a href="https://www.openstreetmap.org" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">OpenStreetMap</a>
+					— Metro stations &amp; lines
 				</p>
 				{/if}
 			</div>

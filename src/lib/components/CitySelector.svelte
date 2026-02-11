@@ -14,8 +14,11 @@
     const city = CITIES.find(c => c.id === target.value);
     selectedCity.set(city ? { id: city.id, name: city.name, lat: city.lat, lng: city.lng, zoom: city.zoom } : null);
 
-    // Navigate with city param if on a page that supports it
     if (city) {
+      // Persist city selection in a cookie so server loads pick it up across pages
+      document.cookie = `city=${city.id};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Lax`;
+
+      // Navigate with city param if on a page that supports it
       const currentPath = page.url.pathname;
       if (CITY_PARAM_PAGES.includes(currentPath)) {
         goto(`${currentPath}?city=${city.id}`);

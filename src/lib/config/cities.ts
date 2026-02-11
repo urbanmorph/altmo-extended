@@ -107,7 +107,7 @@ export const CITIES: CityConfig[] = [
 		zoom: 13,
 		transitSources: {
 			...transitRouterSources('kochi'),
-			metroGTFS: 'http://kochimetro.org/opendata/KMRLOpenData.zip'
+			metroGTFS: 'https://kochimetro.org/opendata/KMRLOpenData.zip'
 		}
 	},
 	{

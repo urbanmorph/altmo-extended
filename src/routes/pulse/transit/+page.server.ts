@@ -2,8 +2,8 @@ import type { PageServerLoad } from './$types';
 import { fetchTransitMetrics, fetchMetroRidership } from '$lib/server/transit-data';
 import { getCityById } from '$lib/config/cities';
 
-export const load: PageServerLoad = async ({ url }) => {
-	const cityId = url.searchParams.get('city') ?? 'bengaluru';
+export const load: PageServerLoad = async ({ url, cookies }) => {
+	const cityId = url.searchParams.get('city') ?? cookies.get('city') ?? 'bengaluru';
 	const city = getCityById(cityId);
 
 	const resolvedCityId = city ? cityId : 'bengaluru';

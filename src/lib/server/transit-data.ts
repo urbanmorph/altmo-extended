@@ -99,7 +99,7 @@ async function fetchMetroFromOverpass(
 relation["network"="${config.network}"]["route"~"subway|light_rail"];
 out body;
 >;
-out skel qt;`;
+out body qt;`;
 
 	const res = await fetch(OVERPASS_API, {
 		method: 'POST',
@@ -179,8 +179,9 @@ out skel qt;`;
 		// Collect member ways and resolve to coordinate arrays
 		const wayRefs = rel.members.filter((m) => m.type === 'way').map((m) => m.ref);
 
-		// Build ordered coordinates by chaining ways (consecutive ways share endpoint nodes)
-		const allCoords: [number, number][] = [];
+		// Build segments by chaining contiguous ways; start a new segment on gaps
+		const segments: [number, number][][] = [];
+		let currentSegment: [number, number][] = [];
 
 		for (const wayId of wayRefs) {
 			const nodeRefs = wayMap.get(wayId);
@@ -196,32 +197,35 @@ out skel qt;`;
 
 			if (wayCoords.length === 0) continue;
 
-			if (allCoords.length > 0) {
-				const lastCoord = allCoords[allCoords.length - 1];
+			if (currentSegment.length > 0) {
+				const lastCoord = currentSegment[currentSegment.length - 1];
 				const firstWay = wayCoords[0];
 				const lastWay = wayCoords[wayCoords.length - 1];
 
 				if (lastCoord[0] === firstWay[0] && lastCoord[1] === firstWay[1]) {
 					// Normal order — skip duplicate start point
-					allCoords.push(...wayCoords.slice(1));
+					currentSegment.push(...wayCoords.slice(1));
 				} else if (lastCoord[0] === lastWay[0] && lastCoord[1] === lastWay[1]) {
 					// Reverse this way segment to maintain continuity
 					wayCoords.reverse();
-					allCoords.push(...wayCoords.slice(1));
+					currentSegment.push(...wayCoords.slice(1));
 				} else {
-					// Disjoint — append as-is (may produce a visual gap)
-					allCoords.push(...wayCoords);
+					// Disjoint — finish current segment, start a new one
+					segments.push(currentSegment);
+					currentSegment = [...wayCoords];
 				}
 			} else {
-				allCoords.push(...wayCoords);
+				currentSegment = [...wayCoords];
 			}
 		}
+		if (currentSegment.length > 0) segments.push(currentSegment);
 
-		if (allCoords.length > 0) {
+		if (segments.length > 0) {
 			metroLines.push({
 				name: matchedLineName,
 				color: matchedColor,
-				coordinates: allCoords
+				coordinates: segments.flat(),
+				segments
 			});
 		}
 	}
@@ -235,8 +239,11 @@ out skel qt;`;
 
 		const isStation =
 			tags['railway'] === 'station' ||
+			tags['railway'] === 'stop' ||
+			tags['railway'] === 'halt' ||
 			tags['station'] === 'subway' ||
-			tags['public_transport'] === 'station';
+			tags['public_transport'] === 'station' ||
+			tags['public_transport'] === 'stop_position';
 
 		if (isStation && tags['name']) {
 			stationNodes.push({ name: tags['name'], lat: node.lat, lon: node.lon });
@@ -337,7 +344,7 @@ async function fetchMetroData(
 
 		return empty;
 	} catch (e) {
-		console.error(`[transit] Failed to fetch metro data for ${cityId}:`, (e as Error).message);
+		console.error(`[transit] Failed to fetch metro data for ${cityId}:`, (e as Error).message, (e as Error).stack);
 		return empty;
 	}
 }
