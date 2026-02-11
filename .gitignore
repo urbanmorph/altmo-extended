@@ -7,3 +7,4 @@ build/
 .env.*.local
 dist/
 .DS_Store
+supporting-docs/
