@@ -358,10 +358,11 @@
 					</div>
 				</div>
 
+				{#if data.cityId === 'bengaluru'}
 				<div class="rounded-lg border border-clay-200 bg-clay-50 p-4">
 					<div class="flex items-center gap-2 mb-2">
 						<i class="fa-solid fa-triangle-exclamation text-clay-600"></i>
-						<h4 class="font-semibold text-text-primary">Current Infrastructure</h4>
+						<h4 class="font-semibold text-text-primary">Bengaluru Infrastructure</h4>
 					</div>
 					<div class="grid grid-cols-2 gap-2 text-text-secondary text-xs mb-2">
 						<div><span class="text-sm font-bold text-text-primary">100 km</span> walkable footpath</div>
@@ -378,6 +379,7 @@
 						— GBA active mobility challenge using Altmo
 					</p>
 				</div>
+				{/if}
 			</div>
 		</div>
 	</div>
@@ -387,6 +389,11 @@
 		<h3 class="text-lg font-semibold text-text-primary mb-4">Data Sources</h3>
 		<div class="grid grid-cols-1 gap-2 text-sm text-text-secondary sm:grid-cols-2">
 			<p>
+				<a href="https://github.com/Vonter/transitrouter" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">TransitRouter (MIT)</a>
+				— Bus stop and route topology
+			</p>
+			{#if data.cityId === 'bengaluru'}
+			<p>
 				<a href="https://github.com/Vonter/bmrcl-ridership-hourly" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">BMRCL Ridership (CC BY 4.0)</a>
 				— Hourly station-wise metro ridership via RTI
 			</p>
@@ -395,21 +402,18 @@
 				— Fleet size, daily ridership estimates
 			</p>
 			<p>
-				<a href="https://github.com/Vonter/transitrouter" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">TransitRouter (MIT)</a>
-				— Bus stop and route topology
-			</p>
-			<p>
 				<a href="https://github.com/geohacker/namma-metro" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">Namma Metro</a>
 				— Station locations and line geometry
 			</p>
 			<p>
-				<a href="https://dult.karnataka.gov.in/storage/pdf-files/CMP2020/Volume%201-%20Status%20of%20Transport%20and%20Mobility%20in%20Bengaluru.pdf" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">DULT CMP 2020</a>
-				— Comprehensive Mobility Plan
+				<a href="https://hejjegala.in" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">Hejje Gala</a>
+				— GBA active mobility challenge using Altmo
 			</p>
 			<p>
 				<a href="https://opencity.in/road-crashes-in-bengaluru-2023/" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">OpenCity / NCRB</a>
 				— Road safety data
 			</p>
+			{/if}
 		</div>
 	</div>
 
