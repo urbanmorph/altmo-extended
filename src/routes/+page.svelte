@@ -16,10 +16,10 @@
   </div>
 
   <div class="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-    <MetricCard label="Active Users" value="—" icon="👤" />
-    <MetricCard label="Total Trips" value="—" icon="🚲" />
-    <MetricCard label="Distance Covered" value="—" icon="📏" />
-    <MetricCard label="CO₂ Saved" value="—" icon="🌱" />
+    <MetricCard label="Active Users" value="—" icon="fa-solid fa-user" />
+    <MetricCard label="Total Trips" value="—" icon="fa-solid fa-bicycle" />
+    <MetricCard label="Distance Covered" value="—" icon="fa-solid fa-ruler" />
+    <MetricCard label="CO₂ Saved" value="—" icon="fa-solid fa-seedling" />
   </div>
 
   <h2 class="mb-4 text-xl font-semibold text-text-primary">Intelligence Modules</h2>

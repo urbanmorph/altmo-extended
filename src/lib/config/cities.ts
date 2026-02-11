@@ -27,10 +27,21 @@ export interface TransitDataSources {
  * Transit data source URLs per city.
  * TransitRouter (MIT): https://github.com/Vonter/transitrouter
  * Namma Metro: https://github.com/geohacker/namma-metro
+ *
+ * TransitRouter city codes:
+ *   blr=Bengaluru, chennai=Chennai, delhi=Delhi,
+ *   telangana=Hyderabad (TSRTC), kochi=Kochi, pune=Pune
  */
+function transitRouterSources(code: string): Pick<TransitDataSources, 'busStops' | 'busServices'> {
+	const base = `https://raw.githubusercontent.com/Vonter/transitrouter/main/data/${code}`;
+	return {
+		busStops: `${base}/stops.min.json`,
+		busServices: `${base}/services.min.json`
+	};
+}
+
 const BENGALURU_TRANSIT: TransitDataSources = {
-	busStops: 'https://raw.githubusercontent.com/Vonter/transitrouter/main/data/blr/stops.min.json',
-	busServices: 'https://raw.githubusercontent.com/Vonter/transitrouter/main/data/blr/services.min.json',
+	...transitRouterSources('blr'),
 	metroStations: 'https://raw.githubusercontent.com/geohacker/namma-metro/master/metro-lines-stations.geojson'
 };
 
@@ -48,35 +59,40 @@ export const CITIES: CityConfig[] = [
 		name: 'Chennai',
 		lat: 13.0827,
 		lng: 80.2707,
-		zoom: 12
+		zoom: 12,
+		transitSources: transitRouterSources('chennai')
 	},
 	{
 		id: 'delhi',
 		name: 'Delhi',
 		lat: 28.6139,
 		lng: 77.209,
-		zoom: 11
+		zoom: 11,
+		transitSources: transitRouterSources('delhi')
 	},
 	{
 		id: 'hyderabad',
 		name: 'Hyderabad',
 		lat: 17.385,
 		lng: 78.4867,
-		zoom: 12
+		zoom: 12,
+		transitSources: transitRouterSources('telangana')
 	},
 	{
 		id: 'kochi',
 		name: 'Kochi',
 		lat: 9.9312,
 		lng: 76.2673,
-		zoom: 13
+		zoom: 13,
+		transitSources: transitRouterSources('kochi')
 	},
 	{
 		id: 'pune',
 		name: 'Pune',
 		lat: 18.5204,
 		lng: 73.8567,
-		zoom: 12
+		zoom: 12,
+		transitSources: transitRouterSources('pune')
 	}
 ];
 

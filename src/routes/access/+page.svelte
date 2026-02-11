@@ -3,16 +3,77 @@
 	import MapLayerToggle from '$lib/components/MapLayerToggle.svelte';
 	import CatchmentRingLegend from '$lib/components/CatchmentRingLegend.svelte';
 	import { TRANSIT_COLORS, CATCHMENT, circlePolygon } from '$lib/utils/transit';
+	import { selectedCity } from '$lib/stores/city';
+	import { goto } from '$app/navigation';
 
 	let { data } = $props();
 
 	let map = $state<maplibregl.Map | null>(null);
+	let layersAdded = $state(false);
 	let showBusStops = $state(true);
 	let showMetroStations = $state(true);
 	let showMetroLines = $state(false);
 	let showCatchmentWalk400 = $state(false);
 	let showCatchmentWalk800 = $state(false);
 	let showCatchmentCycle = $state(false);
+
+	// Track the current city from server data to detect changes
+	let currentCityId = $derived(data.cityId);
+
+	// Sync the city store when the page loads with a city param
+	$effect(() => {
+		if (data.cityId && data.cityName) {
+			selectedCity.set({
+				id: data.cityId,
+				name: data.cityName,
+				lat: data.cityCenter[1],
+				lng: data.cityCenter[0],
+				zoom: data.cityZoom
+			});
+		}
+	});
+
+	// Watch the city store for changes — navigate when user picks a new city
+	$effect(() => {
+		const city = $selectedCity;
+		if (city && city.id !== currentCityId) {
+			goto(`/access?city=${city.id}`);
+		}
+	});
+
+	// When data changes (city switch), update map sources and re-center
+	$effect(() => {
+		if (!map || !layersAdded) return;
+		// Access reactive data properties to track them
+		const busStops = data.busStopsGeoJSON;
+		const metroStations = data.metroStationsGeoJSON;
+		const metroLines = data.metroLinesGeoJSON;
+		const center = data.cityCenter;
+		const zoom = data.cityZoom;
+
+		try {
+			const busSource = map.getSource('bus-stops') as maplibregl.GeoJSONSource | undefined;
+			const metroStationSource = map.getSource('metro-stations') as maplibregl.GeoJSONSource | undefined;
+			const metroLineSource = map.getSource('metro-lines') as maplibregl.GeoJSONSource | undefined;
+
+			if (busSource) busSource.setData(busStops as GeoJSON.FeatureCollection);
+			if (metroStationSource) metroStationSource.setData(metroStations as GeoJSON.FeatureCollection);
+			if (metroLineSource) metroLineSource.setData(metroLines as GeoJSON.FeatureCollection);
+
+			// Clear catchment rings on city change
+			const emptyFC = { type: 'FeatureCollection' as const, features: [] };
+			const c400 = map.getSource('catchment-walk-400') as maplibregl.GeoJSONSource | undefined;
+			const c800 = map.getSource('catchment-walk-800') as maplibregl.GeoJSONSource | undefined;
+			const cCycle = map.getSource('catchment-cycle') as maplibregl.GeoJSONSource | undefined;
+			if (c400) c400.setData(emptyFC);
+			if (c800) c800.setData(emptyFC);
+			if (cCycle) cCycle.setData(emptyFC);
+
+			map.flyTo({ center: center as [number, number], zoom });
+		} catch (err) {
+			console.error('[access-map] Failed to update map sources:', err);
+		}
+	});
 
 	function onMapReady(mapInstance: maplibregl.Map) {
 		map = mapInstance;
@@ -254,6 +315,8 @@
 			mapInstance.getCanvas().style.cursor = '';
 		});
 
+		layersAdded = true;
+
 		} catch (err) {
 			console.error('[access-map] Failed to add map layers:', err);
 		}
@@ -433,8 +496,17 @@
 	</aside>
 
 	<div class="flex-1">
-		{#await import('$lib/components/Map.svelte') then { default: Map }}
-			<Map center={[77.5946, 12.9716]} zoom={12} onReady={onMapReady} />
-		{/await}
+		{#if !data.hasTransitSources}
+			<div class="flex h-full items-center justify-center bg-surface-elevated">
+				<div class="text-center">
+					<p class="text-lg font-semibold text-text-primary">No transit data available for {data.cityName}</p>
+					<p class="mt-2 text-sm text-text-secondary">Transit data sources have not been configured for this city yet.</p>
+				</div>
+			</div>
+		{:else}
+			{#await import('$lib/components/Map.svelte') then { default: Map }}
+				<Map center={data.cityCenter} zoom={data.cityZoom} onReady={onMapReady} />
+			{/await}
+		{/if}
 	</div>
 </div>

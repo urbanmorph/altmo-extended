@@ -13,7 +13,7 @@
   <div class="flex items-center justify-between">
     <p class="text-sm font-medium text-text-secondary">{label}</p>
     {#if icon}
-      <span class="text-xl">{icon}</span>
+      <i class="{icon} text-lg text-text-secondary"></i>
     {/if}
   </div>
   <p class="mt-2 text-3xl font-bold text-text-primary">{value}</p>

@@ -4,6 +4,7 @@
  * Runs only on the server (SvelteKit server load functions).
  */
 
+import { inflateRawSync } from 'node:zlib';
 import { getCityById } from '$lib/config/cities';
 import {
 	parseTransitRouterStops,
@@ -12,7 +13,8 @@ import {
 	computeMetrics,
 	type TransitData,
 	type TransitMetrics,
-	type BusStop
+	type BusStop,
+	type RidershipMetrics
 } from '$lib/utils/transit';
 
 interface CacheEntry<T> {
@@ -140,4 +142,210 @@ export async function fetchTransitMetrics(cityId: string): Promise<{
 	const result = { data, metrics };
 	setCache(cacheKey, result);
 	return result;
+}
+
+// --- Metro Ridership (BMRCL) ---
+
+const BMRCL_STATION_HOURLY_URL =
+	'https://raw.githubusercontent.com/Vonter/bmrcl-ridership-hourly/main/data/station-hourly.csv.zip';
+
+/**
+ * Station-to-line mapping for BMRCL Namma Metro.
+ * Source: https://github.com/Vonter/bmrcl-ridership-hourly/blob/main/enhance.py
+ * Majestic and RV Road are interchange stations shared by two lines.
+ */
+const STATION_LINE_MAP: Record<string, string> = {};
+
+// Purple Line stations
+[
+	'Challaghatta', 'Kengeri', 'Kengeri Bus Terminal', 'Pattanagere',
+	'Jnanabharathi', 'Rajarajeshwari Nagar', 'Pantharapalya - Nayandahalli',
+	'Mysore Road', 'Deepanjali Nagar', 'Attiguppe', 'Vijayanagar',
+	'Sri Balagangadharanatha Swamiji Station', 'Hosahalli', 'Magadi Road',
+	'Krantivira Sangolli Rayanna Railway Station',
+	'Nadaprabhu Kempegowda Station, Majestic',
+	'Sir M. Visvesvaraya Stn., Central College',
+	'Dr. B. R. Ambedkar Station, Vidhana Soudha', 'Cubbon Park',
+	'Mahatma Gandhi Road', 'Trinity', 'Halasuru', 'Indiranagar',
+	'Swami Vivekananda Road', 'Baiyappanahalli', 'Benniganahalli',
+	'Krishnarajapura', 'Singayyanapalya', 'Garudacharpalya', 'Hoodi',
+	'Seetharampalya', 'Kundalahalli', 'Nallurahalli',
+	'Sri Sathya Sai Hospital', 'Pattandur Agrahara', 'Kadugodi Tree Park',
+	'Hopefarm Channasandra', 'Whitefield (Kadugodi)'
+].forEach((s) => { STATION_LINE_MAP[s] = 'purple'; });
+
+// Green Line stations
+[
+	'Madavara', 'Chikkabidarakallu', 'Manjunathanagara', 'Nagasandra',
+	'Dasarahalli', 'Jalahalli', 'Peenya Industry', 'Peenya',
+	'Goraguntepalya', 'Yeshwantpur', 'Sandal Soap Factory', 'Mahalakshmi',
+	'Rajajinagar', 'Mahakavi Kuvempu Road', 'Srirampura',
+	'Mantri Square Sampige Road',
+	'Chickpete', 'Krishna Rajendra Market', 'National College', 'Lalbagh',
+	'South End Circle', 'Jayanagar',
+	'Rashtreeya Vidyalaya Road',
+	'Banashankari', 'Jaya Prakash Nagar', 'Yelachenahalli',
+	'Konanakunte Cross', 'Doddakallasandra', 'Vajarahalli',
+	'Thalaghattapura', 'Silk Institute'
+].forEach((s) => { STATION_LINE_MAP[s] = 'green'; });
+
+// Yellow Line stations
+[
+	'Ragigudda', 'Jayadeva Hospital', 'BTM Layout',
+	'Central Silk Board', 'Bommanahalli', 'Hongasandra', 'Kudlu Gate',
+	'Singasandra', 'Hosa Road', 'Beratena Agrahara', 'Electronic City',
+	'Infosys Foundation Konappana Agrahara', 'Huskur Road',
+	'Biocon Hebbagodi', 'Delta Electronics Bommasandra'
+].forEach((s) => { STATION_LINE_MAP[s] = 'yellow'; });
+
+/**
+ * Extract the first file from a zip buffer using Node.js built-in zlib.
+ * Handles the common case of a single-file zip archive (deflate method 8).
+ */
+function extractFirstFileFromZip(zipBuffer: Buffer): string {
+	// Local file header signature: PK\x03\x04
+	const sig = zipBuffer.readUInt32LE(0);
+	if (sig !== 0x04034b50) {
+		throw new Error('Invalid ZIP file signature');
+	}
+
+	const compressionMethod = zipBuffer.readUInt16LE(8);
+	const compressedSize = zipBuffer.readUInt32LE(18);
+	const fileNameLen = zipBuffer.readUInt16LE(26);
+	const extraFieldLen = zipBuffer.readUInt16LE(28);
+	const dataOffset = 30 + fileNameLen + extraFieldLen;
+
+	if (compressionMethod === 0) {
+		// Stored (no compression)
+		return zipBuffer.subarray(dataOffset, dataOffset + compressedSize).toString('utf-8');
+	} else if (compressionMethod === 8) {
+		// Deflate
+		const compressedData = zipBuffer.subarray(dataOffset, dataOffset + compressedSize);
+		const decompressed = inflateRawSync(compressedData);
+		return decompressed.toString('utf-8');
+	} else {
+		throw new Error(`Unsupported ZIP compression method: ${compressionMethod}`);
+	}
+}
+
+/**
+ * Parse station-hourly CSV text into aggregated ridership metrics.
+ * CSV columns: Date;Hour;Station;Ridership (semicolon-delimited)
+ * Aggregates across all dates to produce summary metrics.
+ */
+function parseRidershipCSV(csvText: string): RidershipMetrics {
+	const lines = csvText.trim().split('\n');
+	if (lines.length < 2) {
+		return {
+			totalDailyRidership: 0,
+			busiestStations: [],
+			ridershipByLine: {},
+			peakHours: [],
+			dateRange: { from: '', to: '' }
+		};
+	}
+
+	// Skip header row
+	const dataLines = lines.slice(1);
+
+	const stationTotals = new Map<string, number>();
+	const hourTotals = new Map<number, number>();
+	const dates = new Set<string>();
+	let totalRidership = 0;
+
+	for (const line of dataLines) {
+		// CSV format: Date;Hour;Station;Ridership (semicolon-delimited)
+		const parts = line.split(';');
+		if (parts.length < 4) continue;
+
+		const date = parts[0].trim();
+		const hour = parseInt(parts[1].trim(), 10);
+		const station = parts[2].trim();
+		const ridership = parseInt(parts[3].trim(), 10);
+
+		if (isNaN(ridership) || isNaN(hour)) continue;
+
+		dates.add(date);
+		totalRidership += ridership;
+		stationTotals.set(station, (stationTotals.get(station) ?? 0) + ridership);
+		hourTotals.set(hour, (hourTotals.get(hour) ?? 0) + ridership);
+	}
+
+	const numDays = dates.size || 1;
+	const sortedDates = [...dates].sort();
+
+	// Busiest stations (top 15, averaged per day)
+	const busiestStations = [...stationTotals.entries()]
+		.sort((a, b) => b[1] - a[1])
+		.slice(0, 15)
+		.map(([name, total]) => ({
+			name,
+			ridership: Math.round(total / numDays)
+		}));
+
+	// Ridership by line (averaged per day)
+	const ridershipByLine: Record<string, number> = {};
+	for (const [station, total] of stationTotals) {
+		const line = STATION_LINE_MAP[station] ?? 'other';
+		ridershipByLine[line] = (ridershipByLine[line] ?? 0) + total;
+	}
+	for (const line of Object.keys(ridershipByLine)) {
+		ridershipByLine[line] = Math.round(ridershipByLine[line] / numDays);
+	}
+
+	// Peak hours (averaged per day)
+	const peakHours = Array.from({ length: 24 }, (_, h) => ({
+		hour: h,
+		ridership: Math.round((hourTotals.get(h) ?? 0) / numDays)
+	}));
+
+	return {
+		totalDailyRidership: Math.round(totalRidership / numDays),
+		busiestStations,
+		ridershipByLine,
+		peakHours,
+		dateRange: {
+			from: sortedDates[0] ?? '',
+			to: sortedDates[sortedDates.length - 1] ?? ''
+		}
+	};
+}
+
+/**
+ * Fetch BMRCL metro ridership data for a city.
+ * Currently only Bengaluru has ridership data available.
+ * Fetches a zipped CSV from GitHub, decompresses, parses, and caches.
+ */
+export async function fetchMetroRidership(cityId: string): Promise<RidershipMetrics | null> {
+	if (cityId !== 'bengaluru') return null;
+
+	const cacheKey = `ridership-${cityId}`;
+	const cached = getCached<RidershipMetrics>(cacheKey);
+	if (cached) return cached;
+
+	try {
+		const res = await fetch(BMRCL_STATION_HOURLY_URL);
+		if (!res.ok) {
+			console.error(`[ridership] Failed to fetch BMRCL data: ${res.status}`);
+			return null;
+		}
+
+		const arrayBuffer = await res.arrayBuffer();
+		const zipBuffer = Buffer.from(arrayBuffer);
+		const csvText = extractFirstFileFromZip(zipBuffer);
+
+		const metrics = parseRidershipCSV(csvText);
+
+		console.log(
+			`[ridership] ${cityId}: ${metrics.totalDailyRidership.toLocaleString()} avg daily ridership, ` +
+			`${metrics.busiestStations.length} stations tracked, ` +
+			`date range ${metrics.dateRange.from} to ${metrics.dateRange.to}`
+		);
+
+		setCache(cacheKey, metrics);
+		return metrics;
+	} catch (e) {
+		console.error('[ridership] Error fetching BMRCL data:', (e as Error).message);
+		return null;
+	}
 }

@@ -1,10 +1,42 @@
 import type { PageServerLoad } from './$types';
-import { fetchTransitMetrics } from '$lib/server/transit-data';
+import { fetchTransitMetrics, fetchMetroRidership } from '$lib/server/transit-data';
+import { getCityById } from '$lib/config/cities';
 
-export const load: PageServerLoad = async () => {
-	const { data, metrics } = await fetchTransitMetrics('bengaluru');
+export const load: PageServerLoad = async ({ url }) => {
+	const cityId = url.searchParams.get('city') ?? 'bengaluru';
+	const city = getCityById(cityId);
+
+	const resolvedCityId = city ? cityId : 'bengaluru';
+	const resolvedCity = city ?? getCityById('bengaluru')!;
+
+	const hasTransitSources = !!resolvedCity.transitSources;
+
+	if (!hasTransitSources) {
+		return {
+			cityId: resolvedCityId,
+			cityName: resolvedCity.name,
+			hasTransitSources: false,
+			metrics: {
+				totalBusStops: 0,
+				totalMetroStations: 0,
+				totalBusRoutes: 0,
+				avgRoutesPerStop: 0
+			},
+			topHubs: [],
+			metroByLine: {},
+			ridership: null
+		};
+	}
+
+	const [{ data, metrics }, ridership] = await Promise.all([
+		fetchTransitMetrics(resolvedCityId),
+		fetchMetroRidership(resolvedCityId)
+	]);
 
 	return {
+		cityId: resolvedCityId,
+		cityName: resolvedCity.name,
+		hasTransitSources: true,
 		metrics: {
 			totalBusStops: metrics.totalBusStops,
 			totalMetroStations: metrics.totalMetroStations,
@@ -20,6 +52,7 @@ export const load: PageServerLoad = async () => {
 				line,
 				stations.map(s => ({ name: s.name }))
 			])
-		)
+		),
+		ridership
 	};
 };

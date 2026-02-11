@@ -42,6 +42,23 @@ export interface TransitMetrics {
 	metroByLine: Record<string, MetroStation[]>;
 }
 
+// --- Ridership Types ---
+
+export interface MetroRidership {
+	date: string;
+	hour: number;
+	station: string;
+	ridership: number;
+}
+
+export interface RidershipMetrics {
+	totalDailyRidership: number;
+	busiestStations: { name: string; ridership: number }[];
+	ridershipByLine: Record<string, number>;
+	peakHours: { hour: number; ridership: number }[];
+	dateRange: { from: string; to: string };
+}
+
 // --- Constants ---
 
 /** Catchment radii in meters */

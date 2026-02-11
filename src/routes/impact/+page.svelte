@@ -11,10 +11,10 @@
   <p class="mt-1 text-text-secondary">ESG impact metrics and sustainability reporting.</p>
 
   <div class="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-    <MetricCard label="CO₂ Offset" value="—" icon="🌍" />
-    <MetricCard label="Calories Burned" value="—" icon="🔥" />
-    <MetricCard label="Cars Off Road" value="—" icon="🚗" />
-    <MetricCard label="Active Companies" value="—" icon="🏢" />
+    <MetricCard label="CO₂ Offset" value="—" icon="fa-solid fa-earth-americas" />
+    <MetricCard label="Calories Burned" value="—" icon="fa-solid fa-fire" />
+    <MetricCard label="Cars Off Road" value="—" icon="fa-solid fa-car" />
+    <MetricCard label="Active Companies" value="—" icon="fa-solid fa-building" />
   </div>
 
   <div class="mt-8 rounded-xl border border-border bg-surface-card p-6">
