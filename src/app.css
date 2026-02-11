@@ -1,0 +1,109 @@
+@import 'tailwindcss';
+
+@theme {
+  /* Font families */
+  --font-sans: 'Open Sans', 'Inter', system-ui, sans-serif;
+
+  /* Altmo Brand Greens */
+  --color-altmo-green-100: hsl(120, 82%, 20%);
+  --color-altmo-green-200: hsl(120, 82%, 18%);
+  --color-altmo-green-300: hsl(120, 82%, 16%);
+  --color-altmo-green-400: hsl(120, 82%, 14%);
+
+  /* Tangerine Accent */
+  --color-tangerine-50: hsl(22, 97%, 50%);
+  --color-tangerine-100: hsl(22, 97%, 48%);
+  --color-tangerine-200: hsl(22, 97%, 46%);
+
+  /* Leaderboard Yellow */
+  --color-leaderboard-yellow: hsl(32, 90%, 57%);
+
+  /* Activity Mode Colors */
+  --color-mode-walk: #df7e37;
+  --color-mode-ride: #000080;
+  --color-mode-run: #1d531f;
+
+  /* Earth Scale */
+  --color-earth-50: #f7f6f2;
+  --color-earth-100: #e8e5dc;
+  --color-earth-200: #d4cec0;
+  --color-earth-300: #bdb39d;
+  --color-earth-400: #a89881;
+  --color-earth-500: #8b7d63;
+  --color-earth-600: #6f6350;
+  --color-earth-700: #5a4f42;
+  --color-earth-800: #4a4038;
+  --color-earth-900: #3d3530;
+
+  /* Moss Scale */
+  --color-moss-50: #f3f6f3;
+  --color-moss-100: #e3e9e3;
+  --color-moss-200: #c7d4c7;
+  --color-moss-300: #a2b9a3;
+  --color-moss-400: #7a9a7c;
+  --color-moss-500: #5a7d5c;
+  --color-moss-600: #466347;
+  --color-moss-700: #384f3a;
+  --color-moss-800: #2f4130;
+  --color-moss-900: #283629;
+
+  /* Clay Scale */
+  --color-clay-50: #faf6f4;
+  --color-clay-100: #f2e9e3;
+  --color-clay-200: #e5d2c6;
+  --color-clay-300: #d4b5a3;
+  --color-clay-400: #c19379;
+  --color-clay-500: #af7658;
+  --color-clay-600: #9a5f46;
+  --color-clay-700: #7f4e3b;
+  --color-clay-800: #694135;
+  --color-clay-900: #56382e;
+
+  /* Sage Scale */
+  --color-sage-50: #f5f7f5;
+  --color-sage-100: #e7ebe7;
+  --color-sage-200: #cfd7cf;
+  --color-sage-300: #adb9ad;
+  --color-sage-400: #879687;
+  --color-sage-500: #6a7a6a;
+  --color-sage-600: #546154;
+  --color-sage-700: #454f45;
+  --color-sage-800: #3a413a;
+  --color-sage-900: #323732;
+
+  /* Transit Colors */
+  --color-transit-bus: #2563eb;
+  --color-transit-metro: #9333ea;
+  --color-transit-metro-purple: #9333ea;
+  --color-transit-metro-green: #16a34a;
+  --color-transit-metro-yellow: #eab308;
+  --color-transit-metro-blue: #2563eb;
+  --color-transit-rail: #dc2626;
+  --color-catchment-walk: #ea580c;
+  --color-catchment-cycle: #000080;
+
+  /* Data Readiness Status */
+  --color-status-available: #16a34a;
+  --color-status-partial: #eab308;
+  --color-status-unavailable: #dc2626;
+
+  /* Semantic Tokens */
+  --color-primary: var(--color-altmo-green-100);
+  --color-primary-dark: var(--color-altmo-green-300);
+  --color-accent: var(--color-tangerine-50);
+  --color-accent-warm: var(--color-leaderboard-yellow);
+  --color-surface: var(--color-earth-50);
+  --color-surface-card: #ffffff;
+  --color-border: var(--color-earth-200);
+  --color-text-primary: var(--color-earth-900);
+  --color-text-secondary: var(--color-earth-600);
+  --color-success: var(--color-moss-500);
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    color: var(--color-text-primary);
+    background-color: var(--color-surface);
+  }
+}
