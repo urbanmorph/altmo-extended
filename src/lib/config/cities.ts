@@ -20,7 +20,10 @@ export interface TransitDataSources {
 	busServices?: string;
 	busRoutes?: string;
 	metroStations?: string;
+	metroLines?: string;
+	metroGTFS?: string;
 	cycleways?: string;
+	metroOverpass?: { network: string; lines: Record<string, string> };
 }
 
 /**
@@ -45,6 +48,18 @@ const BENGALURU_TRANSIT: TransitDataSources = {
 	metroStations: 'https://raw.githubusercontent.com/geohacker/namma-metro/master/metro-lines-stations.geojson'
 };
 
+const DELHI_TRANSIT: TransitDataSources = {
+	...transitRouterSources('delhi'),
+	metroStations: 'https://raw.githubusercontent.com/dhirajt/delhi-metro-stations/master/metro.json',
+	metroLines: 'https://raw.githubusercontent.com/kavyajeetbora/metro_accessibility/master/data/delhi/Delhi_NCR_metro_lines.json'
+};
+
+const HYDERABAD_TRANSIT: TransitDataSources = {
+	...transitRouterSources('telangana'),
+	metroStations: 'https://raw.githubusercontent.com/kavyajeetbora/metro_accessibility/master/data/hyderabad/Hyderabad_station_buildings.geojson',
+	metroLines: 'https://raw.githubusercontent.com/kavyajeetbora/metro_accessibility/master/data/hyderabad/Hyderabad_public_transport_route.geojson'
+};
+
 export const CITIES: CityConfig[] = [
 	{
 		id: 'bengaluru',
@@ -60,7 +75,13 @@ export const CITIES: CityConfig[] = [
 		lat: 13.0827,
 		lng: 80.2707,
 		zoom: 12,
-		transitSources: transitRouterSources('chennai')
+		transitSources: {
+			...transitRouterSources('chennai'),
+			metroOverpass: {
+				network: 'Chennai Metro',
+				lines: { 'Blue Line': '#2563eb', 'Green Line': '#16a34a' }
+			}
+		}
 	},
 	{
 		id: 'delhi',
@@ -68,7 +89,7 @@ export const CITIES: CityConfig[] = [
 		lat: 28.6139,
 		lng: 77.209,
 		zoom: 11,
-		transitSources: transitRouterSources('delhi')
+		transitSources: DELHI_TRANSIT
 	},
 	{
 		id: 'hyderabad',
@@ -76,7 +97,7 @@ export const CITIES: CityConfig[] = [
 		lat: 17.385,
 		lng: 78.4867,
 		zoom: 12,
-		transitSources: transitRouterSources('telangana')
+		transitSources: HYDERABAD_TRANSIT
 	},
 	{
 		id: 'kochi',
@@ -84,7 +105,10 @@ export const CITIES: CityConfig[] = [
 		lat: 9.9312,
 		lng: 76.2673,
 		zoom: 13,
-		transitSources: transitRouterSources('kochi')
+		transitSources: {
+			...transitRouterSources('kochi'),
+			metroGTFS: 'http://kochimetro.org/opendata/KMRLOpenData.zip'
+		}
 	},
 	{
 		id: 'pune',
@@ -92,7 +116,13 @@ export const CITIES: CityConfig[] = [
 		lat: 18.5204,
 		lng: 73.8567,
 		zoom: 12,
-		transitSources: transitRouterSources('pune')
+		transitSources: {
+			...transitRouterSources('pune'),
+			metroOverpass: {
+				network: 'Pune Metro',
+				lines: { 'Purple Line': '#9333ea', 'Aqua Line': '#06b6d4' }
+			}
+		}
 	}
 ];
 

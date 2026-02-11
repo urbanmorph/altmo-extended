@@ -248,6 +248,260 @@ export function parseNammaMetroGeoJSON(geojson: GeoJSON.FeatureCollection): {
 	return { stations, lines };
 }
 
+// --- Delhi Metro Parsers ---
+
+/** Line name to color-key mapping for Delhi Metro */
+const DELHI_LINE_COLOR_KEY: Record<string, string> = {
+	'yellow line': 'yellow',
+	'blue line': 'blue',
+	'blue line branch': 'blue',
+	'red line': 'red',
+	'green line': 'green',
+	'green line branch': 'green',
+	'violet line': 'violet',
+	'airport express': 'orange',
+	'pink line': 'pink',
+	'magenta line': 'magenta',
+	'gray line': 'gray',
+	'grey line': 'gray'
+};
+
+/** Hex colors for Delhi Metro lines */
+const DELHI_LINE_HEX: Record<string, string> = {
+	yellow: '#eab308',
+	blue: '#2563eb',
+	red: '#dc2626',
+	green: '#16a34a',
+	violet: '#7c3aed',
+	pink: '#ec4899',
+	magenta: '#d946ef',
+	gray: '#6b7280',
+	orange: '#f97316'
+};
+
+/**
+ * Parse dhirajt/delhi-metro-stations JSON into MetroStation[].
+ * Format: array of { name, details: { line: string[], latitude, longitude, layout } }
+ */
+export function parseDelhiMetroStations(
+	raw: { name: string; details: { line: string[]; latitude: number; longitude: number; layout: string } }[]
+): MetroStation[] {
+	const stations: MetroStation[] = [];
+	for (const entry of raw) {
+		const { name, details } = entry;
+		if (!details || typeof details.latitude !== 'number' || typeof details.longitude !== 'number') continue;
+
+		// Use the first line for color assignment; interchange stations get their primary line
+		const lineName = (details.line?.[0] ?? '').toLowerCase();
+		const colorKey = DELHI_LINE_COLOR_KEY[lineName] ?? 'blue';
+
+		stations.push({
+			name,
+			lng: details.longitude,
+			lat: details.latitude,
+			line: colorKey
+		});
+	}
+	return stations;
+}
+
+/**
+ * Parse kavyajeetbora Delhi_NCR_metro_lines.json into MetroLine[].
+ * Format: { name: {0: "...", 1: "..."}, color: {0: [r,g,b], ...}, path: {0: [[lng,lat], ...], ...} }
+ * Coordinates are already [lng, lat] in this dataset.
+ */
+export function parseDelhiMetroLines(
+	raw: {
+		name: Record<string, string>;
+		color: Record<string, [number, number, number]>;
+		path: Record<string, [number, number][]>;
+	}
+): MetroLine[] {
+	const lines: MetroLine[] = [];
+	const keys = Object.keys(raw.name);
+
+	for (const key of keys) {
+		const name = raw.name[key];
+		const rgb = raw.color[key];
+		const path = raw.path[key];
+		if (!name || !rgb || !path) continue;
+
+		// Try to match to our standard hex colors by line name; fall back to RGB conversion
+		const lowerName = name.toLowerCase();
+		let hex: string | undefined;
+		for (const [pattern, colorKey] of Object.entries(DELHI_LINE_COLOR_KEY)) {
+			if (lowerName.includes(pattern.replace(' line', '').trim())) {
+				hex = DELHI_LINE_HEX[colorKey];
+				break;
+			}
+		}
+		if (!hex) {
+			// Convert RGB array to hex
+			hex = `#${rgb.map((c) => Math.round(c).toString(16).padStart(2, '0')).join('')}`;
+		}
+
+		// Coordinates are already [lng, lat]
+		const coordinates: [number, number][] = path.map(([lng, lat]) => [lng, lat]);
+
+		lines.push({ name, color: hex, coordinates });
+	}
+
+	return lines;
+}
+
+// --- Hyderabad Metro Parsers ---
+
+/** Hex colors for Hyderabad Metro lines */
+const HYDERABAD_LINE_HEX: Record<string, string> = {
+	red: '#dc2626',
+	green: '#16a34a',
+	blue: '#2563eb'
+};
+
+/**
+ * Extract color key from Hyderabad Metro line name.
+ * Name format: "Hyderabad Metro Line 1 (red)" or "Hyderabad Metro Line 2 (green)"
+ */
+function extractHyderabadLineColor(name: string): string {
+	const lower = name.toLowerCase();
+	for (const color of Object.keys(HYDERABAD_LINE_HEX)) {
+		if (lower.includes(color)) return color;
+	}
+	return 'red';
+}
+
+/**
+ * Parse Hyderabad Metro route GeoJSON into MetroLine[].
+ * The GeoJSON has ~130 LineString segments that need grouping by line name/color.
+ * Groups all segments sharing the same line (e.g., "Line 1 (red)") into consolidated lines.
+ */
+export function parseHyderabadMetroRoutes(geojson: GeoJSON.FeatureCollection): MetroLine[] {
+	// Group segments by line color
+	const lineGroups = new Map<string, { name: string; coords: [number, number][] }>();
+
+	for (const feature of geojson.features) {
+		if (feature.geometry.type !== 'LineString') continue;
+		const props = feature.properties ?? {};
+		const name = props.name ?? '';
+		const colorKey = extractHyderabadLineColor(name);
+
+		if (!lineGroups.has(colorKey)) {
+			// Use a clean display name
+			const lineNum = name.match(/Line\s*(\d+)/i)?.[1] ?? '';
+			const displayName = lineNum
+				? `Line ${lineNum} (${colorKey.charAt(0).toUpperCase() + colorKey.slice(1)})`
+				: name;
+			lineGroups.set(colorKey, { name: displayName, coords: [] });
+		}
+
+		const coords = feature.geometry.coordinates as [number, number][];
+		lineGroups.get(colorKey)!.coords.push(...coords);
+	}
+
+	return Array.from(lineGroups.entries()).map(([colorKey, { name, coords }]) => ({
+		name,
+		color: HYDERABAD_LINE_HEX[colorKey] ?? '#dc2626',
+		coordinates: coords
+	}));
+}
+
+/**
+ * Compute the centroid of a polygon's exterior ring.
+ * Takes an array of [lng, lat] coordinate pairs (the outer ring of a GeoJSON Polygon).
+ */
+function polygonCentroid(ring: [number, number][]): [number, number] {
+	let lngSum = 0;
+	let latSum = 0;
+	// Exclude the closing point (last == first in GeoJSON polygons)
+	const n = ring.length > 1 && ring[0][0] === ring[ring.length - 1][0] && ring[0][1] === ring[ring.length - 1][1]
+		? ring.length - 1
+		: ring.length;
+	for (let i = 0; i < n; i++) {
+		lngSum += ring[i][0];
+		latSum += ring[i][1];
+	}
+	return [lngSum / n, latSum / n];
+}
+
+/**
+ * Parse Hyderabad Metro station buildings GeoJSON into MetroStation[].
+ * Station geometries are Polygon/MultiPolygon building footprints — centroids are computed.
+ * Line assignment uses station_name hints (e.g., "Ameerpet (Red Line)") when available,
+ * otherwise assigns by proximity to the parsed metro lines.
+ */
+export function parseHyderabadMetroStations(
+	geojson: GeoJSON.FeatureCollection,
+	metroLines?: MetroLine[]
+): MetroStation[] {
+	const stations: MetroStation[] = [];
+
+	// Pre-compute line color keys for proximity matching
+	const lineColorKeys = metroLines?.map((line) => {
+		for (const [color, hex] of Object.entries(HYDERABAD_LINE_HEX)) {
+			if (line.color === hex) return color;
+		}
+		return 'red';
+	}) ?? [];
+
+	for (const feature of geojson.features) {
+		const props = feature.properties ?? {};
+		const stationName: string = props.station_name ?? props.name ?? 'Unknown';
+		if (stationName === 'Unknown' && !props.station_name) continue;
+
+		// Compute centroid from polygon geometry
+		let lng: number;
+		let lat: number;
+
+		if (feature.geometry.type === 'Polygon') {
+			const ring = feature.geometry.coordinates[0] as [number, number][];
+			[lng, lat] = polygonCentroid(ring);
+		} else if (feature.geometry.type === 'MultiPolygon') {
+			// Use the first polygon's exterior ring
+			const ring = (feature.geometry.coordinates as [number, number][][][])[0][0];
+			[lng, lat] = polygonCentroid(ring);
+		} else {
+			continue;
+		}
+
+		// Try to extract line from station name (e.g., "Ameerpet (Red Line)")
+		let colorKey: string | undefined;
+		const nameMatch = stationName.match(/\((Red|Green|Blue)\s*Line\)/i);
+		if (nameMatch) {
+			colorKey = nameMatch[1].toLowerCase();
+		}
+
+		// Fall back to proximity-based assignment if no hint in name
+		if (!colorKey && metroLines && metroLines.length > 0) {
+			let minDist = Infinity;
+			let nearestColor = 'red';
+			for (let i = 0; i < metroLines.length; i++) {
+				// Sample every 5th coordinate for performance (lines can have thousands of points)
+				const coords = metroLines[i].coordinates;
+				for (let j = 0; j < coords.length; j += 5) {
+					const d = haversine(lat, lng, coords[j][1], coords[j][0]);
+					if (d < minDist) {
+						minDist = d;
+						nearestColor = lineColorKeys[i];
+					}
+				}
+			}
+			colorKey = nearestColor;
+		}
+
+		// Clean up station name: remove the "(Red Line)" suffix if present
+		const cleanName = stationName.replace(/\s*\((Red|Green|Blue)\s*Line\)/i, '').trim();
+
+		stations.push({
+			name: cleanName,
+			lng,
+			lat,
+			line: colorKey ?? 'red'
+		});
+	}
+
+	return stations;
+}
+
 // --- GeoJSON Builders (for MapLibre) ---
 
 export function busStopsToGeoJSON(stops: BusStop[]): GeoJSON.FeatureCollection {
