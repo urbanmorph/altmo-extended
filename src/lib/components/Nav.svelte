@@ -21,9 +21,9 @@
   <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
     <div class="flex h-16 items-center justify-between">
       <div class="flex items-center gap-8">
-        <a href="/" class="flex items-center gap-2">
+        <a href="/" class="flex flex-col items-center">
           <img src="/altmo-logo-white.png" alt="Altmo" class="h-6" />
-          <span class="text-lg font-normal text-white/70">Intelligence</span>
+          <span class="w-full text-center text-[0.55rem] font-light tracking-[0.25em] uppercase text-white/70">Intelligence</span>
         </a>
         <div class="hidden md:flex items-center gap-1">
           {#each navItems as item}
