@@ -3,7 +3,8 @@
     computeCityQoL,
     gradeColor,
     gradeLabel,
-    type CityQoLScore
+    type CityQoLScore,
+    type ConfidenceTier
   } from '$lib/config/city-qol-data';
   import { computeReadinessScore } from '$lib/config/data-readiness';
   import { CITIES } from '$lib/config/cities';
@@ -32,9 +33,27 @@
   }
 
   function dimColor(score: number): string {
-    if (score >= 0.6) return 'var(--color-altmo-500)';
-    if (score >= 0.4) return 'var(--color-tangerine-300)';
+    if (score >= 0.60) return 'var(--color-altmo-500)';
+    if (score >= 0.30) return 'var(--color-tangerine-300)';
     return 'var(--color-tangerine-500)';
+  }
+
+  function confidenceIcon(tier: ConfidenceTier): string {
+    if (tier === 'gold') return 'fa-solid fa-certificate';
+    if (tier === 'silver') return 'fa-solid fa-certificate';
+    return 'fa-solid fa-circle-half-stroke';
+  }
+
+  function confidenceColor(tier: ConfidenceTier): string {
+    if (tier === 'gold') return '#D4AF37';
+    if (tier === 'silver') return '#9CA3AF';
+    return '#CD7F32';
+  }
+
+  function confidenceLabel(tier: ConfidenceTier): string {
+    if (tier === 'gold') return 'Gold';
+    if (tier === 'silver') return 'Silver';
+    return 'Bronze';
   }
 </script>
 
@@ -47,7 +66,14 @@
         <p class="text-xs text-text-secondary">{gradeLabel(qol.grade)}</p>
       </div>
       <div class="flex items-center gap-2">
-        <span class="text-3xl font-bold" style="color: {gradeColor(qol.grade)}">{qol.grade}</span>
+        <div class="flex items-center gap-1.5">
+          <span class="text-3xl font-bold" style="color: {gradeColor(qol.grade)}">{qol.grade}</span>
+          <i
+            class="{confidenceIcon(qol.confidence)} text-xs"
+            style="color: {confidenceColor(qol.confidence)}"
+            title="{confidenceLabel(qol.confidence)} confidence ({qol.indicatorsAvailable} of {qol.indicatorsTotal} indicators)"
+          ></i>
+        </div>
         <span class="text-sm text-text-secondary">{(qol.composite * 100).toFixed(0)}/100</span>
       </div>
     </div>
@@ -57,7 +83,10 @@
       {#each qol.dimensions as dim (dim.key)}
         <div>
           <div class="flex items-center justify-between text-xs">
-            <span class="font-medium text-text-primary">{dim.label}</span>
+            <span class="font-medium text-text-primary">
+              {dim.label}
+              <span class="font-normal text-text-secondary">({dim.availableCount} of {dim.totalCount} indicators)</span>
+            </span>
             <span class="text-text-secondary">{(dim.score * 100).toFixed(0)}</span>
           </div>
           <div class="mt-0.5 h-1.5 w-full rounded-full bg-earth-100">

@@ -29,6 +29,23 @@ export interface QoLIndicatorDef {
 	description: string;
 }
 
+export interface IndicatorBenchmark {
+	worstRef: number;
+	target: number;
+	source: string;
+}
+
+export const INDICATOR_BENCHMARKS: Record<string, IndicatorBenchmark> = {
+	traffic_fatalities:     { worstRef: 20,  target: 2,   source: 'India avg (MoRTH) / Sweden Vision Zero' },
+	active_transport_share: { worstRef: 10,  target: 50,  source: 'Low-cycling Indian city / Amsterdam-class' },
+	metro_network_km:       { worstRef: 0,   target: 400, source: 'No metro / Delhi DMRC (largest in India)' },
+	bus_fleet_per_lakh:     { worstRef: 5,   target: 60,  source: 'Below minimum / BMTC-class fleet' },
+	pm25_annual:            { worstRef: 100, target: 15,  source: 'Delhi-level / WHO 2021 guideline' },
+	congestion_level:       { worstRef: 60,  target: 15,  source: 'Severe congestion / near free-flow' },
+	sustainable_mode_share: { worstRef: 20,  target: 70,  source: 'Car-dependent / Dutch-class' },
+	road_density:           { worstRef: 3,   target: 20,  source: 'Sparse / well-connected grid' }
+};
+
 export interface QoLDimension {
 	key: string;
 	label: string;
@@ -41,12 +58,31 @@ export interface CityQoLValues {
 	values: Record<string, number | null>;
 }
 
+export const GRADE_BOUNDARIES = [
+	{ grade: 'A', min: 0.75, label: 'International best practice' },
+	{ grade: 'B', min: 0.60, label: 'Meets national targets' },
+	{ grade: 'C', min: 0.45, label: 'Indian average' },
+	{ grade: 'D', min: 0.30, label: 'Below average' },
+	{ grade: 'E', min: 0,    label: 'Crisis level' }
+];
+
+export type ConfidenceTier = 'gold' | 'silver' | 'bronze';
+
+export function getConfidenceTier(availableCount: number, totalCount: number): ConfidenceTier {
+	const pct = totalCount > 0 ? availableCount / totalCount : 0;
+	if (pct > 0.8) return 'gold';
+	if (pct > 0.6) return 'silver';
+	return 'bronze';
+}
+
 export interface DimensionScore {
 	key: string;
 	label: string;
 	weight: number;
 	score: number; // 0-1 normalized
 	weighted: number; // score * weight
+	availableCount: number; // how many indicators have data
+	totalCount: number; // how many indicators defined
 	indicators: {
 		key: string;
 		label: string;
@@ -61,6 +97,9 @@ export interface CityQoLScore {
 	composite: number; // 0-1
 	grade: string; // A-E
 	dimensions: DimensionScore[];
+	confidence: ConfidenceTier;
+	indicatorsAvailable: number;
+	indicatorsTotal: number;
 }
 
 // ---- Framework definition ----
@@ -267,25 +306,18 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 // ---- Scoring engine ----
 
 /**
- * Grade boundaries from the paper's Bell-Curve method.
+ * Grade boundaries anchored to policy-meaningful thresholds.
  */
 export function gradeFromScore(score: number): string {
-	if (score >= 0.6) return 'A';
-	if (score >= 0.53) return 'B';
-	if (score >= 0.47) return 'C';
-	if (score >= 0.39) return 'D';
+	for (const b of GRADE_BOUNDARIES) {
+		if (score >= b.min) return b.grade;
+	}
 	return 'E';
 }
 
 export function gradeLabel(grade: string): string {
-	const labels: Record<string, string> = {
-		A: 'Strong positive',
-		B: 'Moderate positive',
-		C: 'Weak positive',
-		D: 'Moderate negative',
-		E: 'Strong negative'
-	};
-	return labels[grade] ?? '';
+	const entry = GRADE_BOUNDARIES.find((b) => b.grade === grade);
+	return entry?.label ?? '';
 }
 
 export function gradeColor(grade: string): string {
@@ -300,24 +332,31 @@ export function gradeColor(grade: string): string {
 }
 
 /**
- * Min-max normalize an indicator value across all cities.
- * For negative-effect indicators (lower is better), the scale is inverted.
+ * Benchmark-anchored normalization.
+ * Scores are anchored to fixed worst-reference and target values,
+ * so adding/removing cities does not shift existing scores.
  */
 function normalizeIndicator(
 	key: string,
 	value: number,
-	allValues: (number | null)[],
 	effect: EffectDirection
 ): number {
-	const valid = allValues.filter((v): v is number => v !== null);
-	if (valid.length < 2) return 0.5;
+	const bench = INDICATOR_BENCHMARKS[key];
+	if (!bench) return 0.5;
 
-	const min = Math.min(...valid);
-	const max = Math.max(...valid);
-	if (max === min) return 0.5;
+	const { worstRef, target } = bench;
+	if (worstRef === target) return 0.5;
 
-	const raw = (value - min) / (max - min);
-	return effect === 'negative' ? 1 - raw : raw;
+	let raw: number;
+	if (effect === 'negative') {
+		// Lower is better: worst is high, target is low
+		raw = (worstRef - value) / (worstRef - target);
+	} else {
+		// Higher is better: worst is low, target is high
+		raw = (value - worstRef) / (target - worstRef);
+	}
+
+	return Math.max(0, Math.min(1, raw));
 }
 
 /**
@@ -327,12 +366,14 @@ export function computeCityQoL(cityId: string): CityQoLScore | undefined {
 	const cityData = CITY_QOL_DATA.find((c) => c.cityId === cityId);
 	if (!cityData) return undefined;
 
+	let totalAvailable = 0;
+	let totalDefined = 0;
+
 	const dimensions: DimensionScore[] = QOL_DIMENSIONS.map((dim) => {
 		const indicators = dim.indicators.map((ind) => {
 			const value = cityData.values[ind.key] ?? null;
-			const allValues = CITY_QOL_DATA.map((c) => c.values[ind.key] ?? null);
 			const normalized =
-				value !== null ? normalizeIndicator(ind.key, value, allValues, ind.effect) : null;
+				value !== null ? normalizeIndicator(ind.key, value, ind.effect) : null;
 
 			return {
 				key: ind.key,
@@ -350,20 +391,36 @@ export function computeCityQoL(cityId: string): CityQoLScore | undefined {
 			? validScores.reduce((a, b) => a + b, 0) / validScores.length
 			: 0;
 
+		const availableCount = validScores.length;
+		const totalCount = indicators.length;
+		totalAvailable += availableCount;
+		totalDefined += totalCount;
+
 		return {
 			key: dim.key,
 			label: dim.label,
 			weight: dim.weight,
 			score: dimScore,
 			weighted: dimScore * dim.weight,
+			availableCount,
+			totalCount,
 			indicators
 		};
 	});
 
 	const composite = dimensions.reduce((sum, d) => sum + d.weighted, 0);
 	const grade = gradeFromScore(composite);
+	const confidence = getConfidenceTier(totalAvailable, totalDefined);
 
-	return { cityId, composite, grade, dimensions };
+	return {
+		cityId,
+		composite,
+		grade,
+		dimensions,
+		confidence,
+		indicatorsAvailable: totalAvailable,
+		indicatorsTotal: totalDefined
+	};
 }
 
 /**

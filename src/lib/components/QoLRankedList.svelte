@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { computeAllQoL, gradeColor, gradeLabel } from '$lib/config/city-qol-data';
+  import { computeAllQoL, gradeColor, gradeLabel, type ConfidenceTier } from '$lib/config/city-qol-data';
   import { computeAllGaps } from '$lib/config/city-qol-gaps';
   import { cityName, fmtIndicatorValue, barPercent, dimensionColor } from '$lib/utils/qol-format';
 
@@ -8,6 +8,24 @@
 
   function getGap(cityId: string) {
     return gaps.find((g) => g.cityId === cityId);
+  }
+
+  function confidenceIcon(tier: ConfidenceTier): string {
+    if (tier === 'gold') return 'fa-solid fa-certificate';
+    if (tier === 'silver') return 'fa-solid fa-certificate';
+    return 'fa-solid fa-circle-half-stroke';
+  }
+
+  function confidenceColor(tier: ConfidenceTier): string {
+    if (tier === 'gold') return '#D4AF37';
+    if (tier === 'silver') return '#9CA3AF';
+    return '#CD7F32';
+  }
+
+  function confidenceLabel(tier: ConfidenceTier): string {
+    if (tier === 'gold') return 'Gold';
+    if (tier === 'silver') return 'Silver';
+    return 'Bronze';
   }
 
   let expandedIndex = $state(-1);
@@ -46,9 +64,16 @@
           {/if}
         </div>
 
-        <!-- Grade + score -->
+        <!-- Grade + score + confidence -->
         <div class="shrink-0 text-right">
-          <span class="text-2xl font-bold" style="color: {color}">{entry.grade}</span>
+          <div class="flex items-center justify-end gap-1">
+            <span class="text-2xl font-bold" style="color: {color}">{entry.grade}</span>
+            <i
+              class="{confidenceIcon(entry.confidence)} text-xs"
+              style="color: {confidenceColor(entry.confidence)}"
+              title="{confidenceLabel(entry.confidence)} confidence ({entry.indicatorsAvailable} of {entry.indicatorsTotal} indicators)"
+            ></i>
+          </div>
           <p class="text-xs text-text-secondary">{Math.round(entry.composite * 100)}/100</p>
         </div>
 
@@ -70,6 +95,7 @@
                   <span class="font-medium text-text-primary">
                     {dim.label}
                     <span class="font-normal text-text-secondary">({Math.round(dim.weight * 100)}%)</span>
+                    <span class="font-normal text-text-secondary">&middot; {dim.availableCount} of {dim.totalCount} indicators</span>
                   </span>
                   <span class="text-text-secondary">{Math.round(dim.score * 100)}/100</span>
                 </div>

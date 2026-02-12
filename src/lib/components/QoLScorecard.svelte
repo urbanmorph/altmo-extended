@@ -24,8 +24,8 @@
   }
 
   function dimColor(score: number): string {
-    if (score >= 0.6) return 'var(--color-altmo-500)';
-    if (score >= 0.4) return 'var(--color-tangerine-300)';
+    if (score >= 0.60) return 'var(--color-altmo-500)';
+    if (score >= 0.30) return 'var(--color-tangerine-300)';
     return 'var(--color-tangerine-500)';
   }
 </script>

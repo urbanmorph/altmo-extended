@@ -38,8 +38,8 @@ const GAP_DATA: Record<string, Omit<CityGapAnalysis, 'cityId' | 'worstDimension'
 		dataUnlockSentence: 'Publishing safety and NMT infrastructure data unlocks health dimension scoring'
 	},
 	chennai: {
-		gapSentence: 'Traffic fatalities at 10.5 per lakh \u2014 second highest',
-		recommendation: 'Safe System approach on 10 high-fatality corridors',
+		gapSentence: 'Metro network at 54.6 km covers only 14% of the target — accessibility bottleneck',
+		recommendation: 'Phase 2 expansion to 120 km would lift accessibility from D to C range',
 		dataUnlockSentence: 'Publishing metro ridership and NMT data enables full transit performance analysis'
 	},
 	hyderabad: {
