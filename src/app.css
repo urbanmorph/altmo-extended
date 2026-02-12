@@ -4,26 +4,31 @@
   /* Font families */
   --font-sans: 'Open Sans', 'Inter', system-ui, sans-serif;
 
-  /* Altmo Brand Greens */
-  --color-altmo-green-100: hsl(120, 82%, 20%);
-  --color-altmo-green-200: hsl(120, 82%, 18%);
-  --color-altmo-green-300: hsl(120, 82%, 16%);
-  --color-altmo-green-400: hsl(120, 82%, 14%);
+  /* ── Altmo Brand Greens — official palette ── */
+  --color-altmo-50:  #C9E4A6;
+  --color-altmo-100: #EAFB90;
+  --color-altmo-200: #C2ED61;
+  --color-altmo-500: #01AA14;
+  --color-altmo-700: #008409;
+  --color-altmo-800: #19221D;
+  --color-altmo-900: #131A16;
 
-  /* Tangerine Accent */
-  --color-tangerine-50: hsl(22, 97%, 50%);
-  --color-tangerine-100: hsl(22, 97%, 48%);
-  --color-tangerine-200: hsl(22, 97%, 46%);
+  /* ── Altmo Accents — official palette ── */
+  --color-tangerine-300: #FFB31C;
+  --color-tangerine-400: #F08357;
+  --color-tangerine-500: #FF7B27;
 
-  /* Leaderboard Yellow */
-  --color-leaderboard-yellow: hsl(32, 90%, 57%);
+  /* ── Altmo Neutrals — official palette ── */
+  --color-neutral-100: #F1F3F9;
+  --color-neutral-300: #D6D8DC;
+  --color-neutral-500: #999999;
 
   /* Activity Mode Colors */
-  --color-mode-walk: #df7e37;
-  --color-mode-ride: #000080;
-  --color-mode-run: #1d531f;
+  --color-mode-walk: #FF7B27;
+  --color-mode-ride: #008409;
+  --color-mode-run: #19221D;
 
-  /* Earth Scale */
+  /* Earth Scale (warm grays for UI depth) */
   --color-earth-50: #f7f6f2;
   --color-earth-100: #e8e5dc;
   --color-earth-200: #d4cec0;
@@ -79,25 +84,26 @@
   --color-transit-metro-yellow: #eab308;
   --color-transit-metro-blue: #2563eb;
   --color-transit-rail: #dc2626;
-  --color-catchment-walk: #ea580c;
-  --color-catchment-cycle: #000080;
+  --color-catchment-walk: #FF7B27;
+  --color-catchment-cycle: #008409;
 
   /* Data Readiness Status */
-  --color-status-available: #16a34a;
-  --color-status-partial: #eab308;
+  --color-status-available: #01AA14;
+  --color-status-partial: #FFB31C;
   --color-status-unavailable: #dc2626;
 
-  /* Semantic Tokens */
-  --color-primary: var(--color-altmo-green-100);
-  --color-primary-dark: var(--color-altmo-green-300);
-  --color-accent: var(--color-tangerine-50);
-  --color-accent-warm: var(--color-leaderboard-yellow);
-  --color-surface: var(--color-earth-50);
+  /* ── Semantic Tokens ── */
+  --color-primary: var(--color-altmo-700);
+  --color-primary-dark: var(--color-altmo-800);
+  --color-primary-light: var(--color-altmo-500);
+  --color-accent: var(--color-tangerine-500);
+  --color-accent-warm: var(--color-tangerine-300);
+  --color-surface: var(--color-neutral-100);
   --color-surface-card: #ffffff;
-  --color-border: var(--color-earth-200);
-  --color-text-primary: var(--color-earth-900);
-  --color-text-secondary: var(--color-earth-600);
-  --color-success: var(--color-moss-500);
+  --color-border: var(--color-neutral-300);
+  --color-text-primary: var(--color-altmo-900);
+  --color-text-secondary: var(--color-neutral-500);
+  --color-success: var(--color-altmo-500);
 }
 
 @layer base {

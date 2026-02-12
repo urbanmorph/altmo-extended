@@ -82,8 +82,8 @@ export const TRANSIT_COLORS = {
 	metroRed: '#dc2626',
 	metroAqua: '#06b6d4',
 	rail: '#dc2626',
-	catchmentWalk: '#ea580c',
-	catchmentCycle: '#000080'
+	catchmentWalk: '#FF7B27',
+	catchmentCycle: '#008409'
 } as const;
 
 // --- Helpers ---

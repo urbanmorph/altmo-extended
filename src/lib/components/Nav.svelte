@@ -17,7 +17,7 @@
   ];
 </script>
 
-<nav class="bg-altmo-green-100 text-white">
+<nav class="bg-altmo-700 text-white">
   <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
     <div class="flex h-16 items-center justify-between">
       <div class="flex items-center gap-8">

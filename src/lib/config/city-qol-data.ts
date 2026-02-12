@@ -273,10 +273,10 @@ export function gradeLabel(grade: string): string {
 
 export function gradeColor(grade: string): string {
 	const colors: Record<string, string> = {
-		A: 'var(--color-status-available)',
-		B: 'var(--color-moss-400)',
-		C: 'var(--color-status-partial)',
-		D: 'var(--color-clay-500)',
+		A: 'var(--color-altmo-700)',
+		B: 'var(--color-altmo-500)',
+		C: 'var(--color-tangerine-300)',
+		D: 'var(--color-tangerine-500)',
 		E: 'var(--color-status-unavailable)'
 	};
 	return colors[grade] ?? 'var(--color-text-secondary)';
