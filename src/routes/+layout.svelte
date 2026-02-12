@@ -14,11 +14,6 @@
     {#snippet city_selector()}
       <CitySelector />
     {/snippet}
-    {#snippet auth()}
-      <button class="rounded-md px-3 py-1.5 text-sm text-white/80 hover:text-white">
-        Sign in
-      </button>
-    {/snippet}
   </Nav>
 
   <main class="flex-1">

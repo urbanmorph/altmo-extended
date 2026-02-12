@@ -4,10 +4,9 @@
 
   interface Props {
     city_selector?: Snippet;
-    auth?: Snippet;
   }
 
-  let { city_selector, auth }: Props = $props();
+  let { city_selector }: Props = $props();
 
   const navItems = [
     { href: '/access', label: 'Access' },
@@ -43,11 +42,6 @@
         {#if city_selector}
           {@render city_selector()}
         {/if}
-        <div class="text-sm text-white/70">
-          {#if auth}
-            {@render auth()}
-          {/if}
-        </div>
       </div>
     </div>
   </div>
