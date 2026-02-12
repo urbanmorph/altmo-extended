@@ -1,13 +1,15 @@
 import type { PageServerLoad } from './$types';
 import { getLatestSafetyData, getSafetyTrends } from '$lib/server/safety-data';
 import { getAllCityPM25 } from '$lib/server/air-quality';
+import { getAllCityCongestion } from '$lib/server/traffic-flow';
 import type { QoLOverrides } from '$lib/config/city-qol-data';
 
 export const load: PageServerLoad = async () => {
-	const [safety, airQuality, safetyTrends] = await Promise.all([
+	const [safety, airQuality, safetyTrends, congestion] = await Promise.all([
 		getLatestSafetyData(),
 		getAllCityPM25(),
-		getSafetyTrends()
+		getSafetyTrends(),
+		getAllCityCongestion()
 	]);
 
 	const overrides: QoLOverrides = {};
@@ -19,6 +21,11 @@ export const load: PageServerLoad = async () => {
 			overrides[cityId] = { ...overrides[cityId], pm25_annual: data.pm25Avg };
 		}
 	}
+	for (const [cityId, data] of Object.entries(congestion)) {
+		if (data) {
+			overrides[cityId] = { ...overrides[cityId], congestion_level: data.congestionPct };
+		}
+	}
 
-	return { qolOverrides: overrides, airQuality, safetyTrends };
+	return { qolOverrides: overrides, airQuality, safetyTrends, congestion };
 };
