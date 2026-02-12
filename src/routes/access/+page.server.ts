@@ -7,6 +7,7 @@ import {
 	metroLinesToGeoJSON
 } from '$lib/utils/transit';
 import { getLatestSafetyData } from '$lib/server/safety-data';
+import { getAllCityPM25 } from '$lib/server/air-quality';
 import type { QoLOverrides } from '$lib/config/city-qol-data';
 
 export const load: PageServerLoad = async ({ url, cookies }) => {
@@ -18,16 +19,22 @@ export const load: PageServerLoad = async ({ url, cookies }) => {
 	const resolvedCity = city ?? getCityById('bengaluru')!;
 
 	const hasTransitSources = !!resolvedCity.transitSources;
-	const [transitResult, safety] = await Promise.all([
+	const [transitResult, safety, airQuality] = await Promise.all([
 		hasTransitSources
 			? fetchTransitData(resolvedCityId)
 			: Promise.resolve({ busStops: [], metroStations: [], metroLines: [] }),
-		getLatestSafetyData()
+		getLatestSafetyData(),
+		getAllCityPM25()
 	]);
 
 	const qolOverrides: QoLOverrides = {};
 	for (const [id, d] of Object.entries(safety)) {
 		qolOverrides[id] = { traffic_fatalities: d.fatalitiesPerLakh };
+	}
+	for (const [id, d] of Object.entries(airQuality)) {
+		if (d) {
+			qolOverrides[id] = { ...qolOverrides[id], pm25_annual: d.pm25Avg };
+		}
 	}
 
 	return {

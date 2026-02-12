@@ -2,6 +2,7 @@ import type { PageServerLoad } from './$types';
 import { fetchTransitMetrics, fetchMetroRidership } from '$lib/server/transit-data';
 import { getCityById } from '$lib/config/cities';
 import { getLatestSafetyData } from '$lib/server/safety-data';
+import { getAllCityPM25 } from '$lib/server/air-quality';
 import type { QoLOverrides } from '$lib/config/city-qol-data';
 
 export const load: PageServerLoad = async ({ url, cookies }) => {
@@ -13,10 +14,18 @@ export const load: PageServerLoad = async ({ url, cookies }) => {
 
 	const hasTransitSources = !!resolvedCity.transitSources;
 
-	const safety = await getLatestSafetyData();
+	const [safety, airQuality] = await Promise.all([
+		getLatestSafetyData(),
+		getAllCityPM25()
+	]);
 	const qolOverrides: QoLOverrides = {};
 	for (const [id, d] of Object.entries(safety)) {
 		qolOverrides[id] = { traffic_fatalities: d.fatalitiesPerLakh };
+	}
+	for (const [id, d] of Object.entries(airQuality)) {
+		if (d) {
+			qolOverrides[id] = { ...qolOverrides[id], pm25_annual: d.pm25Avg };
+		}
 	}
 
 	if (!hasTransitSources) {
