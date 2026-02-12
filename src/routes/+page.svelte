@@ -48,7 +48,7 @@
 
   <div class="mt-8">
     <h2 class="mb-2 text-xl font-semibold text-text-primary">Data Readiness</h2>
-    <p class="mb-4 text-text-secondary">Data layer availability across cities. Green = available, amber = partial, red = unavailable.</p>
+    <p class="mb-4 text-text-secondary">Weighted score across 10 data layers. Core transit and infrastructure data count more than supplementary layers.</p>
     <DataReadinessGrid />
   </div>
 </div>

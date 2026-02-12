@@ -1,95 +1,52 @@
 <script lang="ts">
-  import { DATA_LAYERS, CITY_READINESS, type DataStatus } from '$lib/config/data-readiness';
+  import { computeAllScores, type ReadinessScore } from '$lib/config/data-readiness';
   import { CITIES } from '$lib/config/cities';
 
-  interface Props {
-    cityIds?: string[];
+  const scores = computeAllScores();
+
+  function cityName(cityId: string): string {
+    return CITIES.find((c) => c.id === cityId)?.name ?? cityId;
   }
 
-  let { cityIds }: Props = $props();
-
-  const displayCities = $derived(
-    cityIds ? CITIES.filter((c) => cityIds!.includes(c.id)) : CITIES
-  );
-
-  function getStatus(cityId: string, layerKey: string): DataStatus {
-    const readiness = CITY_READINESS.find((r) => r.cityId === cityId);
-    return readiness?.layers[layerKey] ?? 'unavailable';
+  function scoreColor(total: number): string {
+    if (total >= 70) return 'var(--color-status-available)';
+    if (total >= 40) return 'var(--color-status-partial)';
+    return 'var(--color-status-unavailable)';
   }
 
-  function statusColor(status: DataStatus): string {
-    switch (status) {
-      case 'available':
-        return 'var(--color-status-available)';
-      case 'partial':
-        return 'var(--color-status-partial)';
-      case 'unavailable':
-        return 'var(--color-status-unavailable)';
-    }
-  }
-
-  function statusLabel(status: DataStatus): string {
-    switch (status) {
-      case 'available':
-        return 'Available';
-      case 'partial':
-        return 'Partial';
-      case 'unavailable':
-        return 'Unavailable';
-    }
+  function barPercent(score: number, max: number): number {
+    return max > 0 ? (score / max) * 100 : 0;
   }
 </script>
 
-<div class="overflow-x-auto rounded-xl border border-border">
-  <table class="w-full text-sm">
-    <thead>
-      <tr class="border-b border-border bg-earth-50">
-        <th class="px-4 py-3 text-left font-medium text-text-secondary">Data Layer</th>
-        {#each displayCities as city}
-          <th class="px-4 py-3 text-center font-medium text-text-secondary">{city.name}</th>
-        {/each}
-      </tr>
-    </thead>
-    <tbody>
-      {#each DATA_LAYERS as layer}
-        <tr class="border-b border-border last:border-0">
-          <td class="px-4 py-3 text-text-primary" title={layer.description}>{layer.label}</td>
-          {#each displayCities as city}
-            {@const status = getStatus(city.id, layer.key)}
-            <td class="px-4 py-3 text-center">
-              <span
-                class="inline-block h-3 w-3 rounded-full"
-                style="background-color: {statusColor(status)}"
-                title="{city.name}: {layer.label} — {statusLabel(status)}"
-              ></span>
-            </td>
-          {/each}
-        </tr>
-      {/each}
-    </tbody>
-  </table>
-</div>
+<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+  {#each scores as entry (entry.cityId)}
+    {@const color = scoreColor(entry.total)}
+    <a
+      href="/access?city={entry.cityId}"
+      class="group rounded-xl border border-border bg-surface-card p-5 transition-shadow hover:shadow-md"
+    >
+      <div class="flex items-center justify-between">
+        <h3 class="font-semibold text-text-primary group-hover:text-primary">{cityName(entry.cityId)}</h3>
+        <span class="text-2xl font-bold" style="color: {color}">{Math.round(entry.total)}</span>
+      </div>
 
-<div class="mt-3 flex items-center gap-4 text-xs text-text-secondary">
-  <span class="flex items-center gap-1">
-    <span
-      class="inline-block h-2.5 w-2.5 rounded-full"
-      style="background-color: var(--color-status-available)"
-    ></span>
-    Available
-  </span>
-  <span class="flex items-center gap-1">
-    <span
-      class="inline-block h-2.5 w-2.5 rounded-full"
-      style="background-color: var(--color-status-partial)"
-    ></span>
-    Partial
-  </span>
-  <span class="flex items-center gap-1">
-    <span
-      class="inline-block h-2.5 w-2.5 rounded-full"
-      style="background-color: var(--color-status-unavailable)"
-    ></span>
-    Unavailable
-  </span>
+      <div class="mt-4 space-y-2">
+        {#each entry.categories as cat (cat.key)}
+          <div>
+            <div class="flex items-center justify-between text-xs text-text-secondary">
+              <span>{cat.label}</span>
+              <span>{Math.round(cat.score)}/{cat.max}</span>
+            </div>
+            <div class="mt-0.5 h-1.5 w-full rounded-full bg-earth-100">
+              <div
+                class="h-1.5 rounded-full transition-all"
+                style="width: {barPercent(cat.score, cat.max)}%; background-color: {scoreColor(cat.score / cat.max * 100)}"
+              ></div>
+            </div>
+          </div>
+        {/each}
+      </div>
+    </a>
+  {/each}
 </div>
