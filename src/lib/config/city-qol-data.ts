@@ -252,7 +252,7 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 /**
  * Grade boundaries from the paper's Bell-Curve method.
  */
-function gradeFromScore(score: number): string {
+export function gradeFromScore(score: number): string {
 	if (score >= 0.6) return 'A';
 	if (score >= 0.53) return 'B';
 	if (score >= 0.47) return 'C';

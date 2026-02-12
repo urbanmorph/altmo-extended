@@ -1,0 +1,115 @@
+<script lang="ts">
+  import { computeAllQoL, gradeColor, gradeLabel } from '$lib/config/city-qol-data';
+  import { computeAllGaps } from '$lib/config/city-qol-gaps';
+  import { cityName, fmtIndicatorValue, barPercent, dimensionColor } from '$lib/utils/qol-format';
+
+  const scores = computeAllQoL();
+  const gaps = computeAllGaps();
+
+  function getGap(cityId: string) {
+    return gaps.find((g) => g.cityId === cityId);
+  }
+
+  let expandedIndex = $state(-1);
+
+  function toggle(index: number) {
+    expandedIndex = expandedIndex === index ? -1 : index;
+  }
+</script>
+
+<div class="space-y-3">
+  {#each scores as entry, i (entry.cityId)}
+    {@const rank = i + 1}
+    {@const color = gradeColor(entry.grade)}
+    {@const gap = getGap(entry.cityId)}
+    {@const expanded = expandedIndex === i}
+
+    <div class="rounded-xl border border-border bg-surface-card transition-shadow" class:shadow-md={expanded}>
+      <!-- Collapsed header -->
+      <button
+        class="flex w-full items-center gap-4 p-4 text-left"
+        onclick={() => toggle(i)}
+      >
+        <!-- Rank badge -->
+        <span
+          class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+          style="background-color: {color}"
+        >
+          {rank}
+        </span>
+
+        <!-- City name + gap teaser -->
+        <div class="min-w-0 flex-1">
+          <h3 class="font-semibold text-text-primary">{cityName(entry.cityId)}</h3>
+          {#if gap}
+            <p class="truncate text-xs text-text-secondary">{gap.gapSentence}</p>
+          {/if}
+        </div>
+
+        <!-- Grade + score -->
+        <div class="shrink-0 text-right">
+          <span class="text-2xl font-bold" style="color: {color}">{entry.grade}</span>
+          <p class="text-xs text-text-secondary">{Math.round(entry.composite * 100)}/100</p>
+        </div>
+
+        <!-- Chevron -->
+        <i
+          class="fa-solid fa-chevron-down shrink-0 text-text-secondary transition-transform duration-200"
+          class:rotate-180={expanded}
+        ></i>
+      </button>
+
+      <!-- Expanded detail -->
+      {#if expanded}
+        <div class="border-t border-border px-4 pb-4 pt-3">
+          <!-- Dimension breakdown -->
+          <div class="space-y-3">
+            {#each entry.dimensions as dim (dim.key)}
+              <div>
+                <div class="flex items-center justify-between text-xs">
+                  <span class="font-medium text-text-primary">
+                    {dim.label}
+                    <span class="font-normal text-text-secondary">({Math.round(dim.weight * 100)}%)</span>
+                  </span>
+                  <span class="text-text-secondary">{Math.round(dim.score * 100)}/100</span>
+                </div>
+                <div class="mt-0.5 h-1.5 w-full rounded-full bg-earth-100">
+                  <div
+                    class="h-1.5 rounded-full transition-all"
+                    style="width: {barPercent(dim.score)}%; background-color: {dimensionColor(dim.score)}"
+                  ></div>
+                </div>
+                <div class="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[0.65rem] text-text-secondary">
+                  {#each dim.indicators as ind (ind.key)}
+                    <span>{ind.label}: <span class="font-medium text-text-primary">{fmtIndicatorValue(ind.value, ind.unit)}</span></span>
+                  {/each}
+                </div>
+              </div>
+            {/each}
+          </div>
+
+          <!-- Recommendation callout -->
+          {#if gap}
+            <div class="mt-4 rounded-lg border border-tangerine-300/30 bg-tangerine-300/5 p-3">
+              <p class="text-xs font-medium text-text-primary">
+                <i class="fa-solid fa-lightbulb mr-1 text-tangerine-500"></i>
+                {gap.recommendation}
+              </p>
+            </div>
+          {/if}
+
+          <!-- Link to access page -->
+          <div class="mt-3">
+            <a
+              href="/access?city={entry.cityId}"
+              class="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary-dark"
+            >
+              Explore {cityName(entry.cityId)} data
+              <i class="fa-solid fa-arrow-right text-xs"></i>
+            </a>
+          </div>
+        </div>
+      {/if}
+    </div>
+  {/each}
+</div>

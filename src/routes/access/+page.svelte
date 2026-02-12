@@ -426,7 +426,7 @@
 
 <div class="flex h-[calc(100vh-4rem)] flex-col lg:flex-row">
 	<aside
-		class="w-full border-b border-border bg-surface-card p-4 lg:w-80 lg:border-b-0 lg:border-r"
+		class="w-full border-b border-border bg-surface-card p-4 lg:w-80 lg:overflow-y-auto lg:border-b-0 lg:border-r"
 	>
 		<h1 class="text-lg font-bold text-text-primary">Access</h1>
 		<p class="mt-1 text-sm text-text-secondary">
@@ -488,6 +488,11 @@
 			</div>
 		</div>
 
+		<div class="mt-4 space-y-4">
+			<CityQoLSummary cityId={data.cityId} />
+			<CityDataLayers cityId={data.cityId} />
+		</div>
+
 		<div class="mt-6 border-t border-border pt-4">
 			<h3 class="text-xs font-semibold uppercase tracking-wide text-text-secondary">Data Sources</h3>
 			<div class="mt-2 space-y-1 text-xs text-text-secondary">
@@ -507,11 +512,6 @@
 				</p>
 				{/if}
 			</div>
-		</div>
-
-		<div class="mt-4 space-y-4">
-			<CityQoLSummary cityId={data.cityId} />
-			<CityDataLayers cityId={data.cityId} />
 		</div>
 	</aside>
 
