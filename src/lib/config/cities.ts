@@ -33,7 +33,7 @@ export interface TransitDataSources {
  *
  * TransitRouter city codes:
  *   blr=Bengaluru, chennai=Chennai, delhi=Delhi,
- *   telangana=Hyderabad (TSRTC), kochi=Kochi, pune=Pune
+ *   telangana=Hyderabad (TSRTC), indore=Indore, kochi=Kochi, pune=Pune
  */
 function transitRouterSources(code: string): Pick<TransitDataSources, 'busStops' | 'busServices'> {
 	const base = `https://raw.githubusercontent.com/Vonter/transitrouter/main/data/${code}`;
@@ -98,6 +98,14 @@ export const CITIES: CityConfig[] = [
 		lng: 78.4867,
 		zoom: 12,
 		transitSources: HYDERABAD_TRANSIT
+	},
+	{
+		id: 'indore',
+		name: 'Indore',
+		lat: 22.7196,
+		lng: 75.8577,
+		zoom: 12,
+		transitSources: transitRouterSources('indore')
 	},
 	{
 		id: 'kochi',

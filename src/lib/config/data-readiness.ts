@@ -92,6 +92,21 @@ export const CITY_READINESS: CityDataReadiness[] = [
 		}
 	},
 	{
+		cityId: 'indore',
+		layers: {
+			altmo_traces: 'partial',
+			bus_stops: 'available',
+			metro_stations: 'unavailable',
+			metro_frequency: 'unavailable',
+			metro_ridership: 'unavailable',
+			bus_frequency: 'partial',
+			walking_infra: 'unavailable',
+			cycling_infra: 'unavailable',
+			safety_data: 'unavailable',
+			air_quality: 'partial'
+		}
+	},
+	{
 		cityId: 'kochi',
 		layers: {
 			altmo_traces: 'partial',

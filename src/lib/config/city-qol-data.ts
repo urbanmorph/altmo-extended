@@ -220,6 +220,23 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 		}
 	},
 	{
+		cityId: 'indore',
+		values: {
+			// Health
+			traffic_fatalities: 18.3, // MoRTH 2022: 639 deaths, metro pop ~35 lakh
+			active_transport_share: 27, // CMP/ICLEI: walk 22% + cycle 5%
+			// Accessibility
+			metro_network_km: 0, // Under construction in 2024; priority corridor opened May 2025
+			bus_fleet_per_lakh: 11, // AICTSL ~387 buses, metro pop ~35 lakh
+			// Environmental
+			pm25_annual: 56, // UrbanEmissions model + IQAir estimates
+			congestion_level: 33, // Estimated (TomTom data not available for Indore)
+			// Mobility
+			sustainable_mode_share: 37, // CMP: walk 22% + cycle 5% + bus ~10%
+			road_density: 8.8 // IMC area 269 km²
+		}
+	},
+	{
 		cityId: 'kochi',
 		values: {
 			traffic_fatalities: 9.2, // NCRB 2022 (Kerala state rate applied)

@@ -23,7 +23,7 @@ const GAP_DATA: Record<string, Omit<CityGapAnalysis, 'cityId' | 'worstDimension'
 		dataUnlockSentence: 'Publishing walking/cycling infrastructure data enables corridor-level air quality impact analysis'
 	},
 	bengaluru: {
-		gapSentence: 'Congestion adds 51% extra travel time \u2014 worst of 6 cities',
+		gapSentence: 'Congestion adds 51% extra travel time \u2014 worst of 7 cities',
 		recommendation: 'Bus priority corridors on 10 arterials would reduce congestion by 15%',
 		dataUnlockSentence: 'Complete walking infrastructure data unlocks pedestrian accessibility scoring'
 	},
@@ -33,7 +33,7 @@ const GAP_DATA: Record<string, Omit<CityGapAnalysis, 'cityId' | 'worstDimension'
 		dataUnlockSentence: 'Publishing metro station and safety data enables full multi-modal analysis'
 	},
 	kochi: {
-		gapSentence: 'Metro network at 25.6 km \u2014 smallest of 6 cities',
+		gapSentence: 'Metro network at 25.6 km \u2014 second smallest of 7 cities',
 		recommendation: 'Phase 2 expansion to 40 km improves accessibility score by 35%',
 		dataUnlockSentence: 'Publishing safety and NMT infrastructure data unlocks health dimension scoring'
 	},
@@ -46,6 +46,11 @@ const GAP_DATA: Record<string, Omit<CityGapAnalysis, 'cityId' | 'worstDimension'
 		gapSentence: 'Bus fleet of 30 per lakh with missing NMT data',
 		recommendation: 'Publishing walking/cycling data unlocks corridor-level analysis',
 		dataUnlockSentence: 'NMT infrastructure data would enable complete active mobility assessment'
+	},
+	indore: {
+		gapSentence: 'No operational metro and bus fleet of just 11 per lakh \u2014 lowest transit coverage',
+		recommendation: 'Scaling AICTSL fleet to 30 per lakh and completing metro Phase 1 would triple transit accessibility',
+		dataUnlockSentence: 'Publishing bus frequency and walking infrastructure data enables transit coverage gap analysis'
 	}
 };
 
