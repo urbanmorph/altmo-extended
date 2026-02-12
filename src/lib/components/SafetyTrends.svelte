@@ -51,9 +51,9 @@
         borderColor: CITY_COLORS[cityId] ?? '#999999',
         backgroundColor: CITY_COLORS[cityId] ?? '#999999',
         tension: 0.3,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        borderWidth: 2
+        pointRadius: 5,
+        pointHoverRadius: 8,
+        borderWidth: 3
       };
     });
 
@@ -92,7 +92,13 @@
     },
     scales: {
       y: {
-        beginAtZero: true,
+        beginAtZero: false,
+        min: 0,
+        max: 22,
+        ticks: {
+          stepSize: 2,
+          autoSkip: false
+        },
         title: {
           display: true,
           text: 'Deaths per lakh population',
@@ -122,8 +128,8 @@
       <h3 class="text-lg font-semibold text-text-primary">Traffic Fatality Trends</h3>
       <p class="text-sm text-text-secondary">Deaths per lakh population</p>
     </div>
-    <div class="h-80">
-      <Chart type="line" data={chartData()} options={chartOptions} />
+    <div class="h-96">
+      <Chart type="line" data={chartData()} options={chartOptions} class="h-full" />
     </div>
     <p class="mt-3 text-xs text-text-secondary">
       <i class="fa-solid fa-circle-info mr-1"></i>

@@ -4,37 +4,39 @@
  */
 
 /**
- * OpenAQ location IDs for PM2.5 monitoring stations near each Altmo city.
- * Discovered via: GET /v3/locations?coordinates={lat},{lng}&radius=25000&parameters_id=2&limit=10
+ * OpenAQ v3 PM2.5 sensor IDs for monitoring stations near each Altmo city.
+ * v3 uses sensor-based endpoints: /sensors/{id}/measurements
+ * Discovered via: /v3/locations?coordinates={lat},{lng}&radius=25000&parameters_id=2
+ * then /v3/locations/{id}/sensors to find active PM2.5 sensor IDs (last reported 2025+).
  */
-export const CITY_OPENAQ_LOCATIONS: Record<string, { name: string; locationIds: number[] }> = {
+export const CITY_OPENAQ_SENSORS: Record<string, { name: string; sensorIds: number[] }> = {
 	bengaluru: {
 		name: 'Bengaluru',
-		locationIds: [412, 594, 2592, 6973, 6974, 6975, 6983]
+		sensorIds: [12235361, 12235370, 12235267, 12235240, 12235285, 12235258, 12235249]
 	},
 	chennai: {
 		name: 'Chennai',
-		locationIds: [378, 2549, 2586, 5655, 10780, 11578, 11579, 11581]
+		sensorIds: [12235653, 12235531, 12235796, 12236299, 12236308, 12236274, 12236290]
 	},
 	delhi: {
 		name: 'Delhi',
-		locationIds: [13, 15, 16, 17, 50, 103, 235, 236, 431, 2503]
+		sensorIds: [12234787, 12234796, 12235610, 12234702, 12234684, 12234708, 12234769, 12235187, 12234690, 12234753]
 	},
 	hyderabad: {
 		name: 'Hyderabad',
-		locationIds: [407, 2594, 5599, 5623, 5647, 344103, 344104, 344140]
+		sensorIds: [12235583, 12235400, 12242121, 12242129, 12237098, 12237125, 12237116]
 	},
 	indore: {
 		name: 'Indore',
-		locationIds: [5603, 3409414, 3409498, 3409499, 3409500, 3409501]
+		sensorIds: [12234921, 12237818, 12238477, 12238486, 12815122, 12238495]
 	},
 	kochi: {
 		name: 'Kochi',
-		locationIds: [6966, 8916, 10916]
+		sensorIds: [12235842]
 	},
 	pune: {
 		name: 'Pune',
-		locationIds: [2585, 5661, 11608, 11609, 11610, 11613, 12042, 60658, 60660]
+		sensorIds: [12235540, 12236443, 12236457, 12236463, 12236449, 12304615, 12237987]
 	}
 };
 

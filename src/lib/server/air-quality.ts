@@ -1,14 +1,13 @@
 /**
  * Server-side air quality fetcher with in-memory cache.
- * Fetches PM2.5 data from OpenAQ v3 API, caches for 24h.
+ * Fetches PM2.5 data from OpenAQ v3 API (sensor-based endpoints), caches for 24h.
  * Same pattern as transit-data.ts.
  */
 
 import { env } from '$env/dynamic/private';
-import { CITY_OPENAQ_LOCATIONS, type CityPM25 } from '$lib/config/air-quality';
+import { CITY_OPENAQ_SENSORS, type CityPM25 } from '$lib/config/air-quality';
 
 const OPENAQ_BASE_URL = 'https://api.openaq.org/v3';
-const PM25_PARAMETER_ID = 2;
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
 interface CacheEntry {
@@ -18,11 +17,17 @@ interface CacheEntry {
 
 const cache = new Map<string, CacheEntry>();
 
-interface OpenAQMeasurementsResponse {
-	results: Array<{
-		value: number;
-		location: { id: number; name: string };
-	}>;
+interface OpenAQSensorMeasurement {
+	value: number;
+	parameter: { id: number; name: string };
+	period: {
+		datetimeFrom: { utc: string };
+		datetimeTo: { utc: string };
+	};
+}
+
+interface OpenAQSensorResponse {
+	results: OpenAQSensorMeasurement[];
 }
 
 async function openaqFetch<T>(path: string): Promise<T> {
@@ -39,23 +44,25 @@ async function openaqFetch<T>(path: string): Promise<T> {
 	return res.json() as Promise<T>;
 }
 
-async function fetchLocationPM25(
-	locationId: number,
-	dateFrom: string,
-	dateTo: string
-): Promise<number[]> {
+/**
+ * Fetch recent PM2.5 readings from a single sensor.
+ * v3 endpoint: /sensors/{sensorId}/measurements
+ */
+async function fetchSensorPM25(sensorId: number): Promise<number[]> {
 	try {
-		const data = await openaqFetch<OpenAQMeasurementsResponse>(
-			`/measurements?locations_id=${locationId}&parameters_id=${PM25_PARAMETER_ID}&date_from=${dateFrom}&date_to=${dateTo}&limit=1000`
+		const data = await openaqFetch<OpenAQSensorResponse>(
+			`/sensors/${sensorId}/measurements?limit=100`
 		);
-		return data.results.map((r) => r.value).filter((v) => v != null && v >= 0 && v < 1000);
+		return data.results
+			.map((r) => r.value)
+			.filter((v) => v != null && v >= 0 && v < 1000);
 	} catch {
 		return [];
 	}
 }
 
 /**
- * Fetch latest PM2.5 for a city (last 24h), with 24h in-memory cache.
+ * Fetch latest PM2.5 for a city (recent readings), with 24h in-memory cache.
  */
 export async function getCityPM25(cityId: string): Promise<CityPM25 | null> {
 	const cached = cache.get(cityId);
@@ -63,17 +70,11 @@ export async function getCityPM25(cityId: string): Promise<CityPM25 | null> {
 		return cached.data;
 	}
 
-	const cityConfig = CITY_OPENAQ_LOCATIONS[cityId];
+	const cityConfig = CITY_OPENAQ_SENSORS[cityId];
 	if (!cityConfig) return null;
 
-	const now = new Date();
-	const yesterday = new Date(now);
-	yesterday.setUTCDate(yesterday.getUTCDate() - 1);
-	const dateFrom = yesterday.toISOString();
-	const dateTo = now.toISOString();
-
 	const results = await Promise.all(
-		cityConfig.locationIds.map((id) => fetchLocationPM25(id, dateFrom, dateTo))
+		cityConfig.sensorIds.map((id) => fetchSensorPM25(id))
 	);
 
 	const allValues: number[] = [];
@@ -103,7 +104,7 @@ export async function getCityPM25(cityId: string): Promise<CityPM25 | null> {
  * Fetch PM2.5 for all configured cities.
  */
 export async function getAllCityPM25(): Promise<Record<string, CityPM25 | null>> {
-	const cityIds = Object.keys(CITY_OPENAQ_LOCATIONS);
+	const cityIds = Object.keys(CITY_OPENAQ_SENSORS);
 	const results = await Promise.all(
 		cityIds.map(async (id) => ({ id, data: await getCityPM25(id) }))
 	);
