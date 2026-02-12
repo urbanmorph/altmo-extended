@@ -43,9 +43,9 @@ const GAP_DATA: Record<string, Omit<CityGapAnalysis, 'cityId' | 'worstDimension'
 		dataUnlockSentence: 'Publishing metro ridership and NMT data enables full transit performance analysis'
 	},
 	hyderabad: {
-		gapSentence: 'Bus fleet of 30 per lakh with missing NMT data',
-		recommendation: 'Publishing walking/cycling data unlocks corridor-level analysis',
-		dataUnlockSentence: 'NMT infrastructure data would enable complete active mobility assessment'
+		gapSentence: 'Metro at 69 km but bus fleet of only 30 per lakh limits last-mile access',
+		recommendation: 'Expanding TSRTC city fleet to 50 per lakh with feeder routes to metro would lift accessibility from D to C',
+		dataUnlockSentence: 'Publishing walking/cycling infrastructure data would enable complete active mobility assessment'
 	},
 	indore: {
 		gapSentence: 'No operational metro and bus fleet of just 11 per lakh \u2014 lowest transit coverage',
