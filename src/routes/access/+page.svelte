@@ -2,6 +2,8 @@
 	import type maplibregl from 'maplibre-gl';
 	import MapLayerToggle from '$lib/components/MapLayerToggle.svelte';
 	import CatchmentRingLegend from '$lib/components/CatchmentRingLegend.svelte';
+	import CityQoLSummary from '$lib/components/CityQoLSummary.svelte';
+	import CityDataLayers from '$lib/components/CityDataLayers.svelte';
 	import { TRANSIT_COLORS, CATCHMENT, circlePolygon } from '$lib/utils/transit';
 	import { selectedCity } from '$lib/stores/city';
 	import { goto } from '$app/navigation';
@@ -505,6 +507,11 @@
 				</p>
 				{/if}
 			</div>
+		</div>
+
+		<div class="mt-4 space-y-4">
+			<CityQoLSummary cityId={data.cityId} />
+			<CityDataLayers cityId={data.cityId} />
 		</div>
 	</aside>
 

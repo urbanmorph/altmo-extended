@@ -2,6 +2,7 @@
 	import MetricCard from '$lib/components/MetricCard.svelte';
 	import Chart from '$lib/components/Chart.svelte';
 	import DataTable from '$lib/components/DataTable.svelte';
+	import CityQoLSummary from '$lib/components/CityQoLSummary.svelte';
 	import type { PageData } from './$types';
 	import { selectedCity } from '$lib/stores/city';
 	import { goto } from '$app/navigation';
@@ -154,6 +155,9 @@
 </script>
 
 <div class="space-y-6">
+	<!-- City QoL Summary -->
+	<CityQoLSummary cityId={data.cityId} />
+
 	{#if !data.hasTransitSources}
 		<div class="flex items-center justify-center rounded-xl border border-border bg-surface-card p-12">
 			<div class="text-center">

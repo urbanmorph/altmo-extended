@@ -1,6 +1,7 @@
 <script lang="ts">
   import MetricCard from '$lib/components/MetricCard.svelte';
   import DataReadinessGrid from '$lib/components/DataReadinessGrid.svelte';
+  import QoLScorecard from '$lib/components/QoLScorecard.svelte';
 </script>
 
 <svelte:head>
@@ -44,6 +45,12 @@
       <h3 class="font-semibold text-primary group-hover:text-primary-dark">Forecast</h3>
       <p class="mt-1 text-sm text-text-secondary">Demand predictions and growth modelling.</p>
     </a>
+  </div>
+
+  <div class="mt-8">
+    <h2 class="mb-2 text-xl font-semibold text-text-primary">Transport Quality of Life</h2>
+    <p class="mb-4 text-text-secondary">City-level QoL assessment across health, accessibility, environmental, and mobility dimensions. Based on the <a href="https://doi.org/10.1080/21650020.2025.2466582" target="_blank" rel="noopener" class="text-primary underline hover:text-primary-dark">TQOLI framework</a> with expert-validated weights.</p>
+    <QoLScorecard />
   </div>
 
   <div class="mt-8">
