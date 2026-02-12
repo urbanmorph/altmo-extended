@@ -4,7 +4,8 @@ import { getCityById } from '$lib/config/cities';
 import {
 	busStopsToGeoJSON,
 	metroStationsToGeoJSON,
-	metroLinesToGeoJSON
+	metroLinesToGeoJSON,
+	computeMetroNetworkKm
 } from '$lib/utils/transit';
 import { getLatestSafetyData } from '$lib/server/safety-data';
 import { getAllCityPM25 } from '$lib/server/air-quality';
@@ -35,6 +36,15 @@ export const load: PageServerLoad = async ({ url, cookies }) => {
 		if (d) {
 			qolOverrides[id] = { ...qolOverrides[id], pm25_annual: d.pm25Avg };
 		}
+	}
+
+	// Override metro_network_km from live transit line geometries
+	const metroNetworkKm = computeMetroNetworkKm(transitResult.metroLines);
+	if (metroNetworkKm > 0) {
+		qolOverrides[resolvedCityId] = {
+			...qolOverrides[resolvedCityId],
+			metro_network_km: metroNetworkKm
+		};
 	}
 
 	return {

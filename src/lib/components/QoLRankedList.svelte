@@ -34,6 +34,19 @@
     return 'Bronze';
   }
 
+  const LIVE_SOURCE_LABELS: Record<string, string> = {
+    traffic_fatalities: 'Supabase',
+    pm25_annual: 'OpenAQ'
+  };
+
+  function isLiveIndicator(cityId: string, indicatorKey: string): boolean {
+    return overrides?.[cityId]?.[indicatorKey] !== undefined;
+  }
+
+  function liveSourceLabel(indicatorKey: string): string {
+    return LIVE_SOURCE_LABELS[indicatorKey] ?? 'live source';
+  }
+
   let expandedIndex = $state(-1);
 
   function toggle(index: number) {
@@ -113,7 +126,16 @@
                 </div>
                 <div class="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[0.65rem] text-text-secondary">
                   {#each dim.indicators as ind (ind.key)}
-                    <span>{ind.label}: <span class="font-medium text-text-primary">{fmtIndicatorValue(ind.value, ind.unit)}</span></span>
+                    <span>
+                      {ind.label}: <span class="font-medium text-text-primary">{fmtIndicatorValue(ind.value, ind.unit)}</span>
+                      {#if isLiveIndicator(entry.cityId, ind.key)}
+                        <i
+                          class="fa-solid fa-tower-broadcast ml-0.5 text-[0.5rem]"
+                          style="color: var(--color-altmo-500)"
+                          title="Live data from {liveSourceLabel(ind.key)}"
+                        ></i>
+                      {/if}
+                    </span>
                   {/each}
                 </div>
               </div>

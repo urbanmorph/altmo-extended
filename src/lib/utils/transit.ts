@@ -575,6 +575,30 @@ export function circlePolygon(
 	};
 }
 
+/**
+ * Compute total metro network length in km from metro line geometries.
+ * Uses segments (if available) to avoid measuring gaps between disjoint line parts.
+ * Returns 0 if no metro lines are present.
+ */
+export function computeMetroNetworkKm(lines: MetroLine[]): number {
+	let totalMeters = 0;
+
+	for (const line of lines) {
+		// Use segments if available (avoids summing across disjoint gaps)
+		const coordSets = line.segments ?? [line.coordinates];
+
+		for (const coords of coordSets) {
+			for (let i = 1; i < coords.length; i++) {
+				const [lng1, lat1] = coords[i - 1];
+				const [lng2, lat2] = coords[i];
+				totalMeters += haversine(lat1, lng1, lat2, lng2);
+			}
+		}
+	}
+
+	return Math.round((totalMeters / 1000) * 10) / 10; // km, 1 decimal place
+}
+
 /** Compute aggregate transit metrics from transit data */
 export function computeMetrics(data: TransitData, totalBusRoutes: number): TransitMetrics {
 	const routeCounts = data.busStops.map((s) => s.routeCount);

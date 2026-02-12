@@ -1,6 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { fetchTransitMetrics, fetchMetroRidership } from '$lib/server/transit-data';
 import { getCityById } from '$lib/config/cities';
+import { computeMetroNetworkKm } from '$lib/utils/transit';
 import { getLatestSafetyData } from '$lib/server/safety-data';
 import { getAllCityPM25 } from '$lib/server/air-quality';
 import type { QoLOverrides } from '$lib/config/city-qol-data';
@@ -50,6 +51,15 @@ export const load: PageServerLoad = async ({ url, cookies }) => {
 		fetchTransitMetrics(resolvedCityId),
 		fetchMetroRidership(resolvedCityId)
 	]);
+
+	// Override metro_network_km from live transit line geometries
+	const metroNetworkKm = computeMetroNetworkKm(data.metroLines);
+	if (metroNetworkKm > 0) {
+		qolOverrides[resolvedCityId] = {
+			...qolOverrides[resolvedCityId],
+			metro_network_km: metroNetworkKm
+		};
+	}
 
 	return {
 		cityId: resolvedCityId,

@@ -57,6 +57,19 @@
     if (tier === 'silver') return 'Silver';
     return 'Bronze';
   }
+
+  const LIVE_SOURCE_LABELS: Record<string, string> = {
+    traffic_fatalities: 'Supabase',
+    pm25_annual: 'OpenAQ'
+  };
+
+  function isLiveIndicator(indicatorKey: string): boolean {
+    return overrides?.[cityId]?.[indicatorKey] !== undefined;
+  }
+
+  function liveSourceLabel(indicatorKey: string): string {
+    return LIVE_SOURCE_LABELS[indicatorKey] ?? 'live source';
+  }
 </script>
 
 {#if qol}
@@ -107,6 +120,13 @@
         {#each dim.indicators as ind (ind.key)}
           <span class="text-[0.65rem] text-text-secondary">
             {ind.label}: <span class="font-medium text-text-primary">{fmtValue(ind.value, ind.unit)}</span>
+            {#if isLiveIndicator(ind.key)}
+              <i
+                class="fa-solid fa-tower-broadcast ml-0.5 text-[0.5rem]"
+                style="color: var(--color-altmo-500)"
+                title="Live data from {liveSourceLabel(ind.key)}"
+              ></i>
+            {/if}
           </span>
         {/each}
       {/each}
