@@ -126,7 +126,7 @@ export const CITY_READINESS: CityDataReadiness[] = [
 		layers: {
 			altmo_traces: 'partial',
 			bus_stops: 'available',
-			metro_stations: 'unavailable',
+			metro_stations: 'available',
 			metro_frequency: 'unavailable',
 			metro_ridership: 'unavailable',
 			bus_frequency: 'available',

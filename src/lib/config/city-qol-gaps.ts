@@ -30,7 +30,7 @@ const GAP_DATA: Record<string, Omit<CityGapAnalysis, 'cityId' | 'worstDimension'
 	pune: {
 		gapSentence: 'Bus fleet of 25 per lakh \u2014 less than half of Bengaluru\u2019s 53',
 		recommendation: 'Doubling PMPML fleet with electric buses would lift accessibility from D to B',
-		dataUnlockSentence: 'Publishing metro station and safety data enables full multi-modal analysis'
+		dataUnlockSentence: 'Publishing ridership, safety, and NMT infrastructure data enables full multi-modal analysis'
 	},
 	kochi: {
 		gapSentence: 'Metro network at 25.6 km \u2014 second smallest of 7 cities',
