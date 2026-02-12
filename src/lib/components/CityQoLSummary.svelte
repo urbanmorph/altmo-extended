@@ -4,18 +4,20 @@
     gradeColor,
     gradeLabel,
     type CityQoLScore,
-    type ConfidenceTier
+    type ConfidenceTier,
+    type QoLOverrides
   } from '$lib/config/city-qol-data';
   import { computeReadinessScore } from '$lib/config/data-readiness';
   import { CITIES } from '$lib/config/cities';
 
   interface Props {
     cityId: string;
+    overrides?: QoLOverrides;
   }
 
-  let { cityId }: Props = $props();
+  let { cityId, overrides }: Props = $props();
 
-  let qol = $derived(computeCityQoL(cityId));
+  let qol = $derived(computeCityQoL(cityId, overrides));
   let readiness = $derived(computeReadinessScore(cityId));
 
   function cityName(id: string): string {

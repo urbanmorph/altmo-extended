@@ -6,6 +6,8 @@ import {
 	metroStationsToGeoJSON,
 	metroLinesToGeoJSON
 } from '$lib/utils/transit';
+import { getLatestSafetyData } from '$lib/server/safety-data';
+import type { QoLOverrides } from '$lib/config/city-qol-data';
 
 export const load: PageServerLoad = async ({ url, cookies }) => {
 	const cityId = url.searchParams.get('city') ?? cookies.get('city') ?? 'bengaluru';
@@ -16,9 +18,17 @@ export const load: PageServerLoad = async ({ url, cookies }) => {
 	const resolvedCity = city ?? getCityById('bengaluru')!;
 
 	const hasTransitSources = !!resolvedCity.transitSources;
-	const data = hasTransitSources
-		? await fetchTransitData(resolvedCityId)
-		: { busStops: [], metroStations: [], metroLines: [] };
+	const [transitResult, safety] = await Promise.all([
+		hasTransitSources
+			? fetchTransitData(resolvedCityId)
+			: Promise.resolve({ busStops: [], metroStations: [], metroLines: [] }),
+		getLatestSafetyData()
+	]);
+
+	const qolOverrides: QoLOverrides = {};
+	for (const [id, d] of Object.entries(safety)) {
+		qolOverrides[id] = { traffic_fatalities: d.fatalitiesPerLakh };
+	}
 
 	return {
 		cityId: resolvedCityId,
@@ -26,10 +36,11 @@ export const load: PageServerLoad = async ({ url, cookies }) => {
 		cityCenter: [resolvedCity.lng, resolvedCity.lat] as [number, number],
 		cityZoom: resolvedCity.zoom,
 		hasTransitSources,
-		busStopsGeoJSON: busStopsToGeoJSON(data.busStops),
-		metroStationsGeoJSON: metroStationsToGeoJSON(data.metroStations),
-		metroLinesGeoJSON: metroLinesToGeoJSON(data.metroLines),
-		busStopCount: data.busStops.length,
-		metroStationCount: data.metroStations.length
+		busStopsGeoJSON: busStopsToGeoJSON(transitResult.busStops),
+		metroStationsGeoJSON: metroStationsToGeoJSON(transitResult.metroStations),
+		metroLinesGeoJSON: metroLinesToGeoJSON(transitResult.metroLines),
+		busStopCount: transitResult.busStops.length,
+		metroStationCount: transitResult.metroStations.length,
+		qolOverrides
 	};
 };

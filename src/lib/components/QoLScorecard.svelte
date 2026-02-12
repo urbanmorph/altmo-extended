@@ -3,11 +3,18 @@
     computeAllQoL,
     gradeColor,
     gradeLabel,
-    type CityQoLScore
+    type CityQoLScore,
+    type QoLOverrides
   } from '$lib/config/city-qol-data';
   import { CITIES } from '$lib/config/cities';
 
-  const scores = computeAllQoL();
+  interface Props {
+    overrides?: QoLOverrides;
+  }
+
+  let { overrides }: Props = $props();
+
+  const scores = $derived(computeAllQoL(overrides));
 
   function cityName(cityId: string): string {
     return CITIES.find((c) => c.id === cityId)?.name ?? cityId;

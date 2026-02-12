@@ -3,7 +3,7 @@
  * and pairs it with actionable recommendations.
  */
 
-import { computeCityQoL, computeAllQoL, type CityQoLScore } from './city-qol-data';
+import { computeCityQoL, computeAllQoL, type CityQoLScore, type QoLOverrides } from './city-qol-data';
 import { getReadiness, computeReadinessScore, DATA_LAYERS, type DataStatus } from './data-readiness';
 
 export interface CityGapAnalysis {
@@ -59,8 +59,8 @@ const GAP_DATA: Record<string, Omit<CityGapAnalysis, 'cityId' | 'worstDimension'
  * Finds the worst-scoring dimension and indicator programmatically,
  * then attaches the hand-crafted narrative.
  */
-export function computeCityGap(cityId: string): CityGapAnalysis | undefined {
-	const qol = computeCityQoL(cityId);
+export function computeCityGap(cityId: string, overrides?: QoLOverrides): CityGapAnalysis | undefined {
+	const qol = computeCityQoL(cityId, overrides);
 	if (!qol) return undefined;
 
 	// Find worst dimension (lowest score)
@@ -87,9 +87,9 @@ export function computeCityGap(cityId: string): CityGapAnalysis | undefined {
 /**
  * Compute gap analysis for all cities, sorted by QoL rank (highest composite first).
  */
-export function computeAllGaps(): CityGapAnalysis[] {
-	const allQoL = computeAllQoL();
+export function computeAllGaps(overrides?: QoLOverrides): CityGapAnalysis[] {
+	const allQoL = computeAllQoL(overrides);
 	return allQoL
-		.map((q) => computeCityGap(q.cityId))
+		.map((q) => computeCityGap(q.cityId, overrides))
 		.filter((g): g is CityGapAnalysis => g !== undefined);
 }

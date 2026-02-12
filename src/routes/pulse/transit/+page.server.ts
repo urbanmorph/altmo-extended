@@ -1,6 +1,8 @@
 import type { PageServerLoad } from './$types';
 import { fetchTransitMetrics, fetchMetroRidership } from '$lib/server/transit-data';
 import { getCityById } from '$lib/config/cities';
+import { getLatestSafetyData } from '$lib/server/safety-data';
+import type { QoLOverrides } from '$lib/config/city-qol-data';
 
 export const load: PageServerLoad = async ({ url, cookies }) => {
 	const cityId = url.searchParams.get('city') ?? cookies.get('city') ?? 'bengaluru';
@@ -10,6 +12,12 @@ export const load: PageServerLoad = async ({ url, cookies }) => {
 	const resolvedCity = city ?? getCityById('bengaluru')!;
 
 	const hasTransitSources = !!resolvedCity.transitSources;
+
+	const safety = await getLatestSafetyData();
+	const qolOverrides: QoLOverrides = {};
+	for (const [id, d] of Object.entries(safety)) {
+		qolOverrides[id] = { traffic_fatalities: d.fatalitiesPerLakh };
+	}
 
 	if (!hasTransitSources) {
 		return {
@@ -24,7 +32,8 @@ export const load: PageServerLoad = async ({ url, cookies }) => {
 			},
 			topHubs: [],
 			metroByLine: {},
-			ridership: null
+			ridership: null,
+			qolOverrides
 		};
 	}
 
@@ -53,6 +62,7 @@ export const load: PageServerLoad = async ({ url, cookies }) => {
 				stations.map(s => ({ name: s.name }))
 			])
 		),
-		ridership
+		ridership,
+		qolOverrides
 	};
 };

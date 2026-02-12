@@ -303,6 +303,11 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 	}
 ];
 
+// ---- Override mechanism ----
+
+/** Live data overrides keyed by cityId, then indicator key. */
+export type QoLOverrides = Record<string, Record<string, number | null>>;
+
 // ---- Scoring engine ----
 
 /**
@@ -361,8 +366,9 @@ function normalizeIndicator(
 
 /**
  * Compute QoL score for a single city.
+ * Optional overrides replace hardcoded values for live data integration.
  */
-export function computeCityQoL(cityId: string): CityQoLScore | undefined {
+export function computeCityQoL(cityId: string, overrides?: QoLOverrides): CityQoLScore | undefined {
 	const cityData = CITY_QOL_DATA.find((c) => c.cityId === cityId);
 	if (!cityData) return undefined;
 
@@ -371,7 +377,7 @@ export function computeCityQoL(cityId: string): CityQoLScore | undefined {
 
 	const dimensions: DimensionScore[] = QOL_DIMENSIONS.map((dim) => {
 		const indicators = dim.indicators.map((ind) => {
-			const value = cityData.values[ind.key] ?? null;
+			const value = overrides?.[cityId]?.[ind.key] ?? cityData.values[ind.key] ?? null;
 			const normalized =
 				value !== null ? normalizeIndicator(ind.key, value, ind.effect) : null;
 
@@ -425,9 +431,10 @@ export function computeCityQoL(cityId: string): CityQoLScore | undefined {
 
 /**
  * Compute QoL scores for all cities, sorted by composite score (highest first).
+ * Optional overrides replace hardcoded values for live data integration.
  */
-export function computeAllQoL(): CityQoLScore[] {
-	return CITY_QOL_DATA.map((c) => computeCityQoL(c.cityId)!)
+export function computeAllQoL(overrides?: QoLOverrides): CityQoLScore[] {
+	return CITY_QOL_DATA.map((c) => computeCityQoL(c.cityId, overrides)!)
 		.filter(Boolean)
 		.sort((a, b) => b.composite - a.composite);
 }

@@ -1,12 +1,18 @@
 <script lang="ts">
-  import { computeAllQoL, gradeColor } from '$lib/config/city-qol-data';
+  import { computeAllQoL, gradeColor, type QoLOverrides } from '$lib/config/city-qol-data';
   import { computeAllScores, CITY_READINESS, type DataStatus } from '$lib/config/data-readiness';
   import { computeAllGaps } from '$lib/config/city-qol-gaps';
   import { cityName, barPercent, dimensionColor, readinessScoreColor } from '$lib/utils/qol-format';
 
-  const allQoL = computeAllQoL();
+  interface Props {
+    overrides?: QoLOverrides;
+  }
+
+  let { overrides }: Props = $props();
+
+  const allQoL = $derived(computeAllQoL(overrides));
   const allReadiness = computeAllScores();
-  const allGaps = computeAllGaps();
+  const allGaps = $derived(computeAllGaps(overrides));
 
   function getReadiness(cityId: string) {
     return allReadiness.find((r) => r.cityId === cityId);

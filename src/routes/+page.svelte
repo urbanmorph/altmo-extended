@@ -4,6 +4,13 @@
   import QoLDataReadinessPaired from '$lib/components/QoLDataReadinessPaired.svelte';
   import IntelligenceModules from '$lib/components/IntelligenceModules.svelte';
   import MethodologyFooter from '$lib/components/MethodologyFooter.svelte';
+  import type { QoLOverrides } from '$lib/config/city-qol-data';
+
+  interface Props {
+    data: { qolOverrides: QoLOverrides };
+  }
+
+  let { data }: Props = $props();
 </script>
 
 <svelte:head>
@@ -19,17 +26,17 @@
   </div>
 
   <div class="mb-8">
-    <QoLHeadlineStats />
+    <QoLHeadlineStats overrides={data.qolOverrides} />
   </div>
 
   <div class="mb-8">
     <h2 class="mb-4 text-xl font-semibold text-text-primary">City QoL Rankings</h2>
-    <QoLRankedList />
+    <QoLRankedList overrides={data.qolOverrides} />
   </div>
 
   <div class="mb-8">
     <h2 class="mb-4 text-xl font-semibold text-text-primary">QoL + Data Readiness</h2>
-    <QoLDataReadinessPaired />
+    <QoLDataReadinessPaired overrides={data.qolOverrides} />
   </div>
 
   <div class="mb-8">

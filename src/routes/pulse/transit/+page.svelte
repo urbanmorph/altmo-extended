@@ -156,7 +156,7 @@
 
 <div class="space-y-6">
 	<!-- City QoL Summary -->
-	<CityQoLSummary cityId={data.cityId} />
+	<CityQoLSummary cityId={data.cityId} overrides={data.qolOverrides} />
 
 	{#if !data.hasTransitSources}
 		<div class="flex items-center justify-center rounded-xl border border-border bg-surface-card p-12">

@@ -489,7 +489,7 @@
 		</div>
 
 		<div class="mt-4 space-y-4">
-			<CityQoLSummary cityId={data.cityId} />
+			<CityQoLSummary cityId={data.cityId} overrides={data.qolOverrides} />
 			<CityDataLayers cityId={data.cityId} />
 		</div>
 

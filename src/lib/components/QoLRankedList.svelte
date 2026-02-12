@@ -1,10 +1,16 @@
 <script lang="ts">
-  import { computeAllQoL, gradeColor, gradeLabel, type ConfidenceTier } from '$lib/config/city-qol-data';
+  import { computeAllQoL, gradeColor, gradeLabel, type ConfidenceTier, type QoLOverrides } from '$lib/config/city-qol-data';
   import { computeAllGaps } from '$lib/config/city-qol-gaps';
   import { cityName, fmtIndicatorValue, barPercent, dimensionColor } from '$lib/utils/qol-format';
 
-  const scores = computeAllQoL();
-  const gaps = computeAllGaps();
+  interface Props {
+    overrides?: QoLOverrides;
+  }
+
+  let { overrides }: Props = $props();
+
+  const scores = $derived(computeAllQoL(overrides));
+  const gaps = $derived(computeAllGaps(overrides));
 
   function getGap(cityId: string) {
     return gaps.find((g) => g.cityId === cityId);
