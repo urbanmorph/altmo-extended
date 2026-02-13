@@ -159,14 +159,14 @@
     {/if}
   </div>
 
-  <!-- Exploratory mode banner for non-Bengaluru -->
+  <!-- City-specific calibration note for non-Bengaluru -->
   {#if !isBengaluru}
-    <div class="mb-6 flex items-start gap-3 rounded-lg border border-tangerine-300/40 bg-tangerine-300/10 px-4 py-3">
-      <i class="fa-solid fa-flask mt-0.5 text-tangerine-500"></i>
+    <div class="mb-6 flex items-start gap-3 rounded-lg border border-altmo-500/30 bg-altmo-500/5 px-4 py-3">
+      <i class="fa-solid fa-flask mt-0.5 text-altmo-700"></i>
       <div>
-        <span class="text-sm font-semibold text-tangerine-500">Exploratory Mode</span>
+        <span class="text-sm font-semibold text-altmo-700">City-Calibrated Coefficients</span>
         <p class="text-sm text-text-secondary">
-          Coefficients calibrated against IISc Bengaluru study. Results for {cityName} are indicative.
+          Intervention effects for {cityName} use research-calibrated coefficients from DIMTS, CMRL, HMRL, PMPML, RITES DPRs, and census mode share data. Preset scenarios (ST1/ST2) were originally designed for Bengaluru.
         </p>
       </div>
     </div>
@@ -308,11 +308,11 @@
       (benchmark-anchored normalization, policy-meaningful grade boundaries) which differs from the
       paper's original TQOLI scoring. Dimension weights from Fuzzy-AHP expert survey (40 transport
       planners): Health 0.43, Accessibility 0.23, Environmental 0.18, Mobility 0.16.
-      Intervention coefficients: metro expansion reduces congestion by 0.03 pp/km and increases
-      sustainable mode share by 0.03 pp/km; bus fleet scaling adjusts congestion by 4 pp per 1x
-      multiplier; cycle lanes increase active transport by 0.03 pp/km; fleet electrification
-      reduces PM2.5 by up to 30% (transport share); grid renewables reduce PM2.5 by up to 15%
-      (power sector share).
+      Intervention coefficients are city-specific, calibrated from DIMTS (Delhi), CMRL (Chennai),
+      HMRL (Hyderabad), PMPML (Pune), Kochi Metro Ltd, AICTSL/BRT (Indore), RITES DPRs, and
+      Census 2011 mode share data. Bengaluru baseline from IISc study. Fleet electrification
+      reduces PM2.5 using city-specific transport emission shares (UrbanEmissions APnA); grid
+      renewables reduce PM2.5 using state-level power generation shares (CEA/Ember).
     </p>
   </div>
 </div>

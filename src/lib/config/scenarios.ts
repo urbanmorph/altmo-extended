@@ -108,7 +108,69 @@ export const CITY_GRID_RENEWABLE_BASELINE: Record<string, number> = {
 	pune: 20 // Maharashtra — coal dominant (~75%)
 };
 
+// ---- City-specific transport intervention coefficients ----
+// Sources: DIMTS Delhi, CMRL Chennai, HMRL Hyderabad, PMPML Pune, Kochi Metro Ltd,
+// Indore BRT/AICTSL, RITES DPRs, Census 2011 mode share, IISc Bengaluru (baseline).
+// Bengaluru values match the original Allirani & Verma (2025) calibration.
+
+export const CITY_TRANSPORT_COEFFICIENTS: Record<string, {
+	metroCongestionPerKm: number;
+	metroModeSharePerKm: number;
+	busCongestionPer2x: number;
+	busModeSharePer2x: number;
+	cycleCyclingSharePerKm: number;
+	cycleWalkingSharePerKm: number;
+	cycleModeSharePerKm: number;
+	cycleCongestionPerKm: number;
+	cycleFatalitiesPerKm: number;
+}> = {
+	bengaluru: {
+		metroCongestionPerKm: -0.03, metroModeSharePerKm: 0.03,
+		busCongestionPer2x: -4, busModeSharePer2x: 4,
+		cycleCyclingSharePerKm: 0.02, cycleWalkingSharePerKm: 0.01,
+		cycleModeSharePerKm: 0.02, cycleCongestionPerKm: -0.01, cycleFatalitiesPerKm: -0.005
+	},
+	delhi: {
+		metroCongestionPerKm: -0.04, metroModeSharePerKm: 0.04,
+		busCongestionPer2x: -3.5, busModeSharePer2x: 3.5,
+		cycleCyclingSharePerKm: 0.022, cycleWalkingSharePerKm: 0.01,
+		cycleModeSharePerKm: 0.022, cycleCongestionPerKm: -0.01, cycleFatalitiesPerKm: -0.005
+	},
+	chennai: {
+		metroCongestionPerKm: -0.02, metroModeSharePerKm: 0.04,
+		busCongestionPer2x: -5, busModeSharePer2x: 8,
+		cycleCyclingSharePerKm: 0.025, cycleWalkingSharePerKm: 0.01,
+		cycleModeSharePerKm: 0.025, cycleCongestionPerKm: -0.01, cycleFatalitiesPerKm: -0.005
+	},
+	hyderabad: {
+		metroCongestionPerKm: -0.035, metroModeSharePerKm: 0.04,
+		busCongestionPer2x: -3.5, busModeSharePer2x: 5,
+		cycleCyclingSharePerKm: 0.015, cycleWalkingSharePerKm: 0.008,
+		cycleModeSharePerKm: 0.015, cycleCongestionPerKm: -0.008, cycleFatalitiesPerKm: -0.004
+	},
+	pune: {
+		metroCongestionPerKm: -0.025, metroModeSharePerKm: 0.025,
+		busCongestionPer2x: -5, busModeSharePer2x: 6,
+		cycleCyclingSharePerKm: 0.03, cycleWalkingSharePerKm: 0.01,
+		cycleModeSharePerKm: 0.03, cycleCongestionPerKm: -0.01, cycleFatalitiesPerKm: -0.005
+	},
+	kochi: {
+		metroCongestionPerKm: -0.025, metroModeSharePerKm: 0.025,
+		busCongestionPer2x: -3.5, busModeSharePer2x: 3.5,
+		cycleCyclingSharePerKm: 0.025, cycleWalkingSharePerKm: 0.01,
+		cycleModeSharePerKm: 0.025, cycleCongestionPerKm: -0.012, cycleFatalitiesPerKm: -0.006
+	},
+	indore: {
+		metroCongestionPerKm: -0.02, metroModeSharePerKm: 0.02,
+		busCongestionPer2x: -5, busModeSharePer2x: 5,
+		cycleCyclingSharePerKm: 0.03, cycleWalkingSharePerKm: 0.01,
+		cycleModeSharePerKm: 0.03, cycleCongestionPerKm: -0.01, cycleFatalitiesPerKm: -0.008
+	}
+};
+
 // ---- Intervention definitions ----
+// NOTE: The `value` fields in effects below are Bengaluru defaults (for display/documentation).
+// Actual computation uses city-specific coefficients from CITY_TRANSPORT_COEFFICIENTS.
 
 export const INTERVENTIONS: InterventionDef[] = [
 	{
@@ -363,6 +425,9 @@ export function computeScenarioResult(
 	// Apply cycle lane effects
 	const cycleDelta = interventions.cycle_lanes_km;
 
+	// City-specific transport coefficients (fall back to Bengaluru)
+	const coeff = CITY_TRANSPORT_COEFFICIENTS[cityId] ?? CITY_TRANSPORT_COEFFICIENTS.bengaluru;
+
 	// Apply each intervention's effects
 	for (const intDef of INTERVENTIONS) {
 		const sliderValue = interventions[intDef.key as keyof InterventionValues] as number;
@@ -376,7 +441,10 @@ export function computeScenarioResult(
 					if (effect.mode === 'set') {
 						modified[effect.indicator] = sliderValue;
 					} else if (effect.mode === 'delta_per_unit') {
-						modified[effect.indicator] = currentVal + effect.value * metroDelta;
+						const metroCoeff = effect.indicator === 'congestion_level'
+							? coeff.metroCongestionPerKm
+							: coeff.metroModeSharePerKm;
+						modified[effect.indicator] = currentVal + metroCoeff * metroDelta;
 					}
 					break;
 
@@ -384,13 +452,24 @@ export function computeScenarioResult(
 					if (effect.mode === 'multiply') {
 						modified[effect.indicator] = busBaseline * sliderValue;
 					} else if (effect.mode === 'delta_per_unit') {
-						modified[effect.indicator] = currentVal + effect.value * busMultiplierDelta;
+						const busCoeff = effect.indicator === 'congestion_level'
+							? coeff.busCongestionPer2x
+							: coeff.busModeSharePer2x;
+						modified[effect.indicator] = currentVal + busCoeff * busMultiplierDelta;
 					}
 					break;
 
 				case 'cycle_lanes_km':
 					if (effect.mode === 'delta_per_unit') {
-						modified[effect.indicator] = currentVal + effect.value * cycleDelta;
+						const cycleCoeffMap: Record<string, number> = {
+							cycling_share: coeff.cycleCyclingSharePerKm,
+							walking_share: coeff.cycleWalkingSharePerKm,
+							sustainable_mode_share: coeff.cycleModeSharePerKm,
+							congestion_level: coeff.cycleCongestionPerKm,
+							traffic_fatalities: coeff.cycleFatalitiesPerKm
+						};
+						const cycleCoeff = cycleCoeffMap[effect.indicator] ?? effect.value;
+						modified[effect.indicator] = currentVal + cycleCoeff * cycleDelta;
 					}
 					break;
 

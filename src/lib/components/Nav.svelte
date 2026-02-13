@@ -13,7 +13,8 @@
     { href: '/pulse', label: 'Pulse' },
     { href: '/impact', label: 'Impact' },
     { href: '/routes', label: 'Routes' },
-    { href: '/forecast', label: 'Forecast' }
+    { href: '/forecast', label: 'Forecast' },
+    { href: '/data-sources', label: 'Data Sources' }
   ];
 </script>
 

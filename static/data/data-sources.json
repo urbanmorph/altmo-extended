@@ -45,7 +45,7 @@
     {
       "name": "Allirani & Verma (2025) — TQOLI Framework",
       "url": "https://doi.org/10.1016/j.jtrangeo.2025.103800",
-      "description": "\"A novel transportation Quality of Life Index framework for evaluating sustainable transport interventions\", IISc Bangalore. Provides dimension weights (Fuzzy-AHP), scenario strategies (ST1/ST2), and intervention coefficients used in the ETQOLI scoring engine.",
+      "description": "\"A novel transportation Quality of Life Index framework for evaluating sustainable transport interventions\", IISc Bangalore. Provides dimension weights (Fuzzy-AHP), scenario strategies (ST1/ST2), and Bengaluru baseline intervention coefficients. City-specific coefficients for other cities are derived from local transport studies (DIMTS, CMRL, HMRL, PMPML, KMRL, AICTSL, RITES DPRs) and Census 2011 mode share data.",
       "category": "scenario",
       "indicators": ["all"],
       "dataType": "research",
@@ -405,6 +405,17 @@
           "confidence": "high",
           "year": "2022",
           "license": "Government of India"
+        },
+        {
+          "name": "CMRL / CTTS — Chennai Transport Coefficients",
+          "url": "https://chennaimetrorail.org/",
+          "description": "Scenario intervention coefficients calibrated from CMRL (Chennai Metro Rail Limited) ridership data, CMDA CTTS mode share surveys, and MTC bus operations. Metro congestion effect: -0.02 pp/km, mode share: +0.04 pp/km. Bus effects are strongest among Altmo cities due to MTC dominance: congestion -5 pp/2x, mode share +8 pp/2x.",
+          "category": "scenario",
+          "indicators": ["congestion_level", "sustainable_mode_share", "cycling_share", "walking_share", "traffic_fatalities"],
+          "dataType": "research",
+          "confidence": "medium",
+          "year": "2023",
+          "license": "Government of Tamil Nadu"
         }
       ]
     },
@@ -543,6 +554,17 @@
           "confidence": "high",
           "year": "2022",
           "license": "Government of India"
+        },
+        {
+          "name": "DIMTS / RITES — Delhi Transport Coefficients",
+          "url": "https://transport.delhi.gov.in/",
+          "description": "Scenario intervention coefficients calibrated from DIMTS (Delhi Integrated Multi-Modal Transit System) ridership elasticities, RITES travel demand forecasts, and Census 2011 mode share baselines. Metro congestion effect: -0.04 pp/km, mode share: +0.04 pp/km. Bus congestion: -3.5 pp/2x, mode share: +3.5 pp/2x.",
+          "category": "scenario",
+          "indicators": ["congestion_level", "sustainable_mode_share", "cycling_share", "walking_share", "traffic_fatalities"],
+          "dataType": "research",
+          "confidence": "medium",
+          "year": "2019",
+          "license": "Government of NCT Delhi"
         }
       ]
     },
@@ -659,6 +681,17 @@
           "confidence": "high",
           "year": "2022",
           "license": "Government of India"
+        },
+        {
+          "name": "HMRL — Hyderabad Transport Coefficients",
+          "url": "https://hmrl.co.in/open-data/",
+          "description": "Scenario intervention coefficients calibrated from HMRL ridership elasticities, TSRTC bus operations data, and Census 2011 mode share baselines. Metro congestion: -0.035 pp/km, mode share: +0.04 pp/km. Bus congestion: -3.5 pp/2x, mode share: +5 pp/2x. Cycle effects moderated by climate and terrain.",
+          "category": "scenario",
+          "indicators": ["congestion_level", "sustainable_mode_share", "cycling_share", "walking_share", "traffic_fatalities"],
+          "dataType": "research",
+          "confidence": "medium",
+          "year": "2024",
+          "license": "HMRL"
         }
       ]
     },
@@ -756,6 +789,17 @@
           "year": "2023",
           "license": null,
           "notes": "Estimated — TomTom does not cover Indore directly"
+        },
+        {
+          "name": "AICTSL / RITES — Indore Transport Coefficients",
+          "url": "https://www.aictsl.com/",
+          "description": "Scenario intervention coefficients calibrated from AICTSL iBus BRT operations, RITES metro DPR demand forecasts, ICLEI CMP mode share data, and Census 2011 baselines. Metro effects conservative (no operational metro): -0.02 pp/km congestion, +0.02 pp/km mode share. Bus congestion: -5 pp/2x, mode share: +5 pp/2x. High cycle lane responsiveness (+0.03 pp/km) reflecting flat terrain and existing cycling culture.",
+          "category": "scenario",
+          "indicators": ["congestion_level", "sustainable_mode_share", "cycling_share", "walking_share", "traffic_fatalities"],
+          "dataType": "research",
+          "confidence": "medium",
+          "year": "2023",
+          "license": "Government of MP"
         }
       ]
     },
@@ -841,6 +885,17 @@
           "confidence": "medium",
           "year": "2022",
           "license": "Government of India"
+        },
+        {
+          "name": "KMRL — Kochi Transport Coefficients",
+          "url": "https://kochimetro.org/open-data/",
+          "description": "Scenario intervention coefficients calibrated from KMRL GTFS ridership data, KSRTC city bus operations, and Census 2011 mode share baselines. Metro effects moderate (single-line system): -0.025 pp/km congestion, +0.025 pp/km mode share. Bus congestion: -3.5 pp/2x, mode share: +3.5 pp/2x. Higher cycle congestion relief (-0.012 pp/km) due to compact urban form.",
+          "category": "scenario",
+          "indicators": ["congestion_level", "sustainable_mode_share", "cycling_share", "walking_share", "traffic_fatalities"],
+          "dataType": "research",
+          "confidence": "medium",
+          "year": "2024",
+          "license": "KMRL"
         }
       ]
     },
@@ -968,6 +1023,17 @@
           "confidence": "medium",
           "year": "2024",
           "license": "TERI"
+        },
+        {
+          "name": "PMPML / Pune CMP — Transport Coefficients",
+          "url": "https://www.pmpml.org/",
+          "description": "Scenario intervention coefficients calibrated from PMPML bus ridership data, ITDP Vision 2027 demand projections, Pune CMP mode share, and Census 2011 baselines. Metro effects moderate (new system): -0.025 pp/km congestion, +0.025 pp/km mode share. Bus congestion: -5 pp/2x, mode share: +6 pp/2x. Highest cycle lane responsiveness (+0.03 pp/km) alongside Indore — reflecting Pune's flat terrain and strong existing cycling culture (15% mode share).",
+          "category": "scenario",
+          "indicators": ["congestion_level", "sustainable_mode_share", "cycling_share", "walking_share", "traffic_fatalities"],
+          "dataType": "research",
+          "confidence": "medium",
+          "year": "2023",
+          "license": "Government of Maharashtra"
         }
       ]
     }
