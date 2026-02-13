@@ -72,9 +72,8 @@
     return LIVE_SOURCE_LABELS[indicatorKey] ?? 'live source';
   }
 
-  function liveCount(total: number): { live: number; total: number } {
-    const live = overrides?.[cityId] ? Object.keys(overrides[cityId]).length : 0;
-    return { live, total };
+  function liveIndicatorCount(): number {
+    return overrides?.[cityId] ? Object.keys(overrides[cityId]).length : 0;
   }
 </script>
 
@@ -98,10 +97,10 @@
           </div>
           <span class="text-sm text-text-secondary">{(qol.composite * 100).toFixed(0)}/100</span>
         </div>
-        {#if liveCount(qol.indicatorsTotal).live > 0}
+        {#if liveIndicatorCount() > 0}
           <p class="text-[0.6rem] text-text-secondary">
             <i class="fa-solid fa-tower-broadcast" style="color: var(--color-altmo-500)"></i>
-            {liveCount(qol.indicatorsTotal).live} of {qol.indicatorsTotal} live
+            {liveIndicatorCount()} of {qol.indicatorsAvailable} live
           </p>
         {/if}
       </div>

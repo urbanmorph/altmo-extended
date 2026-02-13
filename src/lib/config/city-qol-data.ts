@@ -68,8 +68,15 @@ export const GRADE_BOUNDARIES = [
 
 export type ConfidenceTier = 'gold' | 'silver' | 'bronze';
 
-export function getConfidenceTier(availableCount: number, totalCount: number): ConfidenceTier {
-	const pct = totalCount > 0 ? availableCount / totalCount : 0;
+/**
+ * Full TQOLI paper defines ~18 indicators across 4 dimensions.
+ * We currently implement 8. Confidence reflects coverage against
+ * the full framework, not just what we've coded.
+ */
+export const TQOLI_FULL_INDICATOR_COUNT = 18;
+
+export function getConfidenceTier(availableCount: number, _totalImplemented: number): ConfidenceTier {
+	const pct = availableCount / TQOLI_FULL_INDICATOR_COUNT;
 	if (pct > 0.8) return 'gold';
 	if (pct > 0.6) return 'silver';
 	return 'bronze';
@@ -425,7 +432,7 @@ export function computeCityQoL(cityId: string, overrides?: QoLOverrides): CityQo
 		dimensions,
 		confidence,
 		indicatorsAvailable: totalAvailable,
-		indicatorsTotal: totalDefined
+		indicatorsTotal: TQOLI_FULL_INDICATOR_COUNT
 	};
 }
 

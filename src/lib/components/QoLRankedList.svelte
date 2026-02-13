@@ -48,9 +48,8 @@
     return LIVE_SOURCE_LABELS[indicatorKey] ?? 'live source';
   }
 
-  function liveCount(cityId: string, total: number): { live: number; total: number } {
-    const live = overrides?.[cityId] ? Object.keys(overrides[cityId]).length : 0;
-    return { live, total };
+  function liveIndicatorCount(cityId: string): number {
+    return overrides?.[cityId] ? Object.keys(overrides[cityId]).length : 0;
   }
 
   let expandedIndex = $state(-1);
@@ -100,10 +99,10 @@
             ></i>
           </div>
           <p class="text-xs text-text-secondary">{Math.round(entry.composite * 100)}/100</p>
-          {#if liveCount(entry.cityId, entry.indicatorsTotal).live > 0}
+          {#if liveIndicatorCount(entry.cityId) > 0}
             <p class="text-[0.6rem] text-text-secondary">
               <i class="fa-solid fa-tower-broadcast" style="color: var(--color-altmo-500)"></i>
-              {liveCount(entry.cityId, entry.indicatorsTotal).live} of {entry.indicatorsTotal} live
+              {liveIndicatorCount(entry.cityId)} of {entry.indicatorsAvailable} live
             </p>
           {/if}
         </div>
