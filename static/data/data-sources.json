@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "lastUpdated": "2026-02-13",
   "categories": {
     "air_quality": { "label": "Air Quality", "icon": "fa-solid fa-wind" },
@@ -13,6 +13,11 @@
     "energy": { "label": "Energy & Emissions", "icon": "fa-solid fa-bolt" },
     "activity": { "label": "Activity Data", "icon": "fa-solid fa-person-biking" }
   },
+  "confidenceLevels": {
+    "high": { "label": "High", "description": "Direct measurement, authoritative government report, real-time API, or peer-reviewed primary data" },
+    "medium": { "label": "Medium", "description": "Model-based estimate, survey older than 5 years, compiled secondary source, or community-maintained data" },
+    "low": { "label": "Low", "description": "Derived or proxied from comparable sources, estimated value, very old data (>10 years), or single-sensor coverage" }
+  },
   "crossCitySources": [
     {
       "name": "Altmo Core API (Rails)",
@@ -21,6 +26,7 @@
       "category": "activity",
       "indicators": [],
       "dataType": "live",
+      "confidence": "high",
       "year": "Live",
       "license": "Internal",
       "notes": "Auth via access_token query param (RAILS_API_ACCESS_TOKEN). CO2 = distance(km) x 0.25 kg, Petrol = distance(km) x 0.108 L, Money = petrol x 101 INR"
@@ -32,6 +38,7 @@
       "category": "activity",
       "indicators": [],
       "dataType": "live",
+      "confidence": "high",
       "year": "Live",
       "license": "Strava API Terms"
     },
@@ -42,6 +49,7 @@
       "category": "scenario",
       "indicators": ["all"],
       "dataType": "research",
+      "confidence": "medium",
       "year": "2025",
       "license": "Academic"
     },
@@ -52,6 +60,7 @@
       "category": "air_quality",
       "indicators": ["pm25_annual"],
       "dataType": "live",
+      "confidence": "high",
       "year": "Live",
       "license": "CC BY 4.0"
     },
@@ -62,16 +71,18 @@
       "category": "air_quality",
       "indicators": ["pm25_annual"],
       "dataType": "static",
+      "confidence": "high",
       "year": "2023",
       "license": "Government of India"
     },
     {
       "name": "TomTom Traffic Flow API",
       "url": "https://developer.tomtom.com/traffic-api/documentation/traffic-flow",
-      "description": "Real-time traffic flow data from 5-8 major arterial junctions per city. Congestion calculated as: ((freeFlowSpeed / currentSpeed) - 1) × 100. Sampled at representative road segments.",
+      "description": "Real-time traffic flow data from 5-8 major arterial junctions per city. Congestion calculated as: ((freeFlowSpeed / currentSpeed) - 1) x 100. Sampled at representative road segments.",
       "category": "congestion",
       "indicators": ["congestion_level"],
       "dataType": "live",
+      "confidence": "high",
       "year": "Live",
       "license": "TomTom API License"
     },
@@ -82,6 +93,7 @@
       "category": "congestion",
       "indicators": ["congestion_level"],
       "dataType": "static",
+      "confidence": "high",
       "year": "2023",
       "license": "TomTom"
     },
@@ -92,6 +104,7 @@
       "category": "safety",
       "indicators": ["traffic_fatalities"],
       "dataType": "static",
+      "confidence": "high",
       "year": "2022",
       "license": "Government of India"
     },
@@ -102,6 +115,7 @@
       "category": "safety",
       "indicators": ["traffic_fatalities"],
       "dataType": "static",
+      "confidence": "high",
       "year": "2022",
       "license": "Government of India"
     },
@@ -112,6 +126,7 @@
       "category": "mobility",
       "indicators": ["walking_share", "cycling_share", "sustainable_mode_share"],
       "dataType": "static",
+      "confidence": "low",
       "year": "2011",
       "license": "Government of India"
     },
@@ -122,6 +137,7 @@
       "category": "transit_bus",
       "indicators": ["bus_fleet_per_lakh"],
       "dataType": "static",
+      "confidence": "medium",
       "year": "2024",
       "license": "MIT"
     },
@@ -132,6 +148,7 @@
       "category": "energy",
       "indicators": ["pm25_annual"],
       "dataType": "research",
+      "confidence": "medium",
       "year": "2019",
       "license": "Academic"
     },
@@ -142,26 +159,29 @@
       "category": "energy",
       "indicators": [],
       "dataType": "static",
+      "confidence": "high",
       "year": "2025",
       "license": "Government of India"
     },
     {
       "name": "WHO Air Quality Guidelines 2021",
       "url": "https://www.who.int/publications/i/item/9789240034228",
-      "description": "WHO global air quality guideline values. Annual PM2.5 guideline: 5 µg/m³, 24-hour: 15 µg/m³. Used as ETQOLI benchmark reference.",
+      "description": "WHO global air quality guideline values. Annual PM2.5 guideline: 5 ug/m3, 24-hour: 15 ug/m3. Used as ETQOLI benchmark reference.",
       "category": "air_quality",
       "indicators": ["pm25_annual"],
       "dataType": "reference",
+      "confidence": "high",
       "year": "2021",
       "license": "WHO"
     },
     {
       "name": "India NAAQS (National Ambient Air Quality Standards)",
       "url": "https://cpcb.nic.in/displaypdf.php?id=aG9tZS9haXItcG9sbHV0aW9uL1JlY3Zpcy5wZGY=",
-      "description": "Indian national air quality standards. Annual PM2.5 standard: 40 µg/m³, 24-hour: 60 µg/m³. Reference for AQI category breakpoints.",
+      "description": "Indian national air quality standards. Annual PM2.5 standard: 40 ug/m3, 24-hour: 60 ug/m3. Reference for AQI category breakpoints.",
       "category": "air_quality",
       "indicators": ["pm25_annual"],
       "dataType": "reference",
+      "confidence": "high",
       "year": "2009",
       "license": "Government of India"
     }
@@ -178,6 +198,7 @@
           "category": "mobility",
           "indicators": ["walking_share", "cycling_share", "sustainable_mode_share"],
           "dataType": "static",
+          "confidence": "high",
           "year": "2020",
           "license": "Government of Karnataka"
         },
@@ -188,6 +209,7 @@
           "category": "mobility",
           "indicators": ["walking_share", "cycling_share", "sustainable_mode_share"],
           "dataType": "static",
+          "confidence": "high",
           "year": "2020",
           "license": "Open Data"
         },
@@ -198,6 +220,7 @@
           "category": "transit_metro",
           "indicators": ["metro_network_km"],
           "dataType": "static",
+          "confidence": "high",
           "year": "2024",
           "license": "Public"
         },
@@ -208,6 +231,7 @@
           "category": "transit_metro",
           "indicators": [],
           "dataType": "live",
+          "confidence": "high",
           "year": "2024",
           "license": "CC BY 4.0"
         },
@@ -218,16 +242,18 @@
           "category": "transit_bus",
           "indicators": ["bus_fleet_per_lakh"],
           "dataType": "static",
+          "confidence": "medium",
           "year": "2023",
           "license": "Government of Karnataka"
         },
         {
           "name": "OpenAQ — Bengaluru Sensors",
           "url": "https://explore.openaq.org/locations?country=IN&city=Bengaluru",
-          "description": "7 CPCB PM2.5 monitoring stations. Sensor IDs: 12235361, 12235370, 12235267, 12235240, 12235285, 12235258, 12235249. Baseline 2023 annual: 34 µg/m³.",
+          "description": "7 CPCB PM2.5 monitoring stations. Sensor IDs: 12235361, 12235370, 12235267, 12235240, 12235285, 12235258, 12235249. Baseline 2023 annual: 34 ug/m3.",
           "category": "air_quality",
           "indicators": ["pm25_annual"],
           "dataType": "live",
+          "confidence": "high",
           "year": "Live",
           "license": "CC BY 4.0"
         },
@@ -238,6 +264,7 @@
           "category": "energy",
           "indicators": ["pm25_annual"],
           "dataType": "research",
+          "confidence": "medium",
           "year": "2019",
           "license": "Academic"
         },
@@ -248,16 +275,18 @@
           "category": "energy",
           "indicators": [],
           "dataType": "research",
+          "confidence": "medium",
           "year": "2024-25",
           "license": "Open Data"
         },
         {
           "name": "BBMP Road Network",
           "url": "https://bbmp.gov.in/",
-          "description": "BBMP jurisdiction: 764 km² with ~7,800 km of roads = 10.2 km/km² road density. Source: Smart Cities data.",
+          "description": "BBMP jurisdiction: 764 km2 with ~7,800 km of roads = 10.2 km/km2 road density. Source: Smart Cities data.",
           "category": "infrastructure",
           "indicators": ["road_density"],
           "dataType": "static",
+          "confidence": "medium",
           "year": "2023",
           "license": "Government of Karnataka"
         },
@@ -268,6 +297,7 @@
           "category": "safety",
           "indicators": ["traffic_fatalities"],
           "dataType": "static",
+          "confidence": "high",
           "year": "2022",
           "license": "Government of India"
         },
@@ -278,6 +308,7 @@
           "category": "scenario",
           "indicators": [],
           "dataType": "research",
+          "confidence": "medium",
           "year": "2023",
           "license": "Academic"
         }
@@ -294,6 +325,7 @@
           "category": "mobility",
           "indicators": ["walking_share", "cycling_share", "sustainable_mode_share"],
           "dataType": "static",
+          "confidence": "low",
           "year": "2008",
           "license": "Government of Tamil Nadu"
         },
@@ -304,6 +336,7 @@
           "category": "mobility",
           "indicators": ["sustainable_mode_share"],
           "dataType": "static",
+          "confidence": "low",
           "year": "2012",
           "license": "JICA"
         },
@@ -314,6 +347,7 @@
           "category": "transit_metro",
           "indicators": ["metro_network_km"],
           "dataType": "live",
+          "confidence": "medium",
           "year": "2024",
           "license": "ODbL"
         },
@@ -324,26 +358,29 @@
           "category": "transit_bus",
           "indicators": ["bus_fleet_per_lakh"],
           "dataType": "static",
+          "confidence": "medium",
           "year": "2023",
           "license": "Government of Tamil Nadu"
         },
         {
           "name": "OpenAQ — Chennai Sensors",
           "url": "https://explore.openaq.org/locations?country=IN&city=Chennai",
-          "description": "7 CPCB PM2.5 monitoring stations. Sensor IDs: 12235653, 12235531, 12235796, 12236299, 12236308, 12236274, 12236290. Baseline 2023 annual: 31 µg/m³.",
+          "description": "7 CPCB PM2.5 monitoring stations. Sensor IDs: 12235653, 12235531, 12235796, 12236299, 12236308, 12236274, 12236290. Baseline 2023 annual: 31 ug/m3.",
           "category": "air_quality",
           "indicators": ["pm25_annual"],
           "dataType": "live",
+          "confidence": "high",
           "year": "Live",
           "license": "CC BY 4.0"
         },
         {
           "name": "UrbanEmissions — Chennai APnA",
           "url": "https://urbanemissions.info/india-apna/chennai-india/",
-          "description": "PM2.5 source apportionment: Transport 20-25% (depressed by massive industrial base), Industry (incl. power) 70%, Power generation alone 15-25% (North Chennai Thermal Power Station). Modeled annual: 57.5 µg/m³.",
+          "description": "PM2.5 source apportionment: Transport 20-25% (depressed by massive industrial base), Industry (incl. power) 70%, Power generation alone 15-25% (North Chennai Thermal Power Station). Modeled annual: 57.5 ug/m3.",
           "category": "energy",
           "indicators": ["pm25_annual"],
           "dataType": "research",
+          "confidence": "medium",
           "year": "2019",
           "license": "Academic"
         },
@@ -354,6 +391,7 @@
           "category": "energy",
           "indicators": [],
           "dataType": "research",
+          "confidence": "medium",
           "year": "2024-25",
           "license": "Open Data"
         },
@@ -364,6 +402,7 @@
           "category": "safety",
           "indicators": ["traffic_fatalities"],
           "dataType": "static",
+          "confidence": "high",
           "year": "2022",
           "license": "Government of India"
         }
@@ -380,6 +419,7 @@
           "category": "mobility",
           "indicators": ["walking_share", "cycling_share", "sustainable_mode_share"],
           "dataType": "static",
+          "confidence": "low",
           "year": "2011",
           "license": "Government of India"
         },
@@ -390,6 +430,7 @@
           "category": "mobility",
           "indicators": ["sustainable_mode_share"],
           "dataType": "static",
+          "confidence": "medium",
           "year": "2019",
           "license": "Government of NCT Delhi"
         },
@@ -400,6 +441,7 @@
           "category": "transit_bus",
           "indicators": [],
           "dataType": "live",
+          "confidence": "high",
           "year": "2024",
           "license": "Open Data"
         },
@@ -410,6 +452,7 @@
           "category": "transit_metro",
           "indicators": ["metro_network_km"],
           "dataType": "static",
+          "confidence": "high",
           "year": "2024",
           "license": "Public"
         },
@@ -420,6 +463,7 @@
           "category": "transit_metro",
           "indicators": ["metro_network_km"],
           "dataType": "static",
+          "confidence": "medium",
           "year": "2023",
           "license": "Public"
         },
@@ -430,6 +474,7 @@
           "category": "transit_metro",
           "indicators": [],
           "dataType": "static",
+          "confidence": "medium",
           "year": "2023",
           "license": "Public"
         },
@@ -440,16 +485,18 @@
           "category": "transit_bus",
           "indicators": ["bus_fleet_per_lakh"],
           "dataType": "static",
+          "confidence": "medium",
           "year": "2023",
           "license": "Government of NCT Delhi"
         },
         {
           "name": "OpenAQ — Delhi Sensors",
           "url": "https://explore.openaq.org/locations?country=IN&city=Delhi",
-          "description": "10 CPCB PM2.5 monitoring stations — most sensors of any Altmo city. Sensor IDs: 12234787, 12234796, 12235610, etc. Baseline 2023 annual: 99 µg/m³ (worst in India).",
+          "description": "10 CPCB PM2.5 monitoring stations — most sensors of any Altmo city. Sensor IDs: 12234787, 12234796, 12235610, etc. Baseline 2023 annual: 99 ug/m3 (worst in India).",
           "category": "air_quality",
           "indicators": ["pm25_annual"],
           "dataType": "live",
+          "confidence": "high",
           "year": "Live",
           "license": "CC BY 4.0"
         },
@@ -460,6 +507,7 @@
           "category": "energy",
           "indicators": ["pm25_annual"],
           "dataType": "research",
+          "confidence": "medium",
           "year": "2023",
           "license": "Academic"
         },
@@ -470,6 +518,7 @@
           "category": "energy",
           "indicators": ["pm25_annual"],
           "dataType": "research",
+          "confidence": "medium",
           "year": "2018",
           "license": "TERI"
         },
@@ -480,6 +529,7 @@
           "category": "energy",
           "indicators": [],
           "dataType": "research",
+          "confidence": "medium",
           "year": "2024",
           "license": "RMI"
         },
@@ -490,6 +540,7 @@
           "category": "safety",
           "indicators": ["traffic_fatalities"],
           "dataType": "static",
+          "confidence": "high",
           "year": "2022",
           "license": "Government of India"
         }
@@ -506,6 +557,7 @@
           "category": "mobility",
           "indicators": ["walking_share", "cycling_share", "sustainable_mode_share"],
           "dataType": "static",
+          "confidence": "low",
           "year": "2011",
           "license": "Government of India"
         },
@@ -516,6 +568,7 @@
           "category": "transit_metro",
           "indicators": ["metro_network_km"],
           "dataType": "static",
+          "confidence": "high",
           "year": "2024",
           "license": "HMRL"
         },
@@ -526,6 +579,7 @@
           "category": "transit_metro",
           "indicators": ["metro_network_km"],
           "dataType": "static",
+          "confidence": "medium",
           "year": "2023",
           "license": "Public"
         },
@@ -536,6 +590,7 @@
           "category": "transit_metro",
           "indicators": [],
           "dataType": "live",
+          "confidence": "high",
           "year": "2024",
           "license": "Open Data"
         },
@@ -546,16 +601,18 @@
           "category": "transit_bus",
           "indicators": ["bus_fleet_per_lakh"],
           "dataType": "static",
+          "confidence": "medium",
           "year": "2023",
           "license": "Government of Telangana"
         },
         {
           "name": "OpenAQ — Hyderabad Sensors",
           "url": "https://explore.openaq.org/locations?country=IN&city=Hyderabad",
-          "description": "7 PM2.5 monitoring stations. Sensor IDs: 12235583, 12235400, 12242121, 12242129, 12237098, 12237125, 12237116. Baseline 2023 annual: 37 µg/m³.",
+          "description": "7 PM2.5 monitoring stations. Sensor IDs: 12235583, 12235400, 12242121, 12242129, 12237098, 12237125, 12237116. Baseline 2023 annual: 37 ug/m3.",
           "category": "air_quality",
           "indicators": ["pm25_annual"],
           "dataType": "live",
+          "confidence": "high",
           "year": "Live",
           "license": "CC BY 4.0"
         },
@@ -566,6 +623,7 @@
           "category": "energy",
           "indicators": ["pm25_annual"],
           "dataType": "research",
+          "confidence": "medium",
           "year": "2018",
           "license": "Academic"
         },
@@ -576,6 +634,7 @@
           "category": "energy",
           "indicators": ["pm25_annual"],
           "dataType": "research",
+          "confidence": "medium",
           "year": "2013",
           "license": "Academic"
         },
@@ -586,6 +645,7 @@
           "category": "energy",
           "indicators": [],
           "dataType": "research",
+          "confidence": "medium",
           "year": "2024-25",
           "license": "Open Data"
         },
@@ -596,6 +656,7 @@
           "category": "safety",
           "indicators": ["traffic_fatalities"],
           "dataType": "static",
+          "confidence": "high",
           "year": "2022",
           "license": "Government of India"
         }
@@ -612,6 +673,7 @@
           "category": "mobility",
           "indicators": ["walking_share", "cycling_share", "sustainable_mode_share"],
           "dataType": "static",
+          "confidence": "medium",
           "year": "2018",
           "license": "ICLEI / Government of MP"
         },
@@ -622,6 +684,7 @@
           "category": "transit_metro",
           "indicators": ["metro_network_km"],
           "dataType": "static",
+          "confidence": "low",
           "year": "2024",
           "license": "Government of MP",
           "notes": "Slider starts at 0 km in scenario tool; represents building from scratch"
@@ -633,16 +696,18 @@
           "category": "transit_bus",
           "indicators": ["bus_fleet_per_lakh"],
           "dataType": "static",
+          "confidence": "medium",
           "year": "2023",
           "license": "Government of MP"
         },
         {
           "name": "OpenAQ — Indore Sensors",
           "url": "https://explore.openaq.org/locations?country=IN&city=Indore",
-          "description": "6 PM2.5 monitoring stations. Sensor IDs: 12234921, 12237818, 12238477, 12238486, 12815122, 12238495. Baseline from UrbanEmissions model + IQAir: 56 µg/m³.",
+          "description": "6 PM2.5 monitoring stations. Sensor IDs: 12234921, 12237818, 12238477, 12238486, 12815122, 12238495. Baseline from UrbanEmissions model + IQAir: 56 ug/m3.",
           "category": "air_quality",
           "indicators": ["pm25_annual"],
           "dataType": "live",
+          "confidence": "medium",
           "year": "Live",
           "license": "CC BY 4.0",
           "notes": "Indore uses UrbanEmissions model + IQAir estimates for baseline (CPCB station limited coverage)"
@@ -650,10 +715,11 @@
         {
           "name": "UrbanEmissions — Indore APnA",
           "url": "https://urbanemissions.info/india-apna/indore-india/",
-          "description": "PM2.5 source apportionment: Transport 45-55% (highest transport share), Power generation 1-3% (no coal plants in airshed), Dust 24%, Waste burning 8.4%. Emission inventory: 11,850 tonnes/year. Modeled annual: 66.3 µg/m³.",
+          "description": "PM2.5 source apportionment: Transport 45-55% (highest transport share), Power generation 1-3% (no coal plants in airshed), Dust 24%, Waste burning 8.4%. Emission inventory: 11,850 tonnes/year. Modeled annual: 66.3 ug/m3.",
           "category": "energy",
           "indicators": ["pm25_annual"],
           "dataType": "research",
+          "confidence": "medium",
           "year": "2019",
           "license": "Academic"
         },
@@ -664,6 +730,7 @@
           "category": "energy",
           "indicators": [],
           "dataType": "research",
+          "confidence": "medium",
           "year": "2024-25",
           "license": "Government of MP"
         },
@@ -674,6 +741,7 @@
           "category": "safety",
           "indicators": ["traffic_fatalities"],
           "dataType": "static",
+          "confidence": "high",
           "year": "2022",
           "license": "Government of India"
         },
@@ -684,6 +752,7 @@
           "category": "congestion",
           "indicators": ["congestion_level"],
           "dataType": "derived",
+          "confidence": "low",
           "year": "2023",
           "license": null,
           "notes": "Estimated — TomTom does not cover Indore directly"
@@ -701,6 +770,7 @@
           "category": "mobility",
           "indicators": ["walking_share", "cycling_share", "sustainable_mode_share"],
           "dataType": "static",
+          "confidence": "low",
           "year": "2011",
           "license": "Government of India"
         },
@@ -711,6 +781,7 @@
           "category": "transit_metro",
           "indicators": ["metro_network_km"],
           "dataType": "live",
+          "confidence": "high",
           "year": "2024",
           "license": "Open Data"
         },
@@ -721,16 +792,18 @@
           "category": "transit_bus",
           "indicators": ["bus_fleet_per_lakh"],
           "dataType": "static",
+          "confidence": "medium",
           "year": "2023",
           "license": "Government of Kerala"
         },
         {
           "name": "OpenAQ — Kochi Sensors",
           "url": "https://explore.openaq.org/locations?country=IN&city=Kochi",
-          "description": "1 CPCB PM2.5 monitoring station — fewest sensors of any Altmo city. Sensor ID: 12235842. Baseline 2023 annual: 27 µg/m³ (cleanest city).",
+          "description": "1 CPCB PM2.5 monitoring station — fewest sensors of any Altmo city. Sensor ID: 12235842. Baseline 2023 annual: 27 ug/m3 (cleanest city).",
           "category": "air_quality",
           "indicators": ["pm25_annual"],
           "dataType": "live",
+          "confidence": "low",
           "year": "Live",
           "license": "CC BY 4.0",
           "notes": "Only 1 sensor — limited spatial coverage"
@@ -738,10 +811,11 @@
         {
           "name": "UrbanEmissions — Kochi APnA",
           "url": "https://urbanemissions.info/india-apna/kochi-india/",
-          "description": "PM2.5 source apportionment: Transport 35-40% (exhaust + road dust), Power generation 2-4% (Kerala has minimal coal power), Industry 25-28% (petrochemicals, fertilizers). Emission inventory: 9,150 tonnes/year. Modeled annual: 29.1 µg/m³.",
+          "description": "PM2.5 source apportionment: Transport 35-40% (exhaust + road dust), Power generation 2-4% (Kerala has minimal coal power), Industry 25-28% (petrochemicals, fertilizers). Emission inventory: 9,150 tonnes/year. Modeled annual: 29.1 ug/m3.",
           "category": "energy",
           "indicators": ["pm25_annual"],
           "dataType": "research",
+          "confidence": "medium",
           "year": "2019",
           "license": "Academic"
         },
@@ -752,6 +826,7 @@
           "category": "energy",
           "indicators": [],
           "dataType": "research",
+          "confidence": "medium",
           "year": "2024-25",
           "license": "Government of Kerala",
           "notes": "Kerala imports majority of power; effective coal share much higher than in-state generation suggests"
@@ -763,6 +838,7 @@
           "category": "safety",
           "indicators": ["traffic_fatalities"],
           "dataType": "static",
+          "confidence": "medium",
           "year": "2022",
           "license": "Government of India"
         }
@@ -779,6 +855,7 @@
           "category": "mobility",
           "indicators": ["walking_share", "cycling_share", "sustainable_mode_share"],
           "dataType": "static",
+          "confidence": "high",
           "year": "2018",
           "license": "Open Data"
         },
@@ -789,6 +866,7 @@
           "category": "transit_bus",
           "indicators": [],
           "dataType": "reference",
+          "confidence": "medium",
           "year": "2023",
           "license": "ITDP"
         },
@@ -799,6 +877,7 @@
           "category": "transit_metro",
           "indicators": ["metro_network_km"],
           "dataType": "live",
+          "confidence": "medium",
           "year": "2024",
           "license": "ODbL"
         },
@@ -809,16 +888,18 @@
           "category": "transit_bus",
           "indicators": ["bus_fleet_per_lakh"],
           "dataType": "static",
+          "confidence": "medium",
           "year": "2023",
           "license": "Government of Maharashtra"
         },
         {
           "name": "OpenAQ — Pune Sensors",
           "url": "https://explore.openaq.org/locations?country=IN&city=Pune",
-          "description": "7 PM2.5 monitoring stations. Sensor IDs: 12235540, 12236443, 12236457, 12236463, 12236449, 12304615, 12237987. Baseline 2023 annual: 36 µg/m³.",
+          "description": "7 PM2.5 monitoring stations. Sensor IDs: 12235540, 12236443, 12236457, 12236463, 12236449, 12304615, 12237987. Baseline 2023 annual: 36 ug/m3.",
           "category": "air_quality",
           "indicators": ["pm25_annual"],
           "dataType": "live",
+          "confidence": "high",
           "year": "Live",
           "license": "CC BY 4.0"
         },
@@ -829,6 +910,7 @@
           "category": "energy",
           "indicators": ["pm25_annual"],
           "dataType": "research",
+          "confidence": "high",
           "year": "2022",
           "license": "ARAI"
         },
@@ -839,6 +921,7 @@
           "category": "energy",
           "indicators": ["pm25_annual"],
           "dataType": "research",
+          "confidence": "high",
           "year": "2021",
           "license": "Ministry of Earth Sciences"
         },
@@ -849,6 +932,7 @@
           "category": "energy",
           "indicators": ["pm25_annual"],
           "dataType": "research",
+          "confidence": "medium",
           "year": "2019",
           "license": "Academic"
         },
@@ -859,6 +943,7 @@
           "category": "energy",
           "indicators": [],
           "dataType": "research",
+          "confidence": "medium",
           "year": "2024-25",
           "license": "Government of Maharashtra"
         },
@@ -869,6 +954,7 @@
           "category": "safety",
           "indicators": ["traffic_fatalities"],
           "dataType": "static",
+          "confidence": "high",
           "year": "2022",
           "license": "Government of India"
         },
@@ -879,6 +965,7 @@
           "category": "energy",
           "indicators": ["pm25_annual"],
           "dataType": "research",
+          "confidence": "medium",
           "year": "2024",
           "license": "TERI"
         }

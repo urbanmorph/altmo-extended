@@ -9,6 +9,7 @@
     category: string;
     indicators: string[];
     dataType: string;
+    confidence?: 'high' | 'medium' | 'low';
     year: string;
     license: string | null;
     notes?: string;
@@ -19,10 +20,16 @@
     icon: string;
   }
 
+  interface ConfidenceLevelDef {
+    label: string;
+    description: string;
+  }
+
   interface DataSourcesJSON {
     version: string;
     lastUpdated: string;
     categories: Record<string, CategoryDef>;
+    confidenceLevels?: Record<string, ConfidenceLevelDef>;
     crossCitySources: Source[];
     cities: Record<string, { name: string; state: string; sources: Source[] }>;
   }
@@ -75,6 +82,30 @@
       default: return { label: dt, classes: 'bg-neutral-100 text-text-secondary' };
     }
   }
+
+  function confidenceBadge(level: string | undefined): { label: string; icon: string; classes: string } {
+    switch (level) {
+      case 'high': return { label: 'High', icon: 'fa-solid fa-circle-check', classes: 'text-status-available' };
+      case 'medium': return { label: 'Medium', icon: 'fa-solid fa-circle-minus', classes: 'text-status-partial' };
+      case 'low': return { label: 'Low', icon: 'fa-solid fa-circle-exclamation', classes: 'text-status-unavailable' };
+      default: return { label: 'Unknown', icon: 'fa-solid fa-circle-question', classes: 'text-text-secondary' };
+    }
+  }
+
+  function countConfidence(sources: Source[]): { high: number; medium: number; low: number } {
+    return sources.reduce((acc, s) => {
+      if (s.confidence === 'high') acc.high++;
+      else if (s.confidence === 'medium') acc.medium++;
+      else acc.low++;
+      return acc;
+    }, { high: 0, medium: 0, low: 0 });
+  }
+
+  let allCitySources = $derived(
+    Object.values(ds.cities).flatMap((c) => c.sources)
+  );
+  let allSources = $derived([...ds.crossCitySources, ...allCitySources]);
+  let confidenceCounts = $derived(countConfidence(allSources));
 </script>
 
 <svelte:head>
@@ -154,6 +185,7 @@
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
         {#each citySources as source (source.name)}
           {@const badge = dataTypeBadge(source.dataType)}
+          {@const conf = confidenceBadge(source.confidence)}
           {@const catDef = ds.categories[source.category]}
           <div class="rounded-xl border border-border bg-surface-card p-5">
             <div class="mb-2 flex items-start justify-between gap-2">
@@ -163,9 +195,14 @@
                 {/if}
                 <h3 class="text-sm font-semibold text-text-primary">{source.name}</h3>
               </div>
-              <span class="shrink-0 rounded-full px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wide {badge.classes}">
-                {badge.label}
-              </span>
+              <div class="flex shrink-0 items-center gap-1.5">
+                <span class="inline-flex items-center gap-1 text-[0.6rem] {conf.classes}" title="Confidence: {conf.label}">
+                  <i class="{conf.icon} text-[0.55rem]"></i>
+                </span>
+                <span class="rounded-full px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wide {badge.classes}">
+                  {badge.label}
+                </span>
+              </div>
             </div>
             <p class="mb-3 text-xs leading-relaxed text-text-secondary">{source.description}</p>
             <div class="flex flex-wrap items-center gap-2 text-xs">
@@ -217,6 +254,7 @@
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
       {#each crossCitySources as source (source.name)}
         {@const badge = dataTypeBadge(source.dataType)}
+        {@const conf = confidenceBadge(source.confidence)}
         {@const catDef = ds.categories[source.category]}
         <div class="rounded-xl border border-border bg-surface-card p-5">
           <div class="mb-2 flex items-start justify-between gap-2">
@@ -226,9 +264,14 @@
               {/if}
               <h3 class="text-sm font-semibold text-text-primary">{source.name}</h3>
             </div>
-            <span class="shrink-0 rounded-full px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wide {badge.classes}">
-              {badge.label}
-            </span>
+            <div class="flex shrink-0 items-center gap-1.5">
+              <span class="inline-flex items-center gap-1 text-[0.6rem] {conf.classes}" title="Confidence: {conf.label}">
+                <i class="{conf.icon} text-[0.55rem]"></i>
+              </span>
+              <span class="rounded-full px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wide {badge.classes}">
+                {badge.label}
+              </span>
+            </div>
           </div>
           <p class="mb-3 text-xs leading-relaxed text-text-secondary">{source.description}</p>
           <div class="flex flex-wrap items-center gap-2 text-xs">
@@ -298,6 +341,37 @@
         <div class="text-2xl font-bold text-primary">{Object.keys(ds.categories).length}</div>
         <div class="text-xs text-text-secondary">Categories</div>
       </div>
+    </div>
+
+    <!-- Confidence breakdown -->
+    <div class="mt-4 border-t border-border pt-4">
+      <h3 class="mb-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">
+        Data Confidence
+      </h3>
+      <div class="flex flex-wrap gap-4">
+        <div class="flex items-center gap-1.5 text-xs">
+          <i class="fa-solid fa-circle-check text-status-available"></i>
+          <span class="font-semibold text-text-primary">{confidenceCounts.high}</span>
+          <span class="text-text-secondary">High</span>
+        </div>
+        <div class="flex items-center gap-1.5 text-xs">
+          <i class="fa-solid fa-circle-minus text-status-partial"></i>
+          <span class="font-semibold text-text-primary">{confidenceCounts.medium}</span>
+          <span class="text-text-secondary">Medium</span>
+        </div>
+        <div class="flex items-center gap-1.5 text-xs">
+          <i class="fa-solid fa-circle-exclamation text-status-unavailable"></i>
+          <span class="font-semibold text-text-primary">{confidenceCounts.low}</span>
+          <span class="text-text-secondary">Low</span>
+        </div>
+      </div>
+      {#if ds.confidenceLevels}
+        <div class="mt-2 space-y-0.5 text-[0.65rem] text-text-secondary">
+          {#each Object.entries(ds.confidenceLevels) as [, def]}
+            <div>{def.label}: {def.description}</div>
+          {/each}
+        </div>
+      {/if}
     </div>
   </div>
 </div>
