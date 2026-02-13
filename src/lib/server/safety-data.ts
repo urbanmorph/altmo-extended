@@ -12,6 +12,7 @@ const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
 export interface SafetyDataPoint {
 	fatalitiesPerLakh: number;
+	vruFatalityShare: number | null;
 	year: number;
 	source: string;
 }
@@ -57,7 +58,7 @@ export async function getLatestSafetyData(): Promise<Record<string, SafetyDataPo
 		// Get the latest year per city using distinct on
 		const { data, error } = await supabase
 			.from('city_safety_annual')
-			.select('city_id, year, fatalities_per_lakh, source')
+			.select('city_id, year, fatalities_per_lakh, total_fatalities, pedestrian_fatalities, cyclist_fatalities, source')
 			.order('city_id')
 			.order('year', { ascending: false });
 
@@ -70,8 +71,16 @@ export async function getLatestSafetyData(): Promise<Record<string, SafetyDataPo
 		const result: Record<string, SafetyDataPoint> = {};
 		for (const row of data) {
 			if (!result[row.city_id]) {
+				let vruShare: number | null = null;
+				if (row.total_fatalities && row.total_fatalities > 0 &&
+					row.pedestrian_fatalities != null && row.cyclist_fatalities != null) {
+					vruShare = Math.round(
+						((row.pedestrian_fatalities + row.cyclist_fatalities) / row.total_fatalities) * 100
+					);
+				}
 				result[row.city_id] = {
 					fatalitiesPerLakh: Number(row.fatalities_per_lakh),
+					vruFatalityShare: vruShare,
 					year: row.year,
 					source: row.source ?? 'Unknown'
 				};

@@ -23,6 +23,9 @@ export async function buildQoLOverrides(): Promise<QoLOverrides> {
 
 	for (const [cityId, data] of Object.entries(safety)) {
 		overrides[cityId] = { traffic_fatalities: data.fatalitiesPerLakh };
+		if (data.vruFatalityShare !== null) {
+			overrides[cityId].vru_fatality_share = data.vruFatalityShare;
+		}
 	}
 
 	for (const [cityId, data] of Object.entries(airQuality)) {

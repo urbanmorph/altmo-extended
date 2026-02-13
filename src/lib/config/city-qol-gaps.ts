@@ -38,9 +38,9 @@ const GAP_DATA: Record<string, Omit<CityGapAnalysis, 'cityId' | 'worstDimension'
 		dataUnlockSentence: 'Publishing safety and NMT infrastructure data unlocks health dimension scoring'
 	},
 	chennai: {
-		gapSentence: 'Metro network at 54.6 km covers only 14% of the target — accessibility bottleneck',
-		recommendation: 'Phase 2 expansion to 120 km would lift accessibility from D to C range',
-		dataUnlockSentence: 'Publishing metro ridership and NMT data enables full transit performance analysis'
+		gapSentence: 'Cycling share at just 4% and VRU fatality share at 43% — active mobility is unsafe and underused',
+		recommendation: 'Protected cycle lanes on 15 arterials + pedestrian-priority zones could halve VRU fatalities',
+		dataUnlockSentence: 'Publishing walking/cycling infrastructure data enables corridor-level safety analysis'
 	},
 	hyderabad: {
 		gapSentence: 'Metro at 69 km but bus fleet of only 30 per lakh limits last-mile access',

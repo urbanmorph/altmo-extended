@@ -37,10 +37,12 @@ export interface IndicatorBenchmark {
 
 export const INDICATOR_BENCHMARKS: Record<string, IndicatorBenchmark> = {
 	traffic_fatalities:     { worstRef: 20,  target: 2,   source: 'India avg (MoRTH) / Sweden Vision Zero' },
+	vru_fatality_share:     { worstRef: 65,  target: 15,  source: 'Delhi-level VRU share / Vision Zero cities with protected infra' },
 	walking_share:          { worstRef: 10,  target: 35,  source: 'Low-walk Indian city / Barcelona-class walkability' },
 	cycling_share:          { worstRef: 1,   target: 25,  source: 'Negligible cycling / Amsterdam-class cycling city' },
 	metro_network_km:       { worstRef: 0,   target: 400, source: 'No metro / Delhi DMRC (largest in India)' },
 	bus_fleet_per_lakh:     { worstRef: 5,   target: 60,  source: 'Below minimum / BMTC-class fleet' },
+	transit_stop_density:   { worstRef: 3,   target: 30,  source: 'Sparse coverage / dense European city' },
 	pm25_annual:            { worstRef: 100, target: 15,  source: 'Delhi-level / WHO 2021 guideline' },
 	congestion_level:       { worstRef: 60,  target: 15,  source: 'Severe congestion / near free-flow' },
 	sustainable_mode_share: { worstRef: 20,  target: 70,  source: 'Car-dependent / Dutch-class' },
@@ -141,6 +143,14 @@ export const QOL_DIMENSIONS: QoLDimension[] = [
 				effect: 'positive',
 				source: 'Census/CMP',
 				description: 'Share of trips by cycling'
+			},
+			{
+				key: 'vru_fatality_share',
+				label: 'VRU Fatality Share',
+				unit: '%',
+				effect: 'negative',
+				source: 'NCRB 2022',
+				description: 'Pedestrian + cyclist deaths as % of total traffic fatalities'
 			}
 		]
 	},
@@ -164,6 +174,14 @@ export const QOL_DIMENSIONS: QoLDimension[] = [
 				effect: 'positive',
 				source: 'Transport corps',
 				description: 'Public bus fleet size per lakh population'
+			},
+			{
+				key: 'transit_stop_density',
+				label: 'Transit Stop Density',
+				unit: 'stops/km\u00B2',
+				effect: 'positive',
+				source: 'TransitRouter/Metro corps',
+				description: 'Bus stops + metro stations per sq km of city area'
 			}
 		]
 	},
@@ -225,9 +243,11 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			traffic_fatalities: 7.8, // NCRB 2022: ~960 deaths, pop ~1.23 cr
 			walking_share: 22, // CMP 2020
 			cycling_share: 5, // CMP 2020
+			vru_fatality_share: 40, // NCRB 2022: (310+75)/960 = 40%
 			// Accessibility
 			metro_network_km: 73.8, // Namma Metro Phase 1 + 2A (as of 2024)
 			bus_fleet_per_lakh: 53, // BMTC ~6,500 buses, pop ~1.23 cr
+			transit_stop_density: 11.2, // (8500 bus + 62 metro) / 764 km²
 			// Environmental
 			pm25_annual: 34, // CPCB 2023 annual average
 			congestion_level: 51, // TomTom 2023
@@ -242,8 +262,10 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			traffic_fatalities: 10.5, // NCRB 2022
 			walking_share: 24, // Census/CTTS
 			cycling_share: 4, // Census/CTTS
+			vru_fatality_share: 43, // NCRB 2022: (345+55)/920 = 43%
 			metro_network_km: 54.6, // Phase 1 + extension (2024)
 			bus_fleet_per_lakh: 40, // MTC ~3,500 buses, pop ~87 lakh
+			transit_stop_density: 29.8, // (5200 bus + 40 metro) / 176 km²
 			pm25_annual: 31, // CPCB 2023
 			congestion_level: 39, // TomTom 2023
 			sustainable_mode_share: 52, // CTTS: walk+cycle+bus+metro
@@ -256,8 +278,10 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			traffic_fatalities: 11.3, // NCRB 2022: highest absolute numbers
 			walking_share: 16, // Census
 			cycling_share: 6, // Census
+			vru_fatality_share: 62, // NCRB 2022: (750+280)/1670 = 62% — worst
 			metro_network_km: 393, // DMRC — largest network in India
 			bus_fleet_per_lakh: 32, // DTC ~3,700 + cluster ~3,500; pop ~2.1 cr
+			transit_stop_density: 4.8, // (6800 bus + 288 metro) / 1483 km²
 			pm25_annual: 99, // CPCB 2023 — worst in India
 			congestion_level: 44, // TomTom 2023
 			sustainable_mode_share: 43, // Census/DMP: walk+cycle+bus+metro
@@ -270,8 +294,10 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			traffic_fatalities: 8.4, // NCRB 2022
 			walking_share: 20, // Census/CMP
 			cycling_share: 5, // Census/CMP
+			vru_fatality_share: 39, // NCRB 2022: (260+65)/840 = 39%
 			metro_network_km: 69.2, // HMR L1+L2+L3
 			bus_fleet_per_lakh: 30, // TSRTC city services ~3,000, pop ~1 cr
+			transit_stop_density: 7.0, // (4500 bus + 57 metro) / 650 km²
 			pm25_annual: 37, // CPCB 2023
 			congestion_level: 36, // TomTom 2023
 			sustainable_mode_share: 46, // CMP: walk+cycle+bus+metro
@@ -285,9 +311,11 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			traffic_fatalities: 18.3, // MoRTH 2022: 639 deaths, metro pop ~35 lakh
 			walking_share: 22, // CMP/ICLEI
 			cycling_share: 5, // CMP/ICLEI
+			vru_fatality_share: 42, // NCRB 2022: (175+95)/640 = 42%
 			// Accessibility
 			metro_network_km: 0, // Under construction in 2024; priority corridor opened May 2025
 			bus_fleet_per_lakh: 11, // AICTSL ~387 buses, metro pop ~35 lakh
+			transit_stop_density: 4.5, // (1200 bus + 0 metro) / 269 km²
 			// Environmental
 			pm25_annual: 56, // UrbanEmissions model + IQAir estimates
 			congestion_level: 33, // Estimated (TomTom data not available for Indore)
@@ -302,8 +330,10 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			traffic_fatalities: 9.2, // NCRB 2022 (Kerala state rate applied)
 			walking_share: 22, // Census
 			cycling_share: 5, // Census
+			vru_fatality_share: 51, // NCRB 2022: (85+15)/195 = 51%
 			metro_network_km: 25.6, // KMRL single line
 			bus_fleet_per_lakh: 20, // KSRTC city ~400 + private; pop ~21 lakh
+			transit_stop_density: 19.2, // (1800 bus + 22 metro) / 95 km²
 			pm25_annual: 27, // CPCB 2023 — cleanest of the 6
 			congestion_level: 29, // TomTom 2023 — lowest
 			sustainable_mode_share: 42, // CMP: walk+cycle+bus+metro
@@ -316,8 +346,10 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			traffic_fatalities: 7.1, // NCRB 2022 — lowest of the 6
 			walking_share: 25, // Census
 			cycling_share: 15, // Census (high — flat terrain, cycle culture)
+			vru_fatality_share: 53, // NCRB 2022: (210+85)/555 = 53%
 			metro_network_km: 33.3, // Pune Metro Phase 1 (partial, 2024)
 			bus_fleet_per_lakh: 25, // PMPML ~2,000 buses, pop ~78 lakh
+			transit_stop_density: 10.7, // (3500 bus + 30 metro) / 330 km²
 			pm25_annual: 36, // CPCB 2023
 			congestion_level: 41, // TomTom 2023
 			sustainable_mode_share: 50, // Census/CMP: walk+cycle+bus
