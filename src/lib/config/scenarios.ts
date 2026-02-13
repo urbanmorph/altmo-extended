@@ -79,6 +79,35 @@ export interface ScenarioPreset {
 	values: InterventionValues;
 }
 
+// ---- City-specific PM2.5 source apportionment coefficients ----
+// Sources: UrbanEmissions APnA, CPCB receptor studies, TERI/ARAI inventories
+// transportShare = fraction of ambient PM2.5 from transport (exhaust + road dust)
+// powerShare = fraction of ambient PM2.5 from power generation
+
+export const CITY_PM25_COEFFICIENTS: Record<string, { transportShare: number; powerShare: number }> = {
+	bengaluru: { transportShare: 0.44, powerShare: 0.01 }, // Guttikunda 2019 — negligible local coal power
+	chennai: { transportShare: 0.22, powerShare: 0.20 }, // North Chennai thermal plants in airshed
+	delhi: { transportShare: 0.33, powerShare: 0.05 }, // Post-Badarpur closure (2018), TERI 2018
+	hyderabad: { transportShare: 0.40, powerShare: 0.04 }, // CPCB receptor + UE inventory
+	indore: { transportShare: 0.50, powerShare: 0.02 }, // UE inventory — no nearby coal plants
+	kochi: { transportShare: 0.37, powerShare: 0.03 }, // UE inventory — Kerala minimal coal
+	pune: { transportShare: 0.35, powerShare: 0.04 } // ARAI 2022 + NCAP convergence
+};
+
+// ---- City-specific grid renewable generation share (%) ----
+// Based on state-level generation mix estimates for FY 2024-25.
+// Sources: CEA, Ember SET 2024, GENCO reports, MNRE statistics
+
+export const CITY_GRID_RENEWABLE_BASELINE: Record<string, number> = {
+	bengaluru: 58, // Karnataka — hydro + solar + wind dominant
+	chennai: 42, // Tamil Nadu — wind + solar + nuclear
+	delhi: 29, // NCT — imports ~90%, ~70% coal
+	hyderabad: 21, // Telangana — coal dominant (~80%)
+	indore: 28, // Madhya Pradesh — solar + wind growing
+	kochi: 28, // Kerala — in-state hydro, but imports ~70% (mostly coal)
+	pune: 20 // Maharashtra — coal dominant (~75%)
+};
+
 // ---- Intervention definitions ----
 
 export const INTERVENTIONS: InterventionDef[] = [
@@ -276,20 +305,25 @@ export function getDefaultInterventions(cityId: string, overrides?: QoLOverrides
 		bus_multiplier: 1,
 		cycle_lanes_km: 0,
 		fleet_electrification_pct: 0,
-		grid_renewables_pct: 0
+		grid_renewables_pct: CITY_GRID_RENEWABLE_BASELINE[cityId] ?? 26
 	};
 }
 
-/** Resolve preset values for a specific city. Metro "0" in preset means "keep current". */
+/** Resolve preset values for a specific city. Metro "0" and grid_renewables "0" mean "keep current". */
 export function resolvePresetForCity(
 	preset: ScenarioPreset,
 	cityId: string,
 	overrides?: QoLOverrides
 ): InterventionValues {
 	const cityMetro = getCityMetroKm(cityId, overrides);
+	const cityRenewable = CITY_GRID_RENEWABLE_BASELINE[cityId] ?? 26;
 	return {
 		...preset.values,
-		metro_km: preset.values.metro_km === 0 ? cityMetro : Math.max(preset.values.metro_km, cityMetro)
+		metro_km: preset.values.metro_km === 0 ? cityMetro : Math.max(preset.values.metro_km, cityMetro),
+		grid_renewables_pct:
+			preset.values.grid_renewables_pct === 0
+				? cityRenewable
+				: preset.values.grid_renewables_pct
 	};
 }
 
@@ -362,17 +396,25 @@ export function computeScenarioResult(
 
 				case 'fleet_electrification_pct':
 					if (effect.mode === 'multiply' && effect.indicator === 'pm25_annual') {
-						// pm25 *= (1 - transportShare * pct/100)
-						const factor = 1 - effect.value * (sliderValue / 100);
-						modified[effect.indicator] = currentVal * factor;
+						// City-specific transport share of PM2.5
+						const transportShare = CITY_PM25_COEFFICIENTS[cityId]?.transportShare ?? 0.30;
+						const electFactor = 1 - transportShare * (sliderValue / 100);
+						modified[effect.indicator] = currentVal * electFactor;
 					}
 					break;
 
 				case 'grid_renewables_pct':
 					if (effect.mode === 'multiply' && effect.indicator === 'pm25_annual') {
-						// pm25 *= (1 - powerShare * pct/100)
-						const factor = 1 - effect.value * (sliderValue / 100);
-						modified[effect.indicator] = currentVal * factor;
+						// City-specific power share of PM2.5 + delta from current grid mix
+						const powerShare = CITY_PM25_COEFFICIENTS[cityId]?.powerShare ?? 0.15;
+						const cityRenewable = CITY_GRID_RENEWABLE_BASELINE[cityId] ?? 26;
+						const fossilBaseline = (100 - cityRenewable) / 100;
+						const fossilNew = (100 - sliderValue) / 100;
+						// If baseline fossil is ~0, renewables slider has no further effect
+						const gridFactor = fossilBaseline > 0.01
+							? 1 + powerShare * (fossilNew / fossilBaseline - 1)
+							: 1;
+						modified[effect.indicator] = currentVal * gridFactor;
 					}
 					break;
 			}
