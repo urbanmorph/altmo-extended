@@ -107,40 +107,44 @@ The Rails app is the primary activity data backend. Stack: Ruby 3.1.2, Rails 7.0
 
 **Auth:** All `/api/v1/` endpoints require `?access_token=<token>` query param, validated via `ApiUser.find_by_token` in `BaseController`. The `railsApi()` helper in `src/lib/rails-api.ts` appends this automatically using the `RAILS_API_ACCESS_TOKEN` env var.
 
-**ETL endpoint mapping:**
+**API Base URL:** `https://www.altmo.app/api/v1/`
+**API Docs:** `https://altmo.app/api/docs`
 
-| ETL Route | Rails Endpoint | Supabase Table | Notes |
+**ETL endpoint mapping (needs migration — see NEW_API_ENDPOINTS_SPEC.md):**
+
+| ETL Route | Currently Calls | Status | Migration Needed |
 |---|---|---|---|
-| `sync-routes` | `GET /api/v1/routes/bulk` (paginated, needs `start_date`/`end_date`) | `activity_routes` (PK: `activity_id`) | Fetches last 90 days, 500/page, batched upsert |
-| `sync-stats` | `GET /api/v1/leaderboard` | `leaderboards` (PK: `company_name`) | Full snapshot upsert |
-| `sync-stats` | `GET /api/v1/stats/global` (returns `results`, 90-day rolling) | `daily_stats` (PK: `date`) | Global daily stats |
-| `sync-facilities` | `GET /api/v1/companies` | `companies` (PK: `id`) | Group-level data |
-| `sync-facilities` | `GET /api/v1/facilities` | `facilities` (PK: `id`) | Company/facility-level data |
+| `sync-routes` | `/api/v1/routes/bulk` | **Blocked** — date format parsing error on Rails side | Fix date parsing in Rails |
+| `sync-stats` | `/api/v1/leaderboard` | **Broken** — endpoint removed from new API | Rewrite or remove |
+| `sync-stats` | `/api/v1/stats/global` | **Broken** — replaced by `/api/v1/statistics/overall` (different shape) | Rewrite to use new endpoint |
+| `sync-facilities` | `/api/v1/companies` | **Slow** — times out on large response | Add pagination or timeout handling |
+| `sync-facilities` | `/api/v1/facilities` | **Broken** — endpoint removed from new API | Rewrite or remove |
 
 > **Setup:** Run `scripts/migrations/001-create-etl-tables.sql` against Supabase before first ETL run.
 
-**Available Rails API endpoints (`rails-web-app`):**
+**Verified Rails API endpoints (tested 2026-02-13):**
 
 *All endpoints require `access_token` query param.*
 
-*Existing endpoints:*
-- `GET /api/v1/leaderboard` — Company leaderboards, optional `city_id` param
-- `GET /api/v1/group_leaderboard` — Group-level aggregations, optional `city_id`
-- `GET /api/v1/facilities` — All approved facilities with stats
-- `GET /api/v1/companies` — All company groups with stats
-- `GET /api/v1/routes` — Activity routes (requires `facility_id`, `company_id`, or `rider_id` + date range)
-- `GET /api/v1/stats/global` — 90-day rolling daily stats, optional `city_id`
-- `GET /api/v1/stats/daily/:date` — Single-day stats
-- `GET /api/v1/activities/map` — Last 7 days' rides with routes, optional `city_id`
-- `GET /api/v1/cities/list` — City ID→name mapping
+*Working endpoints:*
+- `GET /api/v1/cities` — City name→numeric_id mapping (100+ cities). Response: `{ success, cities: { "Bengaluru": 18326, ... } }`
+- `GET /api/v1/statistics/overall` — Global impact totals. Response: `{ success, overall_statistics: { people, activitiesCount, distance, co2Offset, fuelSaved, moneySaved } }`. Note: `city_id` filter has no effect
+- `GET /api/v1/geo_markers` — GeoMarker boundaries with lat/lon, associable_type/name, city_id. Response: `{ success, data: { geo_markers: [...] } }`
+- `GET /api/v1/challenges` — Challenge list with scope, dates, status. Response: `{ success, challenges: [...] }` (camelCase keys)
+- `GET /api/v1/campuses` — Campus name→id mapping. Response: `{ success, campuses: { "ELCITA": 32, ... } }`
+- `GET /api/v1/companies` — Company data (very slow, may timeout)
 
-*Pending endpoints (from NEW_API_ENDPOINTS_SPEC.md — to be built in `rails-web-app`):*
-- `GET /api/v1/routes/bulk` — EP-1: Paginated bulk activity routes (P0)
-- `GET /api/v1/transit_activities` — EP-2: Transit activity data (P0)
-- `GET /api/v1/geo_markers` — EP-3: GeoMarker boundaries (P0)
-- `GET /api/v1/history` — EP-5: Historical leaderboard snapshots (P1)
-- `GET /api/v1/challenges/summary` — EP-4: Challenge summary (P3, deferred)
-- `GET /api/v1/demographics` — EP-6: Anonymised demographics (P3, deferred)
+*Endpoints with issues (need Rails-side fixes):*
+- `GET /api/v1/routes/bulk` — Date format rejected (tried YYYY-MM-DD, ISO 8601, DD/MM/YYYY)
+- `GET /api/v1/transit_activities` — Same date format issue
+- `GET /api/v1/activities/summary` — Returns 500 Internal Server Error
+- `GET /api/v1/companies/:id`, `/challenges/:id`, `/campuses/:id` — Timeout or param type errors
+- `GET /api/v1/countries`, `/states` — Timeout
+
+*Endpoints not found in new API:*
+- `/api/v1/leaderboard`, `/api/v1/group_leaderboard`, `/api/v1/facilities`, `/api/v1/stats/global`, `/api/v1/stats/daily/:date`, `/api/v1/activities/map`, `/api/v1/cities/list`
+
+*Key city IDs:* Bengaluru=18326, Chennai=18586, Delhi=18215, Hyderabad=18629, Indore=18396, Kochi=18363
 
 **Key Rails data models:**
 - **Activity**: Strava-sourced GPS rides (≥1km, company-linked), direction (to/from work), distance, speed, CO2/fuel/money saved

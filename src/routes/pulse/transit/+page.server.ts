@@ -2,10 +2,7 @@ import type { PageServerLoad } from './$types';
 import { fetchTransitMetrics, fetchMetroRidership } from '$lib/server/transit-data';
 import { getCityById } from '$lib/config/cities';
 import { computeMetroNetworkKm } from '$lib/utils/transit';
-import { getLatestSafetyData } from '$lib/server/safety-data';
-import { getAllCityPM25 } from '$lib/server/air-quality';
-import { getAllCityCongestion } from '$lib/server/traffic-flow';
-import type { QoLOverrides } from '$lib/config/city-qol-data';
+import { buildQoLOverrides } from '$lib/server/qol-overrides';
 
 export const load: PageServerLoad = async ({ url, cookies }) => {
 	const cityId = url.searchParams.get('city') ?? cookies.get('city') ?? 'bengaluru';
@@ -16,25 +13,7 @@ export const load: PageServerLoad = async ({ url, cookies }) => {
 
 	const hasTransitSources = !!resolvedCity.transitSources;
 
-	const [safety, airQuality, congestion] = await Promise.all([
-		getLatestSafetyData(),
-		getAllCityPM25(),
-		getAllCityCongestion()
-	]);
-	const qolOverrides: QoLOverrides = {};
-	for (const [id, d] of Object.entries(safety)) {
-		qolOverrides[id] = { traffic_fatalities: d.fatalitiesPerLakh };
-	}
-	for (const [id, d] of Object.entries(airQuality)) {
-		if (d) {
-			qolOverrides[id] = { ...qolOverrides[id], pm25_annual: d.pm25Avg };
-		}
-	}
-	for (const [id, d] of Object.entries(congestion)) {
-		if (d) {
-			qolOverrides[id] = { ...qolOverrides[id], congestion_level: d.congestionPct };
-		}
-	}
+	const qolOverrides = await buildQoLOverrides();
 
 	if (!hasTransitSources) {
 		return {
