@@ -91,6 +91,12 @@ supporting-docs/       — Analysis docs (gitignored, not deployed)
 
 ### Altmo Core API (Rails app — `altmo-rails-web-app`)
 
+> **IMPORTANT: The `altmo-rails-web-app` repository is READ-ONLY from this project's perspective.
+> NEVER modify, create, or suggest changes to files in that repository. All integration with the
+> Rails backend MUST go through its existing REST API endpoints listed below. If an endpoint is
+> missing or returns an unexpected shape, document the gap and flag it — do NOT add or change
+> Rails controllers, models, routes, or views.**
+
 The Rails app is the primary activity data backend. Stack: Ruby 3.1.2, Rails 7.0, PostgreSQL + PostGIS, Devise auth, Strava OAuth integration.
 
 **ETL endpoint mapping (updated for `altmo-rails-web-app`):**
