@@ -5,7 +5,7 @@
  */
 
 import { env } from '$env/dynamic/private';
-import { CITY_OPENAQ_SENSORS, type CityPM25 } from '$lib/config/air-quality';
+import { CITY_OPENAQ_SENSORS, CITY_OPENAQ_NO2_SENSORS, type CityPM25, type CityNO2 } from '$lib/config/air-quality';
 
 const OPENAQ_BASE_URL = 'https://api.openaq.org/v3';
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
@@ -107,6 +107,77 @@ export async function getAllCityPM25(): Promise<Record<string, CityPM25 | null>>
 	const cityIds = Object.keys(CITY_OPENAQ_SENSORS);
 	const results = await Promise.all(
 		cityIds.map(async (id) => ({ id, data: await getCityPM25(id) }))
+	);
+	return Object.fromEntries(results.map((r) => [r.id, r.data]));
+}
+
+// ---- NO2 fetcher (same pattern as PM2.5) ----
+
+const no2Cache = new Map<string, { data: CityNO2 | null; timestamp: number }>();
+
+/**
+ * Fetch recent NO2 readings from a single sensor.
+ */
+async function fetchSensorNO2(sensorId: number): Promise<number[]> {
+	try {
+		const data = await openaqFetch<OpenAQSensorResponse>(
+			`/sensors/${sensorId}/measurements?limit=100`
+		);
+		return data.results
+			.map((r) => r.value)
+			.filter((v) => v != null && v >= 0 && v < 500);
+	} catch {
+		return [];
+	}
+}
+
+/**
+ * Fetch latest NO2 for a city, with 24h in-memory cache.
+ * Returns null if no sensors configured or no data available.
+ */
+export async function getCityNO2(cityId: string): Promise<CityNO2 | null> {
+	const cached = no2Cache.get(cityId);
+	if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+		return cached.data;
+	}
+
+	const cityConfig = CITY_OPENAQ_NO2_SENSORS[cityId];
+	if (!cityConfig || cityConfig.sensorIds.length === 0) return null;
+
+	const results = await Promise.all(
+		cityConfig.sensorIds.map((id) => fetchSensorNO2(id))
+	);
+
+	const allValues: number[] = [];
+	let stationsReporting = 0;
+	for (const values of results) {
+		if (values.length > 0) {
+			allValues.push(...values);
+			stationsReporting++;
+		}
+	}
+
+	const data =
+		allValues.length > 0
+			? {
+					no2Avg: Math.round((allValues.reduce((s, v) => s + v, 0) / allValues.length) * 100) / 100,
+					no2Max: Math.round(Math.max(...allValues) * 100) / 100,
+					stationsReporting,
+					readings: allValues.length
+				}
+			: null;
+
+	no2Cache.set(cityId, { data, timestamp: Date.now() });
+	return data;
+}
+
+/**
+ * Fetch NO2 for all configured cities.
+ */
+export async function getAllCityNO2(): Promise<Record<string, CityNO2 | null>> {
+	const cityIds = Object.keys(CITY_OPENAQ_NO2_SENSORS);
+	const results = await Promise.all(
+		cityIds.map(async (id) => ({ id, data: await getCityNO2(id) }))
 	);
 	return Object.fromEntries(results.map((r) => [r.id, r.data]));
 }

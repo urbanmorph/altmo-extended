@@ -1,5 +1,6 @@
 /**
  * Air quality configuration: station mapping, thresholds, categories.
+ * Covers PM2.5 and NO2 parameters from OpenAQ/CPCB stations.
  * Shared between server and client code.
  */
 
@@ -39,6 +40,42 @@ export const CITY_OPENAQ_SENSORS: Record<string, { name: string; sensorIds: numb
 		sensorIds: [12235540, 12236443, 12236457, 12236463, 12236449, 12304615, 12237987]
 	}
 };
+
+/**
+ * OpenAQ v3 NO2 sensor IDs for monitoring stations near each Altmo city.
+ * v3 uses sensor-based endpoints: /sensors/{id}/measurements
+ * Discovered via: /v3/locations?coordinates={lat},{lng}&radius=25000&parameters_id=4
+ * then /v3/locations/{id}/sensors to find active NO2 sensor IDs.
+ *
+ * Cities with empty sensorIds fall back to hardcoded values in city-qol-data.ts.
+ * To populate: run the discovery query above with OPENAQ_API_KEY set.
+ */
+export const CITY_OPENAQ_NO2_SENSORS: Record<string, { name: string; sensorIds: number[] }> = {
+	bengaluru: { name: 'Bengaluru', sensorIds: [] },
+	chennai: { name: 'Chennai', sensorIds: [] },
+	delhi: { name: 'Delhi', sensorIds: [] },
+	hyderabad: { name: 'Hyderabad', sensorIds: [] },
+	indore: { name: 'Indore', sensorIds: [] },
+	kochi: { name: 'Kochi', sensorIds: [] },
+	pune: { name: 'Pune', sensorIds: [] }
+};
+
+export interface CityNO2 {
+	no2Avg: number;
+	no2Max: number;
+	stationsReporting: number;
+	readings: number;
+}
+
+/**
+ * NO2 reference thresholds (ug/m3).
+ * WHO 2021 annual guideline: 10
+ * India NAAQS annual standard: 40
+ */
+export const NO2_THRESHOLDS = {
+	who: { annual: 10, label: 'WHO 2021 Guideline' },
+	naaqs: { annual: 40, label: 'India NAAQS Standard' }
+} as const;
 
 /**
  * PM2.5 reference thresholds (ug/m3).

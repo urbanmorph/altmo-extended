@@ -14,6 +14,9 @@
  *   - State transport corporation annual reports (bus fleet)
  *   - Metro rail corporation data (network length)
  *   - TomTom Traffic Index (congestion levels)
+ *   - CPCB / OpenAQ (NO2 annual averages)
+ *   - City CMP/Smart City/DULT reports (footpath coverage, cycle infra)
+ *   - TransitRouter + metro station data (PT accessibility estimates)
  */
 
 // ---- Types ----
@@ -40,10 +43,14 @@ export const INDICATOR_BENCHMARKS: Record<string, IndicatorBenchmark> = {
 	vru_fatality_share:     { worstRef: 65,  target: 15,  source: 'Delhi-level VRU share / Vision Zero cities with protected infra' },
 	walking_share:          { worstRef: 10,  target: 35,  source: 'Low-walk Indian city / Barcelona-class walkability' },
 	cycling_share:          { worstRef: 1,   target: 25,  source: 'Negligible cycling / Amsterdam-class cycling city' },
+	footpath_coverage:      { worstRef: 10,  target: 90,  source: 'Minimal footpaths / Dutch-Copenhagen class' },
 	metro_network_km:       { worstRef: 0,   target: 400, source: 'No metro / Delhi DMRC (largest in India)' },
 	bus_fleet_per_lakh:     { worstRef: 5,   target: 60,  source: 'Below minimum / BMTC-class fleet' },
 	transit_stop_density:   { worstRef: 3,   target: 30,  source: 'Sparse coverage / dense European city' },
+	cycle_infra_km:         { worstRef: 0,   target: 500, source: 'No cycle infra / Amsterdam-class network' },
+	pt_accessibility:       { worstRef: 20,  target: 95,  source: 'Sparse transit reach / near-universal coverage' },
 	pm25_annual:            { worstRef: 100, target: 15,  source: 'Delhi-level / WHO 2021 guideline' },
+	no2_annual:             { worstRef: 80,  target: 10,  source: 'Delhi peak / WHO 2021 guideline' },
 	congestion_level:       { worstRef: 60,  target: 15,  source: 'Severe congestion / near free-flow' },
 	sustainable_mode_share: { worstRef: 20,  target: 70,  source: 'Car-dependent / Dutch-class' },
 	road_density:           { worstRef: 3,   target: 20,  source: 'Sparse / well-connected grid' }
@@ -151,6 +158,14 @@ export const QOL_DIMENSIONS: QoLDimension[] = [
 				effect: 'negative',
 				source: 'NCRB 2022',
 				description: 'Pedestrian + cyclist deaths as % of total traffic fatalities'
+			},
+			{
+				key: 'footpath_coverage',
+				label: 'Footpath Coverage',
+				unit: '% roads',
+				effect: 'positive',
+				source: 'CMP/DULT audits',
+				description: 'Percentage of roads with paved footpaths'
 			}
 		]
 	},
@@ -182,6 +197,22 @@ export const QOL_DIMENSIONS: QoLDimension[] = [
 				effect: 'positive',
 				source: 'TransitRouter/Metro corps',
 				description: 'Bus stops + metro stations per sq km of city area'
+			},
+			{
+				key: 'cycle_infra_km',
+				label: 'Cycle Infrastructure',
+				unit: 'km',
+				effect: 'positive',
+				source: 'City CDP/CMP/OSM',
+				description: 'Dedicated cycle lane/track length'
+			},
+			{
+				key: 'pt_accessibility',
+				label: 'PT Accessibility',
+				unit: '% area',
+				effect: 'positive',
+				source: 'TransitRouter/Metro corps',
+				description: 'City area within 500m of a bus stop or metro station'
 			}
 		]
 	},
@@ -197,6 +228,14 @@ export const QOL_DIMENSIONS: QoLDimension[] = [
 				effect: 'negative',
 				source: 'CPCB 2023',
 				description: 'Annual average fine particulate matter concentration'
+			},
+			{
+				key: 'no2_annual',
+				label: 'NO\u2082',
+				unit: '\u00B5g/m\u00B3',
+				effect: 'negative',
+				source: 'CPCB/OpenAQ',
+				description: 'Annual average nitrogen dioxide concentration'
 			},
 			{
 				key: 'congestion_level',
@@ -244,12 +283,16 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			walking_share: 22, // CMP 2020
 			cycling_share: 5, // CMP 2020
 			vru_fatality_share: 40, // NCRB 2022: (310+75)/960 = 40%
+			footpath_coverage: 37, // CMP 2020 / DULT audit
 			// Accessibility
 			metro_network_km: 73.8, // Namma Metro Phase 1 + 2A (as of 2024)
 			bus_fleet_per_lakh: 53, // BMTC ~6,500 buses, pop ~1.23 cr
 			transit_stop_density: 11.2, // (8500 bus + 62 metro) / 764 km²
+			cycle_infra_km: 15, // TenderSURE + cycle tracks
+			pt_accessibility: 65, // 8,562 stops / 764 km² — gaps in periphery
 			// Environmental
 			pm25_annual: 34, // CPCB 2023 annual average
+			no2_annual: 30, // CPCB 2023 annual average
 			congestion_level: 51, // TomTom 2023
 			// Mobility
 			sustainable_mode_share: 48, // CMP 2020: walk+cycle+bus+metro
@@ -263,10 +306,14 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			walking_share: 24, // Census/CTTS
 			cycling_share: 4, // Census/CTTS
 			vru_fatality_share: 43, // NCRB 2022: (345+55)/920 = 43%
+			footpath_coverage: 45, // CTTS 2018
 			metro_network_km: 54.6, // Phase 1 + extension (2024)
 			bus_fleet_per_lakh: 40, // MTC ~3,500 buses, pop ~87 lakh
 			transit_stop_density: 29.8, // (5200 bus + 40 metro) / 176 km²
+			cycle_infra_km: 10, // Smart City corridors
+			pt_accessibility: 85, // 5,240 stops / 176 km² — very dense
 			pm25_annual: 31, // CPCB 2023
+			no2_annual: 25, // CPCB 2023 annual average
 			congestion_level: 39, // TomTom 2023
 			sustainable_mode_share: 52, // CTTS: walk+cycle+bus+metro
 			road_density: 12.5 // ~2,200 km roads / 176 km² (Chennai Corp)
@@ -279,10 +326,14 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			walking_share: 16, // Census
 			cycling_share: 6, // Census
 			vru_fatality_share: 62, // NCRB 2022: (750+280)/1670 = 62% — worst
+			footpath_coverage: 25, // DIMTS pedestrian audit
 			metro_network_km: 393, // DMRC — largest network in India
 			bus_fleet_per_lakh: 32, // DTC ~3,700 + cluster ~3,500; pop ~2.1 cr
 			transit_stop_density: 4.8, // (6800 bus + 288 metro) / 1483 km²
+			cycle_infra_km: 25, // DDA painted cycle tracks
+			pt_accessibility: 55, // 7,088 stops / 1,483 km² — sparse outer NCT
 			pm25_annual: 99, // CPCB 2023 — worst in India
+			no2_annual: 60, // CPCB 2023 — worst in India
 			congestion_level: 44, // TomTom 2023
 			sustainable_mode_share: 43, // Census/DMP: walk+cycle+bus+metro
 			road_density: 18.0 // Dense road network, 1,483 km² NCT
@@ -295,10 +346,14 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			walking_share: 20, // Census/CMP
 			cycling_share: 5, // Census/CMP
 			vru_fatality_share: 39, // NCRB 2022: (260+65)/840 = 39%
+			footpath_coverage: 30, // HMDA CMP
 			metro_network_km: 69.2, // HMR L1+L2+L3
 			bus_fleet_per_lakh: 30, // TSRTC city services ~3,000, pop ~1 cr
 			transit_stop_density: 7.0, // (4500 bus + 57 metro) / 650 km²
+			cycle_infra_km: 8, // Limited cycle infra
+			pt_accessibility: 50, // 4,557 stops / 650 km² — gaps in ORR-outer areas
 			pm25_annual: 37, // CPCB 2023
+			no2_annual: 28, // CPCB 2023 annual average
 			congestion_level: 36, // TomTom 2023
 			sustainable_mode_share: 46, // CMP: walk+cycle+bus+metro
 			road_density: 8.5 // GHMC area 650 km²
@@ -312,12 +367,16 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			walking_share: 22, // CMP/ICLEI
 			cycling_share: 5, // CMP/ICLEI
 			vru_fatality_share: 42, // NCRB 2022: (175+95)/640 = 42%
+			footpath_coverage: 20, // Smart City CDP estimate
 			// Accessibility
 			metro_network_km: 0, // Under construction in 2024; priority corridor opened May 2025
 			bus_fleet_per_lakh: 11, // AICTSL ~387 buses, metro pop ~35 lakh
 			transit_stop_density: 4.5, // (1200 bus + 0 metro) / 269 km²
+			cycle_infra_km: 12, // BRTS corridor cycle tracks
+			pt_accessibility: 35, // 1,200 stops / 269 km² — limited network
 			// Environmental
 			pm25_annual: 56, // UrbanEmissions model + IQAir estimates
+			no2_annual: 35, // CPCB 2023 estimate
 			congestion_level: 33, // Estimated (TomTom data not available for Indore)
 			// Mobility
 			sustainable_mode_share: 37, // CMP: walk 22% + cycle 5% + bus ~10%
@@ -331,10 +390,14 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			walking_share: 22, // Census
 			cycling_share: 5, // Census
 			vru_fatality_share: 51, // NCRB 2022: (85+15)/195 = 51%
+			footpath_coverage: 35, // Kerala urban walkability study
 			metro_network_km: 25.6, // KMRL single line
 			bus_fleet_per_lakh: 20, // KSRTC city ~400 + private; pop ~21 lakh
 			transit_stop_density: 19.2, // (1800 bus + 22 metro) / 95 km²
+			cycle_infra_km: 5, // Minimal dedicated cycle infra
+			pt_accessibility: 70, // 1,822 stops / 95 km² — compact city
 			pm25_annual: 27, // CPCB 2023 — cleanest of the 6
+			no2_annual: 18, // CPCB 2023 — lowest
 			congestion_level: 29, // TomTom 2023 — lowest
 			sustainable_mode_share: 42, // CMP: walk+cycle+bus+metro
 			road_density: 7.2 // Kochi Corp ~95 km²
@@ -347,10 +410,14 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			walking_share: 25, // Census
 			cycling_share: 15, // Census (high — flat terrain, cycle culture)
 			vru_fatality_share: 53, // NCRB 2022: (210+85)/555 = 53%
+			footpath_coverage: 40, // PMC footpath survey
 			metro_network_km: 33.3, // Pune Metro Phase 1 (partial, 2024)
 			bus_fleet_per_lakh: 25, // PMPML ~2,000 buses, pop ~78 lakh
 			transit_stop_density: 10.7, // (3500 bus + 30 metro) / 330 km²
+			cycle_infra_km: 50, // PMC cycle tracks + BRT (strongest cycle culture)
+			pt_accessibility: 55, // 3,530 stops / 330 km² — moderate coverage
 			pm25_annual: 36, // CPCB 2023
+			no2_annual: 32, // CPCB 2023 annual average
 			congestion_level: 41, // TomTom 2023
 			sustainable_mode_share: 50, // Census/CMP: walk+cycle+bus
 			road_density: 9.8 // PMC area ~330 km²

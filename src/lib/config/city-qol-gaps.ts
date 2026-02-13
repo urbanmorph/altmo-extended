@@ -23,9 +23,9 @@ const GAP_DATA: Record<string, Omit<CityGapAnalysis, 'cityId' | 'worstDimension'
 		dataUnlockSentence: 'Publishing walking/cycling infrastructure data enables corridor-level air quality impact analysis'
 	},
 	bengaluru: {
-		gapSentence: 'Congestion adds 51% extra travel time \u2014 worst of 7 cities',
-		recommendation: 'Bus priority corridors on 10 arterials would reduce congestion by 15%',
-		dataUnlockSentence: 'Complete walking infrastructure data unlocks pedestrian accessibility scoring'
+		gapSentence: 'Only 15 km of cycle tracks and 37% footpath coverage \u2014 active mobility infrastructure lags behind transit investment',
+		recommendation: 'Dedicating 5% of arterial road width to protected cycle lanes would triple cycle infra and lift accessibility from D to C',
+		dataUnlockSentence: 'Publishing walking/cycling infrastructure GIS data enables corridor-level gap analysis'
 	},
 	pune: {
 		gapSentence: 'Bus fleet of 25 per lakh \u2014 less than half of Bengaluru\u2019s 53',

@@ -1,21 +1,22 @@
 /**
  * Shared QoL overrides builder.
- * Fetches live data from all three automated sources (safety, air quality, congestion)
+ * Fetches live data from all four automated sources (safety, PM2.5, NO2, congestion)
  * and assembles a QoLOverrides object for use in computeCityQoL().
  *
  * Used by all page servers that display QoL scores to avoid duplicating
- * the same ~20-line override-building block.
+ * the override-building block.
  */
 
 import { getLatestSafetyData } from './safety-data';
-import { getAllCityPM25 } from './air-quality';
+import { getAllCityPM25, getAllCityNO2 } from './air-quality';
 import { getAllCityCongestion } from './traffic-flow';
 import type { QoLOverrides } from '$lib/config/city-qol-data';
 
 export async function buildQoLOverrides(): Promise<QoLOverrides> {
-	const [safety, airQuality, congestion] = await Promise.all([
+	const [safety, airQuality, no2Data, congestion] = await Promise.all([
 		getLatestSafetyData(),
 		getAllCityPM25(),
+		getAllCityNO2(),
 		getAllCityCongestion()
 	]);
 
@@ -31,6 +32,12 @@ export async function buildQoLOverrides(): Promise<QoLOverrides> {
 	for (const [cityId, data] of Object.entries(airQuality)) {
 		if (data) {
 			overrides[cityId] = { ...overrides[cityId], pm25_annual: data.pm25Avg };
+		}
+	}
+
+	for (const [cityId, data] of Object.entries(no2Data)) {
+		if (data) {
+			overrides[cityId] = { ...overrides[cityId], no2_annual: data.no2Avg };
 		}
 	}
 
