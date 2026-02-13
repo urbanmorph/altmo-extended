@@ -23,7 +23,7 @@
       "dataType": "live",
       "year": "Live",
       "license": "Internal",
-      "notes": "Bearer token auth via RAILS_API_KEY. CO2 = distance(km) x 0.25 kg, Petrol = distance(km) x 0.108 L, Money = petrol x 101 INR"
+      "notes": "Auth via access_token query param (RAILS_API_ACCESS_TOKEN). CO2 = distance(km) x 0.25 kg, Petrol = distance(km) x 0.108 L, Money = petrol x 101 INR"
     },
     {
       "name": "Strava API (via Altmo Core)",

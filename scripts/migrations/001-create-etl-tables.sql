@@ -1,4 +1,4 @@
--- ETL tables for syncing data from Altmo Core Rails API (altmo-rails-web-app)
+-- ETL tables for syncing data from Altmo Core Rails API (rails-web-app)
 -- Run against Supabase project: zztiiovryhdsdzmhkcjk
 --
 -- Usage:

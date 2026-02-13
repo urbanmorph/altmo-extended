@@ -89,9 +89,9 @@ supporting-docs/       — Analysis docs (gitignored, not deployed)
 | NCRB / MoRTH | Government | Traffic fatality rates per city |
 | [UrbanEmissions APnA](https://urbanemissions.info/india-apna/) | Academic | PM2.5 source apportionment per city |
 
-### Altmo Core API (Rails app — `altmo-rails-web-app`)
+### Altmo Core API (Rails app — `rails-web-app`)
 
-> **IMPORTANT: The `altmo-rails-web-app` repository is READ-ONLY from this project's perspective.
+> **IMPORTANT: The `rails-web-app` repository is READ-ONLY from this project's perspective.
 > NEVER modify, create, or suggest changes to files in that repository. All integration with the
 > Rails backend MUST go through its existing REST API endpoints listed below. If an endpoint is
 > missing or returns an unexpected shape, document the gap and flag it — do NOT add or change
@@ -99,48 +99,42 @@ supporting-docs/       — Analysis docs (gitignored, not deployed)
 
 The Rails app is the primary activity data backend. Stack: Ruby 3.1.2, Rails 7.0, PostgreSQL + PostGIS, Devise auth, Strava OAuth integration.
 
-**ETL endpoint mapping (updated for `altmo-rails-web-app`):**
+**Auth:** All `/api/v1/` endpoints require `?access_token=<token>` query param, validated via `ApiUser.find_by_token` in `BaseController`. The `railsApi()` helper in `src/lib/rails-api.ts` appends this automatically using the `RAILS_API_ACCESS_TOKEN` env var.
+
+**ETL endpoint mapping:**
 
 | ETL Route | Rails Endpoint | Supabase Table | Notes |
 |---|---|---|---|
 | `sync-routes` | `GET /api/v1/routes/bulk` (paginated, needs `start_date`/`end_date`) | `activity_routes` (PK: `activity_id`) | Fetches last 90 days, 500/page, batched upsert |
-| `sync-stats` | `GET /api/v1/leaderboard` (singular, JBuilder → `leaderboards_list`) | `leaderboards` (PK: `company_name`) | Full snapshot upsert |
+| `sync-stats` | `GET /api/v1/leaderboard` | `leaderboards` (PK: `company_name`) | Full snapshot upsert |
 | `sync-stats` | `GET /api/v1/stats/global` (returns `results`, 90-day rolling) | `daily_stats` (PK: `date`) | Global daily stats |
-| `sync-facilities` | `GET /api/v1/companies` (bare array response) | `companies` (PK: `id`) | Group-level data |
-| `sync-facilities` | `GET /api/v1/facilities` (bare array response) | `facilities` (PK: `id`) | Company/facility-level data |
+| `sync-facilities` | `GET /api/v1/companies` | `companies` (PK: `id`) | Group-level data |
+| `sync-facilities` | `GET /api/v1/facilities` | `facilities` (PK: `id`) | Company/facility-level data |
 
 > **Setup:** Run `scripts/migrations/001-create-etl-tables.sql` against Supabase before first ETL run.
 
-**Available Rails API endpoints (`altmo-rails-web-app`):**
+**Available Rails API endpoints (`rails-web-app`):**
 
-*BaseController (no auth required):*
-- `GET /api/v1/leaderboard` — Company leaderboards, optional `city_id` param. Response: `{ leaderboards_list: [{ rank, company_name, percentage, riders, rides, carbon_credits, city_id }] }` (via JBuilder)
+*All endpoints require `access_token` query param.*
+
+*Existing endpoints:*
+- `GET /api/v1/leaderboard` — Company leaderboards, optional `city_id` param
 - `GET /api/v1/group_leaderboard` — Group-level aggregations, optional `city_id`
-- `GET /api/v1/facilities` — All approved facilities with stats. Returns bare array: `[{ id, name, approved, activities, distance, emp_count, city, city_id, latlngs }]`
-- `GET /api/v1/companies` — All company groups with stats. Returns bare array: `[{ id, name, activities, distance, emp_count, facilities }]`
-- `GET /api/v1/facilities_and_companies` — Combined: `{ facilities: [...], companies: [...] }`
+- `GET /api/v1/facilities` — All approved facilities with stats
+- `GET /api/v1/companies` — All company groups with stats
 - `GET /api/v1/routes` — Activity routes (requires `facility_id`, `company_id`, or `rider_id` + date range)
-- `GET /api/v1/public/routes` — Same but without rider names
-
-*IntelligenceController (no auth, built for this dashboard):*
-- `GET /api/v1/routes/bulk` — Paginated activity routes. Params: `start_date` (required), `end_date` (required), `city_id`, `activity_types`. Returns `{ routes: [{ activity_id, activity_type, start_date, distance, moving_time, start_lat, start_lng, end_lat, end_lng, direction, facility_id, company_id, city_id, path }] }`
-- `GET /api/v1/transit_activities` — Paginated transit rides. Params: `start_date` (required), `end_date` (required), `city_id`, `status`. Returns `{ transit_activities: [...] }`
-- `GET /api/v1/geo_markers` — Zone boundaries. Params: `type`, `layer_type`, `city_id`. Returns `{ geo_markers: [{ id, associable_type, associable_id, associable_name, lat, lon, layer_type, latlngs, radius, city_id }] }`
-- `GET /api/v1/history` — Leaderboard snapshots. Params: `start_date` (required), `end_date` (required), `type`, `associable_id`. Returns `{ history: [{ date, associable_type, associable_id, associable_name, riders, rides, distance_km, co2_credits, rank }] }`
-
-*StatsController (no auth):*
-- `GET /api/v1/stats/global` — 90-day rolling daily stats, optional `city_id`. Returns `{ results: [{ date, facilities, riders, rides, distance, co2_saved, petrol_saved }] }`
+- `GET /api/v1/stats/global` — 90-day rolling daily stats, optional `city_id`
 - `GET /api/v1/stats/daily/:date` — Single-day stats
-
-*ActivitiesController:*
 - `GET /api/v1/activities/map` — Last 7 days' rides with routes, optional `city_id`
-- `GET /api/v1/activities/company/:id` — **Requires Bearer token** (ambassador auth)
-
-*Other:*
 - `GET /api/v1/cities/list` — City ID→name mapping
-- `GET /api/v1/groups` — All company groups
-- `GET /api/v1/daily_history` — History by date
-- `GET /api/v1/credit_types` — Credit type activities
+
+*Pending endpoints (from NEW_API_ENDPOINTS_SPEC.md — to be built in `rails-web-app`):*
+- `GET /api/v1/routes/bulk` — EP-1: Paginated bulk activity routes (P0)
+- `GET /api/v1/transit_activities` — EP-2: Transit activity data (P0)
+- `GET /api/v1/geo_markers` — EP-3: GeoMarker boundaries (P0)
+- `GET /api/v1/history` — EP-5: Historical leaderboard snapshots (P1)
+- `GET /api/v1/challenges/summary` — EP-4: Challenge summary (P3, deferred)
+- `GET /api/v1/demographics` — EP-6: Anonymised demographics (P3, deferred)
 
 **Key Rails data models:**
 - **Activity**: Strava-sourced GPS rides (≥1km, company-linked), direction (to/from work), distance, speed, CO2/fuel/money saved
@@ -150,7 +144,7 @@ The Rails app is the primary activity data backend. Stack: Ruby 3.1.2, Rails 7.0
 - **GeoMarker**: PostGIS point/polygon boundaries for companies, transit points, campuses
 - **Challenge**: Gamification events (F2WCR, transit challenges) with eligibility and moderation
 - **History**: Daily snapshots of leaderboard data (riders, rides, distance, co2_credits, rank)
-- **ApiLog**: Request logging for Intelligence/Stats endpoints
+- **ApiUser**: Token-based auth — `access_token` query param validated via `find_by_token`
 
 **Formulas:** CO2 = distance(km) × 0.25 kg, Petrol = distance(km) × 0.108 L, Money = petrol × ₹101
 
