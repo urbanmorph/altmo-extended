@@ -37,7 +37,8 @@ export interface IndicatorBenchmark {
 
 export const INDICATOR_BENCHMARKS: Record<string, IndicatorBenchmark> = {
 	traffic_fatalities:     { worstRef: 20,  target: 2,   source: 'India avg (MoRTH) / Sweden Vision Zero' },
-	active_transport_share: { worstRef: 10,  target: 50,  source: 'Low-cycling Indian city / Amsterdam-class' },
+	walking_share:          { worstRef: 10,  target: 35,  source: 'Low-walk Indian city / Barcelona-class walkability' },
+	cycling_share:          { worstRef: 1,   target: 25,  source: 'Negligible cycling / Amsterdam-class cycling city' },
 	metro_network_km:       { worstRef: 0,   target: 400, source: 'No metro / Delhi DMRC (largest in India)' },
 	bus_fleet_per_lakh:     { worstRef: 5,   target: 60,  source: 'Below minimum / BMTC-class fleet' },
 	pm25_annual:            { worstRef: 100, target: 15,  source: 'Delhi-level / WHO 2021 guideline' },
@@ -126,12 +127,20 @@ export const QOL_DIMENSIONS: QoLDimension[] = [
 				description: 'Road traffic deaths per lakh population'
 			},
 			{
-				key: 'active_transport_share',
-				label: 'Active Transport',
+				key: 'walking_share',
+				label: 'Walking',
 				unit: '% trips',
 				effect: 'positive',
 				source: 'Census/CMP',
-				description: 'Share of trips by walking and cycling'
+				description: 'Share of trips by walking'
+			},
+			{
+				key: 'cycling_share',
+				label: 'Cycling',
+				unit: '% trips',
+				effect: 'positive',
+				source: 'Census/CMP',
+				description: 'Share of trips by cycling'
 			}
 		]
 	},
@@ -214,7 +223,8 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 		values: {
 			// Health
 			traffic_fatalities: 7.8, // NCRB 2022: ~960 deaths, pop ~1.23 cr
-			active_transport_share: 27, // CMP 2020: walk 22% + cycle 5%
+			walking_share: 22, // CMP 2020
+			cycling_share: 5, // CMP 2020
 			// Accessibility
 			metro_network_km: 73.8, // Namma Metro Phase 1 + 2A (as of 2024)
 			bus_fleet_per_lakh: 53, // BMTC ~6,500 buses, pop ~1.23 cr
@@ -230,7 +240,8 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 		cityId: 'chennai',
 		values: {
 			traffic_fatalities: 10.5, // NCRB 2022
-			active_transport_share: 28, // Census/CTTS: walk 24% + cycle 4%
+			walking_share: 24, // Census/CTTS
+			cycling_share: 4, // Census/CTTS
 			metro_network_km: 54.6, // Phase 1 + extension (2024)
 			bus_fleet_per_lakh: 40, // MTC ~3,500 buses, pop ~87 lakh
 			pm25_annual: 31, // CPCB 2023
@@ -243,7 +254,8 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 		cityId: 'delhi',
 		values: {
 			traffic_fatalities: 11.3, // NCRB 2022: highest absolute numbers
-			active_transport_share: 22, // Census: walk 16% + cycle 6%
+			walking_share: 16, // Census
+			cycling_share: 6, // Census
 			metro_network_km: 393, // DMRC — largest network in India
 			bus_fleet_per_lakh: 32, // DTC ~3,700 + cluster ~3,500; pop ~2.1 cr
 			pm25_annual: 99, // CPCB 2023 — worst in India
@@ -256,7 +268,8 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 		cityId: 'hyderabad',
 		values: {
 			traffic_fatalities: 8.4, // NCRB 2022
-			active_transport_share: 25, // Census/CMP: walk 20% + cycle 5%
+			walking_share: 20, // Census/CMP
+			cycling_share: 5, // Census/CMP
 			metro_network_km: 69.2, // HMR L1+L2+L3
 			bus_fleet_per_lakh: 30, // TSRTC city services ~3,000, pop ~1 cr
 			pm25_annual: 37, // CPCB 2023
@@ -270,7 +283,8 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 		values: {
 			// Health
 			traffic_fatalities: 18.3, // MoRTH 2022: 639 deaths, metro pop ~35 lakh
-			active_transport_share: 27, // CMP/ICLEI: walk 22% + cycle 5%
+			walking_share: 22, // CMP/ICLEI
+			cycling_share: 5, // CMP/ICLEI
 			// Accessibility
 			metro_network_km: 0, // Under construction in 2024; priority corridor opened May 2025
 			bus_fleet_per_lakh: 11, // AICTSL ~387 buses, metro pop ~35 lakh
@@ -286,7 +300,8 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 		cityId: 'kochi',
 		values: {
 			traffic_fatalities: 9.2, // NCRB 2022 (Kerala state rate applied)
-			active_transport_share: 27, // Census: walk 22% + cycle 5%
+			walking_share: 22, // Census
+			cycling_share: 5, // Census
 			metro_network_km: 25.6, // KMRL single line
 			bus_fleet_per_lakh: 20, // KSRTC city ~400 + private; pop ~21 lakh
 			pm25_annual: 27, // CPCB 2023 — cleanest of the 6
@@ -299,7 +314,8 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 		cityId: 'pune',
 		values: {
 			traffic_fatalities: 7.1, // NCRB 2022 — lowest of the 6
-			active_transport_share: 40, // Census: walk 25% + cycle 15% (high!)
+			walking_share: 25, // Census
+			cycling_share: 15, // Census (high — flat terrain, cycle culture)
 			metro_network_km: 33.3, // Pune Metro Phase 1 (partial, 2024)
 			bus_fleet_per_lakh: 25, // PMPML ~2,000 buses, pop ~78 lakh
 			pm25_annual: 36, // CPCB 2023

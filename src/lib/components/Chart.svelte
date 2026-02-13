@@ -3,7 +3,7 @@
   import { Chart, registerables } from 'chart.js';
 
   interface Props {
-    type: 'bar' | 'line' | 'doughnut' | 'pie' | 'scatter';
+    type: 'bar' | 'line' | 'doughnut' | 'pie' | 'scatter' | 'radar';
     data: object;
     options?: object;
     class?: string;

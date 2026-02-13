@@ -44,10 +44,15 @@
     },
     {
       href: '/forecast',
-      icon: 'fa-solid fa-chart-area',
+      icon: 'fa-solid fa-sliders',
       title: 'Forecast',
-      teaser: 'Demand predictions and growth modelling',
-      preview: true
+      teaser: 'What-if scenario modelling for transport QoL interventions'
+    },
+    {
+      href: '/data-sources',
+      icon: 'fa-solid fa-database',
+      title: 'Data Sources',
+      teaser: `References and provenance for all ${CITIES.length} cities`
     }
   ];
 </script>

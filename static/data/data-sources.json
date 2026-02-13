@@ -1,0 +1,888 @@
+{
+  "version": "1.0",
+  "lastUpdated": "2026-02-13",
+  "categories": {
+    "air_quality": { "label": "Air Quality", "icon": "fa-solid fa-wind" },
+    "safety": { "label": "Road Safety", "icon": "fa-solid fa-shield-halved" },
+    "transit_metro": { "label": "Metro Rail", "icon": "fa-solid fa-train-subway" },
+    "transit_bus": { "label": "Bus Transit", "icon": "fa-solid fa-bus" },
+    "mobility": { "label": "Mobility & Mode Share", "icon": "fa-solid fa-person-walking" },
+    "congestion": { "label": "Traffic Congestion", "icon": "fa-solid fa-traffic-light" },
+    "infrastructure": { "label": "Infrastructure", "icon": "fa-solid fa-road" },
+    "scenario": { "label": "Scenario Modelling", "icon": "fa-solid fa-sliders" },
+    "energy": { "label": "Energy & Emissions", "icon": "fa-solid fa-bolt" },
+    "activity": { "label": "Activity Data", "icon": "fa-solid fa-person-biking" }
+  },
+  "crossCitySources": [
+    {
+      "name": "Altmo Core API (Rails)",
+      "url": null,
+      "description": "Internal Rails 7 + PostgreSQL/PostGIS backend. Ingests GPS activity traces via Strava OAuth, validates against company geo-fences, aggregates leaderboards. 2.1M+ activities across 8 cities. ETL endpoints: /api/v1/activity_routes (routes with path arrays), /api/v1/leaderboards (company rankings), /api/v1/city_stats (city aggregations), /api/v1/companies + /api/v1/facilities (organisations). Additional endpoints available: /api/v1/routes/bulk, /api/v1/transit_activities, /api/v1/geo_markers, /api/v1/history.",
+      "category": "activity",
+      "indicators": [],
+      "dataType": "live",
+      "year": "Live",
+      "license": "Internal",
+      "notes": "Bearer token auth via RAILS_API_KEY. CO2 = distance(km) x 0.25 kg, Petrol = distance(km) x 0.108 L, Money = petrol x 101 INR"
+    },
+    {
+      "name": "Strava API (via Altmo Core)",
+      "url": "https://developers.strava.com/",
+      "description": "Primary activity data source. Users connect via OAuth, activities pulled automatically + via webhooks. Provides GPS polylines, distance, speed, elapsed time, activity type (Ride/Walk/Run). Direction detection (to/from work) via PostGIS proximity to company geo-markers (1km radius).",
+      "category": "activity",
+      "indicators": [],
+      "dataType": "live",
+      "year": "Live",
+      "license": "Strava API Terms"
+    },
+    {
+      "name": "Allirani & Verma (2025) — TQOLI Framework",
+      "url": "https://doi.org/10.1016/j.jtrangeo.2025.103800",
+      "description": "\"A novel transportation Quality of Life Index framework for evaluating sustainable transport interventions\", IISc Bangalore. Provides dimension weights (Fuzzy-AHP), scenario strategies (ST1/ST2), and intervention coefficients used in the ETQOLI scoring engine.",
+      "category": "scenario",
+      "indicators": ["all"],
+      "dataType": "research",
+      "year": "2025",
+      "license": "Academic"
+    },
+    {
+      "name": "OpenAQ v3 API",
+      "url": "https://api.openaq.org/v3",
+      "description": "Real-time PM2.5 measurements from CPCB-operated government monitoring stations. Sensor-based endpoint: /sensors/{id}/measurements. Stations discovered via location search within 25 km of each city center.",
+      "category": "air_quality",
+      "indicators": ["pm25_annual"],
+      "dataType": "live",
+      "year": "Live",
+      "license": "CC BY 4.0"
+    },
+    {
+      "name": "CPCB National Ambient Air Quality Status",
+      "url": "https://cpcb.nic.in/real-time-air-qulity-data/",
+      "description": "Central Pollution Control Board annual PM2.5 averages from continuous ambient air quality monitoring stations. Baseline values for all cities.",
+      "category": "air_quality",
+      "indicators": ["pm25_annual"],
+      "dataType": "static",
+      "year": "2023",
+      "license": "Government of India"
+    },
+    {
+      "name": "TomTom Traffic Flow API",
+      "url": "https://developer.tomtom.com/traffic-api/documentation/traffic-flow",
+      "description": "Real-time traffic flow data from 5-8 major arterial junctions per city. Congestion calculated as: ((freeFlowSpeed / currentSpeed) - 1) × 100. Sampled at representative road segments.",
+      "category": "congestion",
+      "indicators": ["congestion_level"],
+      "dataType": "live",
+      "year": "Live",
+      "license": "TomTom API License"
+    },
+    {
+      "name": "TomTom Traffic Index (Annual)",
+      "url": "https://www.tomtom.com/traffic-index/ranking/",
+      "description": "Annual city-level congestion rankings. Baseline congestion percentages for static QoL scoring.",
+      "category": "congestion",
+      "indicators": ["congestion_level"],
+      "dataType": "static",
+      "year": "2023",
+      "license": "TomTom"
+    },
+    {
+      "name": "NCRB — Accidental Deaths & Suicides in India",
+      "url": "https://ncrb.gov.in/accidental-deaths-suicides-in-india.html",
+      "description": "National Crime Records Bureau annual report. City-wise traffic accident fatalities normalised to per-lakh population rates.",
+      "category": "safety",
+      "indicators": ["traffic_fatalities"],
+      "dataType": "static",
+      "year": "2022",
+      "license": "Government of India"
+    },
+    {
+      "name": "MoRTH — Road Accidents in India",
+      "url": "https://morth.nic.in/road-accident-in-india",
+      "description": "Ministry of Road Transport & Highways annual accident statistics. Used for cities not covered by NCRB city-level data (e.g. Indore).",
+      "category": "safety",
+      "indicators": ["traffic_fatalities"],
+      "dataType": "static",
+      "year": "2022",
+      "license": "Government of India"
+    },
+    {
+      "name": "Census of India 2011",
+      "url": "https://censusindia.gov.in/",
+      "description": "Decennial census mode share data (walk, cycle, public transport, private vehicle) for urban areas. Used as baseline for cities without recent CMP/CTTS surveys.",
+      "category": "mobility",
+      "indicators": ["walking_share", "cycling_share", "sustainable_mode_share"],
+      "dataType": "static",
+      "year": "2011",
+      "license": "Government of India"
+    },
+    {
+      "name": "TransitRouter (Vonter)",
+      "url": "https://github.com/Vonter/transitrouter",
+      "description": "Open-source bus stops and services data for 9 Indian regions. Provides GTFS-like stop coordinates and route mappings. Data fetched from GitHub raw files.",
+      "category": "transit_bus",
+      "indicators": ["bus_fleet_per_lakh"],
+      "dataType": "static",
+      "year": "2024",
+      "license": "MIT"
+    },
+    {
+      "name": "UrbanEmissions.info — APnA City Program",
+      "url": "https://urbanemissions.info/india-apna/",
+      "description": "City-level PM2.5 source apportionment using WRF-CAMx dispersion modelling (Guttikunda et al. 2019). Provides sector-wise emission shares: transport, industry, dust, waste burning, residential, DG sets.",
+      "category": "energy",
+      "indicators": ["pm25_annual"],
+      "dataType": "research",
+      "year": "2019",
+      "license": "Academic"
+    },
+    {
+      "name": "CEA CO2 Baseline Database v21.0",
+      "url": "https://cea.nic.in/cdm-co2-baseline-database/?lang=en",
+      "description": "Central Electricity Authority grid emission factors by region and state. National weighted average: 0.710 tCO2/MWh (FY 2024-25). Used for grid renewables baseline in scenario modelling.",
+      "category": "energy",
+      "indicators": [],
+      "dataType": "static",
+      "year": "2025",
+      "license": "Government of India"
+    },
+    {
+      "name": "WHO Air Quality Guidelines 2021",
+      "url": "https://www.who.int/publications/i/item/9789240034228",
+      "description": "WHO global air quality guideline values. Annual PM2.5 guideline: 5 µg/m³, 24-hour: 15 µg/m³. Used as ETQOLI benchmark reference.",
+      "category": "air_quality",
+      "indicators": ["pm25_annual"],
+      "dataType": "reference",
+      "year": "2021",
+      "license": "WHO"
+    },
+    {
+      "name": "India NAAQS (National Ambient Air Quality Standards)",
+      "url": "https://cpcb.nic.in/displaypdf.php?id=aG9tZS9haXItcG9sbHV0aW9uL1JlY3Zpcy5wZGY=",
+      "description": "Indian national air quality standards. Annual PM2.5 standard: 40 µg/m³, 24-hour: 60 µg/m³. Reference for AQI category breakpoints.",
+      "category": "air_quality",
+      "indicators": ["pm25_annual"],
+      "dataType": "reference",
+      "year": "2009",
+      "license": "Government of India"
+    }
+  ],
+  "cities": {
+    "bengaluru": {
+      "name": "Bengaluru",
+      "state": "Karnataka",
+      "sources": [
+        {
+          "name": "DULT Comprehensive Mobility Plan 2020",
+          "url": "https://dult.karnataka.gov.in/",
+          "description": "Directorate of Urban Land Transport — Bengaluru CMP with mode share, travel demand, and infrastructure data. Walking 22%, Cycling 5%, PT 48%.",
+          "category": "mobility",
+          "indicators": ["walking_share", "cycling_share", "sustainable_mode_share"],
+          "dataType": "static",
+          "year": "2020",
+          "license": "Government of Karnataka"
+        },
+        {
+          "name": "OpenCity — Bengaluru CMP Dataset",
+          "url": "https://data.opencity.in/dataset/bengaluru-comprehensive-mobility-plan",
+          "description": "Open data portal hosting the Bengaluru Comprehensive Mobility Plan tables and mode share breakdowns.",
+          "category": "mobility",
+          "indicators": ["walking_share", "cycling_share", "sustainable_mode_share"],
+          "dataType": "static",
+          "year": "2020",
+          "license": "Open Data"
+        },
+        {
+          "name": "Namma Metro GeoJSON (geohacker)",
+          "url": "https://github.com/geohacker/namma-metro",
+          "description": "Metro station locations and line geometry for BMRCL Phase 1 + 2A (73.8 km operational as of 2024). GeoJSON with station Name and line color.",
+          "category": "transit_metro",
+          "indicators": ["metro_network_km"],
+          "dataType": "static",
+          "year": "2024",
+          "license": "Public"
+        },
+        {
+          "name": "BMRCL Hourly Ridership (Vonter)",
+          "url": "https://github.com/Vonter/bmrcl-ridership-hourly",
+          "description": "Station-wise hourly ridership data for Bengaluru metro. CSV format: Date;Hour;Station;Ridership. Only city with metro ridership data.",
+          "category": "transit_metro",
+          "indicators": [],
+          "dataType": "live",
+          "year": "2024",
+          "license": "CC BY 4.0"
+        },
+        {
+          "name": "BMTC (Bangalore Metropolitan Transport Corporation)",
+          "url": "https://mybmtc.karnataka.gov.in/",
+          "description": "Bus fleet size: ~6,500 buses for ~1.23 crore population (53 per lakh). Routes and services via TransitRouter.",
+          "category": "transit_bus",
+          "indicators": ["bus_fleet_per_lakh"],
+          "dataType": "static",
+          "year": "2023",
+          "license": "Government of Karnataka"
+        },
+        {
+          "name": "OpenAQ — Bengaluru Sensors",
+          "url": "https://explore.openaq.org/locations?country=IN&city=Bengaluru",
+          "description": "7 CPCB PM2.5 monitoring stations. Sensor IDs: 12235361, 12235370, 12235267, 12235240, 12235285, 12235258, 12235249. Baseline 2023 annual: 34 µg/m³.",
+          "category": "air_quality",
+          "indicators": ["pm25_annual"],
+          "dataType": "live",
+          "year": "Live",
+          "license": "CC BY 4.0"
+        },
+        {
+          "name": "UrbanEmissions — Bengaluru APnA",
+          "url": "https://urbanemissions.info/india-apna/bengaluru-india/",
+          "description": "PM2.5 source apportionment: Transport 44% (exhaust + road dust), Industry 8-10%, Dust 20-23%. Based on Guttikunda & Jawahar (2019) WRF-CAMx modelling. No coal power plants in airshed.",
+          "category": "energy",
+          "indicators": ["pm25_annual"],
+          "dataType": "research",
+          "year": "2019",
+          "license": "Academic"
+        },
+        {
+          "name": "Karnataka Grid Energy Mix",
+          "url": "https://ember-energy.org/data/india-electricity-data-explorer/",
+          "description": "Karnataka state grid: ~55-62% renewable (22-25% hydro, 15-18% solar, 12-14% wind), ~35-40% coal/thermal. India's #1 ranked state in clean electricity transition (Ember SET 2024).",
+          "category": "energy",
+          "indicators": [],
+          "dataType": "research",
+          "year": "2024-25",
+          "license": "Open Data"
+        },
+        {
+          "name": "BBMP Road Network",
+          "url": "https://bbmp.gov.in/",
+          "description": "BBMP jurisdiction: 764 km² with ~7,800 km of roads = 10.2 km/km² road density. Source: Smart Cities data.",
+          "category": "infrastructure",
+          "indicators": ["road_density"],
+          "dataType": "static",
+          "year": "2023",
+          "license": "Government of Karnataka"
+        },
+        {
+          "name": "NCRB 2022 — Bengaluru",
+          "url": "https://ncrb.gov.in/accidental-deaths-suicides-in-india.html",
+          "description": "960 traffic fatalities in 2022, ~1.23 crore population = 7.8 per lakh. Source: NCRB Accidental Deaths & Suicides in India.",
+          "category": "safety",
+          "indicators": ["traffic_fatalities"],
+          "dataType": "static",
+          "year": "2022",
+          "license": "Government of India"
+        },
+        {
+          "name": "Vajjarapu et al. (2023) — Travel Demand Model",
+          "url": "https://doi.org/10.1016/j.trd.2023.103741",
+          "description": "\"Evaluating Climate Change Mitigation and Adaptation Strategies for Transport\" — Bengaluru travel demand modelling for scenario validation.",
+          "category": "scenario",
+          "indicators": [],
+          "dataType": "research",
+          "year": "2023",
+          "license": "Academic"
+        }
+      ]
+    },
+    "chennai": {
+      "name": "Chennai",
+      "state": "Tamil Nadu",
+      "sources": [
+        {
+          "name": "CMDA — Comprehensive Traffic & Transportation Study",
+          "url": "https://www.cmdachennai.gov.in/",
+          "description": "Chennai Metropolitan Development Authority CTTS. Mode share: Walking 24%, Cycling 4%, Bus 26%, Two-wheeler 25%. Data from 2008 survey.",
+          "category": "mobility",
+          "indicators": ["walking_share", "cycling_share", "sustainable_mode_share"],
+          "dataType": "static",
+          "year": "2008",
+          "license": "Government of Tamil Nadu"
+        },
+        {
+          "name": "JICA — Chennai Data Collection Survey",
+          "url": "https://openjicareport.jica.go.jp/",
+          "description": "Japan International Cooperation Agency data collection survey on urban transport planning in Chennai metropolitan area.",
+          "category": "mobility",
+          "indicators": ["sustainable_mode_share"],
+          "dataType": "static",
+          "year": "2012",
+          "license": "JICA"
+        },
+        {
+          "name": "Chennai Metro (Overpass/OSM)",
+          "url": "https://www.openstreetmap.org/",
+          "description": "Metro stations and lines fetched via Overpass API from OpenStreetMap. Phase 1 + extension: 54.6 km (2024). Lines: Blue Line, Green Line.",
+          "category": "transit_metro",
+          "indicators": ["metro_network_km"],
+          "dataType": "live",
+          "year": "2024",
+          "license": "ODbL"
+        },
+        {
+          "name": "MTC (Metropolitan Transport Corporation)",
+          "url": "https://mtcbus.tn.gov.in/",
+          "description": "Bus fleet: ~3,500 buses for ~87 lakh population = 40 per lakh. Routes and services via TransitRouter.",
+          "category": "transit_bus",
+          "indicators": ["bus_fleet_per_lakh"],
+          "dataType": "static",
+          "year": "2023",
+          "license": "Government of Tamil Nadu"
+        },
+        {
+          "name": "OpenAQ — Chennai Sensors",
+          "url": "https://explore.openaq.org/locations?country=IN&city=Chennai",
+          "description": "7 CPCB PM2.5 monitoring stations. Sensor IDs: 12235653, 12235531, 12235796, 12236299, 12236308, 12236274, 12236290. Baseline 2023 annual: 31 µg/m³.",
+          "category": "air_quality",
+          "indicators": ["pm25_annual"],
+          "dataType": "live",
+          "year": "Live",
+          "license": "CC BY 4.0"
+        },
+        {
+          "name": "UrbanEmissions — Chennai APnA",
+          "url": "https://urbanemissions.info/india-apna/chennai-india/",
+          "description": "PM2.5 source apportionment: Transport 20-25% (depressed by massive industrial base), Industry (incl. power) 70%, Power generation alone 15-25% (North Chennai Thermal Power Station). Modeled annual: 57.5 µg/m³.",
+          "category": "energy",
+          "indicators": ["pm25_annual"],
+          "dataType": "research",
+          "year": "2019",
+          "license": "Academic"
+        },
+        {
+          "name": "Tamil Nadu Grid Energy Mix",
+          "url": "https://ember-energy.org/data/india-electricity-data-explorer/",
+          "description": "Tamil Nadu grid: ~38-45% renewable (18-22% wind, 10-14% solar, 4-6% hydro), ~45-50% coal/thermal, ~5-7% nuclear. 50% RE installed capacity but lower generation share.",
+          "category": "energy",
+          "indicators": [],
+          "dataType": "research",
+          "year": "2024-25",
+          "license": "Open Data"
+        },
+        {
+          "name": "NCRB 2022 — Chennai",
+          "url": "https://ncrb.gov.in/accidental-deaths-suicides-in-india.html",
+          "description": "Traffic fatalities: 10.5 per lakh population (2022). Source: NCRB.",
+          "category": "safety",
+          "indicators": ["traffic_fatalities"],
+          "dataType": "static",
+          "year": "2022",
+          "license": "Government of India"
+        }
+      ]
+    },
+    "delhi": {
+      "name": "Delhi",
+      "state": "NCT Delhi",
+      "sources": [
+        {
+          "name": "Census 2011 — Delhi Mode Share",
+          "url": "https://censusindia.gov.in/",
+          "description": "Delhi mode share: Walking 16%, Cycling 6%, Public transport 42%. Census 2011 urban transport data.",
+          "category": "mobility",
+          "indicators": ["walking_share", "cycling_share", "sustainable_mode_share"],
+          "dataType": "static",
+          "year": "2011",
+          "license": "Government of India"
+        },
+        {
+          "name": "RITES/DIMTS Transport Demand Forecast",
+          "url": "https://transport.delhi.gov.in/",
+          "description": "Delhi Transport Department travel demand forecasts and mode share studies.",
+          "category": "mobility",
+          "indicators": ["sustainable_mode_share"],
+          "dataType": "static",
+          "year": "2019",
+          "license": "Government of NCT Delhi"
+        },
+        {
+          "name": "Delhi Open Transit Data (OTD)",
+          "url": "https://otd.delhi.gov.in/",
+          "description": "GTFS feeds for Delhi public transport including DTC buses and metro.",
+          "category": "transit_bus",
+          "indicators": [],
+          "dataType": "live",
+          "year": "2024",
+          "license": "Open Data"
+        },
+        {
+          "name": "DMRC (Delhi Metro Rail Corporation)",
+          "url": "https://www.delhimetrorail.com/",
+          "description": "Delhi Metro: 393 km operational — largest in India (2024). Station data from dhirajt/delhi-metro-stations GitHub.",
+          "category": "transit_metro",
+          "indicators": ["metro_network_km"],
+          "dataType": "static",
+          "year": "2024",
+          "license": "Public"
+        },
+        {
+          "name": "Delhi Metro Stations GeoJSON",
+          "url": "https://github.com/dhirajt/delhi-metro-stations",
+          "description": "GeoJSON of all Delhi metro stations. Used for map rendering and accessibility analysis.",
+          "category": "transit_metro",
+          "indicators": ["metro_network_km"],
+          "dataType": "static",
+          "year": "2023",
+          "license": "Public"
+        },
+        {
+          "name": "Delhi Metro Lines GeoJSON",
+          "url": "https://github.com/kavyajeetbora/metro_accessibility",
+          "description": "Delhi NCR metro line geometries for map rendering.",
+          "category": "transit_metro",
+          "indicators": [],
+          "dataType": "static",
+          "year": "2023",
+          "license": "Public"
+        },
+        {
+          "name": "DTC + Cluster Bus Fleet",
+          "url": "https://www.dtc.delhi.gov.in/",
+          "description": "DTC ~3,700 + cluster ~3,500 buses for ~2.1 crore population = 32 per lakh. DTC fleet includes 3,109 CNG + 1,250 electric buses.",
+          "category": "transit_bus",
+          "indicators": ["bus_fleet_per_lakh"],
+          "dataType": "static",
+          "year": "2023",
+          "license": "Government of NCT Delhi"
+        },
+        {
+          "name": "OpenAQ — Delhi Sensors",
+          "url": "https://explore.openaq.org/locations?country=IN&city=Delhi",
+          "description": "10 CPCB PM2.5 monitoring stations — most sensors of any Altmo city. Sensor IDs: 12234787, 12234796, 12235610, etc. Baseline 2023 annual: 99 µg/m³ (worst in India).",
+          "category": "air_quality",
+          "indicators": ["pm25_annual"],
+          "dataType": "live",
+          "year": "Live",
+          "license": "CC BY 4.0"
+        },
+        {
+          "name": "UrbanEmissions — Delhi Source Apportionment",
+          "url": "https://urbanemissions.info/blog-pieces/whats-polluting-delhis-air/",
+          "description": "Multiple studies synthesised: Transport 28-40% (exhaust + road dust), Power generation 3-8% (post-Badarpur closure 2018), Biomass 13-30%, Secondary PM 30-34%. Best central estimate: Transport 33%, Power 5%.",
+          "category": "energy",
+          "indicators": ["pm25_annual"],
+          "dataType": "research",
+          "year": "2023",
+          "license": "Academic"
+        },
+        {
+          "name": "TERI — Delhi NCR Source Apportionment (2018)",
+          "url": "https://www.teriin.org/sites/default/files/2018-08/Report_SA_AQM-Delhi-NCR_0.pdf",
+          "description": "TERI-ARAI hybrid emission inventory + CTM study. Transport share 13-39% depending on domain (NCR vs city). Power/energy ~3.4% for Delhi city.",
+          "category": "energy",
+          "indicators": ["pm25_annual"],
+          "dataType": "research",
+          "year": "2018",
+          "license": "TERI"
+        },
+        {
+          "name": "RMI — Transforming Delhi's Power Grid",
+          "url": "https://rmi.org/wp-content/uploads/dlm_uploads/2024/07/transforming_delhis_power_grid.pdf",
+          "description": "Delhi grid: ~25-33% renewable (8-14% solar, 12-17% hydro), ~55-60% coal (from imports), ~8-11% gas. Delhi imports ~90% of power. Projects coal share declining to ~37% by 2030.",
+          "category": "energy",
+          "indicators": [],
+          "dataType": "research",
+          "year": "2024",
+          "license": "RMI"
+        },
+        {
+          "name": "NCRB 2022 — Delhi",
+          "url": "https://ncrb.gov.in/accidental-deaths-suicides-in-india.html",
+          "description": "Traffic fatalities: 11.3 per lakh population (2022) — highest absolute numbers. Source: NCRB.",
+          "category": "safety",
+          "indicators": ["traffic_fatalities"],
+          "dataType": "static",
+          "year": "2022",
+          "license": "Government of India"
+        }
+      ]
+    },
+    "hyderabad": {
+      "name": "Hyderabad",
+      "state": "Telangana",
+      "sources": [
+        {
+          "name": "Census/CMP — Hyderabad Mode Share",
+          "url": "https://censusindia.gov.in/",
+          "description": "Hyderabad mode share: Walking 20%, Cycling 5%, Public transport 31% (highest PT share among Altmo cities). Census 2011 + CMP data.",
+          "category": "mobility",
+          "indicators": ["walking_share", "cycling_share", "sustainable_mode_share"],
+          "dataType": "static",
+          "year": "2011",
+          "license": "Government of India"
+        },
+        {
+          "name": "HMRL Open Data",
+          "url": "https://hmrl.co.in/open-data/",
+          "description": "Hyderabad Metro Rail Limited open data portal. HMR Line 1 + Line 2 + Line 3: 69.2 km operational (2024).",
+          "category": "transit_metro",
+          "indicators": ["metro_network_km"],
+          "dataType": "static",
+          "year": "2024",
+          "license": "HMRL"
+        },
+        {
+          "name": "Hyderabad Metro GeoJSON (kavyajeetbora)",
+          "url": "https://github.com/kavyajeetbora/metro_accessibility",
+          "description": "Station buildings and route GeoJSON for Hyderabad metro mapping and accessibility analysis.",
+          "category": "transit_metro",
+          "indicators": ["metro_network_km"],
+          "dataType": "static",
+          "year": "2023",
+          "license": "Public"
+        },
+        {
+          "name": "Telangana GTFS — HMRL",
+          "url": "https://data.telangana.gov.in/dataset/gtfs-hmrl-hyderabad",
+          "description": "GTFS feed for Hyderabad metro from Telangana Open Data Portal.",
+          "category": "transit_metro",
+          "indicators": [],
+          "dataType": "live",
+          "year": "2024",
+          "license": "Open Data"
+        },
+        {
+          "name": "TSRTC City Bus Services",
+          "url": "https://www.tsrtc.telangana.gov.in/",
+          "description": "Telangana State Road Transport Corporation city services: ~3,000 buses for ~1 crore population = 30 per lakh.",
+          "category": "transit_bus",
+          "indicators": ["bus_fleet_per_lakh"],
+          "dataType": "static",
+          "year": "2023",
+          "license": "Government of Telangana"
+        },
+        {
+          "name": "OpenAQ — Hyderabad Sensors",
+          "url": "https://explore.openaq.org/locations?country=IN&city=Hyderabad",
+          "description": "7 PM2.5 monitoring stations. Sensor IDs: 12235583, 12235400, 12242121, 12242129, 12237098, 12237125, 12237116. Baseline 2023 annual: 37 µg/m³.",
+          "category": "air_quality",
+          "indicators": ["pm25_annual"],
+          "dataType": "live",
+          "year": "Live",
+          "license": "CC BY 4.0"
+        },
+        {
+          "name": "UrbanEmissions — Hyderabad APnA",
+          "url": "https://urbanemissions.info/india-apna/hyderabad-india/",
+          "description": "PM2.5 source apportionment: Transport 35-45% (CPCB receptor study: vehicle 31% + dust 26%), Power generation 3-5% (regional, no major plants in airshed), Industry 20-29%. Emission inventory: 34,750 tonnes/year.",
+          "category": "energy",
+          "indicators": ["pm25_annual"],
+          "dataType": "research",
+          "year": "2018",
+          "license": "Academic"
+        },
+        {
+          "name": "Guttikunda & Kopakka (2013) — Hyderabad EMAS",
+          "url": "http://www.urbanemissions.info/wp-content/uploads/docs/2013-07-EMAS-PMSA-Hyderabad.pdf",
+          "description": "CPCB-funded receptor model study for Hyderabad PM2.5 source apportionment. Found: vehicular 31%, dust 26%, combustion 9%, industrial 7%, refuse 6%.",
+          "category": "energy",
+          "indicators": ["pm25_annual"],
+          "dataType": "research",
+          "year": "2013",
+          "license": "Academic"
+        },
+        {
+          "name": "Telangana Grid Energy Mix",
+          "url": "https://ember-energy.org/data/india-electricity-data-explorer/",
+          "description": "Telangana grid: ~18-24% renewable (8-10% solar, 8-12% hydro, 1-2% wind), ~75-82% coal/thermal. TSGENCO capacity >90% thermal. Target: 50% green power by 2030.",
+          "category": "energy",
+          "indicators": [],
+          "dataType": "research",
+          "year": "2024-25",
+          "license": "Open Data"
+        },
+        {
+          "name": "NCRB 2022 — Hyderabad",
+          "url": "https://ncrb.gov.in/accidental-deaths-suicides-in-india.html",
+          "description": "Traffic fatalities: 8.4 per lakh population (2022). Source: NCRB.",
+          "category": "safety",
+          "indicators": ["traffic_fatalities"],
+          "dataType": "static",
+          "year": "2022",
+          "license": "Government of India"
+        }
+      ]
+    },
+    "indore": {
+      "name": "Indore",
+      "state": "Madhya Pradesh",
+      "sources": [
+        {
+          "name": "CMP/ICLEI — Indore Mode Share",
+          "url": "https://iclei.org/",
+          "description": "Indore mode share from CMP and ICLEI Sustainable Mobility Plan: Walking 22%, Cycling 5%, PT ~18%.",
+          "category": "mobility",
+          "indicators": ["walking_share", "cycling_share", "sustainable_mode_share"],
+          "dataType": "static",
+          "year": "2018",
+          "license": "ICLEI / Government of MP"
+        },
+        {
+          "name": "Indore Metro Rail (under construction)",
+          "url": "https://www.mpidc.co.in/",
+          "description": "Metro under construction as of 2024. Priority corridor opened May 2025. Current operational km: 0 (at time of data entry).",
+          "category": "transit_metro",
+          "indicators": ["metro_network_km"],
+          "dataType": "static",
+          "year": "2024",
+          "license": "Government of MP",
+          "notes": "Slider starts at 0 km in scenario tool; represents building from scratch"
+        },
+        {
+          "name": "AICTSL Bus Fleet",
+          "url": "https://www.aictsl.com/",
+          "description": "Atal Indore City Transport Service Limited: ~387 buses for ~35 lakh metro population = 11 per lakh. i-Bus branded fleet.",
+          "category": "transit_bus",
+          "indicators": ["bus_fleet_per_lakh"],
+          "dataType": "static",
+          "year": "2023",
+          "license": "Government of MP"
+        },
+        {
+          "name": "OpenAQ — Indore Sensors",
+          "url": "https://explore.openaq.org/locations?country=IN&city=Indore",
+          "description": "6 PM2.5 monitoring stations. Sensor IDs: 12234921, 12237818, 12238477, 12238486, 12815122, 12238495. Baseline from UrbanEmissions model + IQAir: 56 µg/m³.",
+          "category": "air_quality",
+          "indicators": ["pm25_annual"],
+          "dataType": "live",
+          "year": "Live",
+          "license": "CC BY 4.0",
+          "notes": "Indore uses UrbanEmissions model + IQAir estimates for baseline (CPCB station limited coverage)"
+        },
+        {
+          "name": "UrbanEmissions — Indore APnA",
+          "url": "https://urbanemissions.info/india-apna/indore-india/",
+          "description": "PM2.5 source apportionment: Transport 45-55% (highest transport share), Power generation 1-3% (no coal plants in airshed), Dust 24%, Waste burning 8.4%. Emission inventory: 11,850 tonnes/year. Modeled annual: 66.3 µg/m³.",
+          "category": "energy",
+          "indicators": ["pm25_annual"],
+          "dataType": "research",
+          "year": "2019",
+          "license": "Academic"
+        },
+        {
+          "name": "Madhya Pradesh Grid Energy Mix",
+          "url": "https://mperc.in/uploads/editor/About-MP-PowerSector.pdf",
+          "description": "MP grid: ~25-32% renewable (10-14% solar, 8-10% hydro, 5-7% wind), ~65-72% coal/thermal, ~1-2% nuclear. Capacity allocation (2023): thermal 62.5%, RE 23.6%, hydro 12.4%.",
+          "category": "energy",
+          "indicators": [],
+          "dataType": "research",
+          "year": "2024-25",
+          "license": "Government of MP"
+        },
+        {
+          "name": "MoRTH 2022 — Indore",
+          "url": "https://morth.nic.in/road-accident-in-india",
+          "description": "Traffic fatalities: 639 deaths, ~35 lakh metro population = 18.3 per lakh (2022). Source: MoRTH (NCRB city-level data not available).",
+          "category": "safety",
+          "indicators": ["traffic_fatalities"],
+          "dataType": "static",
+          "year": "2022",
+          "license": "Government of India"
+        },
+        {
+          "name": "Congestion Estimate (comparable cities)",
+          "url": null,
+          "description": "TomTom Traffic Index not available for Indore. Congestion estimated at 33% based on comparable mid-size Indian cities.",
+          "category": "congestion",
+          "indicators": ["congestion_level"],
+          "dataType": "derived",
+          "year": "2023",
+          "license": null,
+          "notes": "Estimated — TomTom does not cover Indore directly"
+        }
+      ]
+    },
+    "kochi": {
+      "name": "Kochi",
+      "state": "Kerala",
+      "sources": [
+        {
+          "name": "Census 2011 — Kochi Mode Share",
+          "url": "https://censusindia.gov.in/",
+          "description": "Kochi mode share: Walking 22%, Cycling 5%, NMT total 42% (walk+cycle highest among Altmo cities). Census 2011 urban data.",
+          "category": "mobility",
+          "indicators": ["walking_share", "cycling_share", "sustainable_mode_share"],
+          "dataType": "static",
+          "year": "2011",
+          "license": "Government of India"
+        },
+        {
+          "name": "KMRL Open Data (GTFS)",
+          "url": "https://kochimetro.org/open-data/",
+          "description": "Kochi Metro Rail Limited GTFS feed — first Indian metro to publish GTFS (March 2018). Single line: 25.6 km. Includes stops.txt, shapes.txt, routes.txt.",
+          "category": "transit_metro",
+          "indicators": ["metro_network_km"],
+          "dataType": "live",
+          "year": "2024",
+          "license": "Open Data"
+        },
+        {
+          "name": "KSRTC City Bus Services",
+          "url": "https://www.keralartc.com/",
+          "description": "Kerala State Road Transport Corporation city services + private operators: ~400 buses for ~21 lakh population = 20 per lakh.",
+          "category": "transit_bus",
+          "indicators": ["bus_fleet_per_lakh"],
+          "dataType": "static",
+          "year": "2023",
+          "license": "Government of Kerala"
+        },
+        {
+          "name": "OpenAQ — Kochi Sensors",
+          "url": "https://explore.openaq.org/locations?country=IN&city=Kochi",
+          "description": "1 CPCB PM2.5 monitoring station — fewest sensors of any Altmo city. Sensor ID: 12235842. Baseline 2023 annual: 27 µg/m³ (cleanest city).",
+          "category": "air_quality",
+          "indicators": ["pm25_annual"],
+          "dataType": "live",
+          "year": "Live",
+          "license": "CC BY 4.0",
+          "notes": "Only 1 sensor — limited spatial coverage"
+        },
+        {
+          "name": "UrbanEmissions — Kochi APnA",
+          "url": "https://urbanemissions.info/india-apna/kochi-india/",
+          "description": "PM2.5 source apportionment: Transport 35-40% (exhaust + road dust), Power generation 2-4% (Kerala has minimal coal power), Industry 25-28% (petrochemicals, fertilizers). Emission inventory: 9,150 tonnes/year. Modeled annual: 29.1 µg/m³.",
+          "category": "energy",
+          "indicators": ["pm25_annual"],
+          "dataType": "research",
+          "year": "2019",
+          "license": "Academic"
+        },
+        {
+          "name": "Kerala Grid Energy Mix",
+          "url": "https://old.kseb.in/",
+          "description": "Kerala grid: In-state generation ~80-90% renewable (60-70% hydro, 15-20% solar), BUT imports 70-80% of total consumption. Effective consumption-weighted mix: ~25-30% renewable, ~60-65% coal (from imports).",
+          "category": "energy",
+          "indicators": [],
+          "dataType": "research",
+          "year": "2024-25",
+          "license": "Government of Kerala",
+          "notes": "Kerala imports majority of power; effective coal share much higher than in-state generation suggests"
+        },
+        {
+          "name": "NCRB 2022 — Kochi (Kerala state rate)",
+          "url": "https://ncrb.gov.in/accidental-deaths-suicides-in-india.html",
+          "description": "Traffic fatalities: 9.2 per lakh population (2022). Uses Kerala state rate as city-specific data not available. Source: NCRB.",
+          "category": "safety",
+          "indicators": ["traffic_fatalities"],
+          "dataType": "static",
+          "year": "2022",
+          "license": "Government of India"
+        }
+      ]
+    },
+    "pune": {
+      "name": "Pune",
+      "state": "Maharashtra",
+      "sources": [
+        {
+          "name": "OpenCity — Pune CMP Dataset",
+          "url": "https://data.opencity.in/dataset/pune-comprehensive-mobility-plan",
+          "description": "Pune Comprehensive Mobility Plan. Mode share (2018): Walking 25%, Cycling 15% (highest cycling share — flat terrain, cycle culture), PT 12%, Private 48%.",
+          "category": "mobility",
+          "indicators": ["walking_share", "cycling_share", "sustainable_mode_share"],
+          "dataType": "static",
+          "year": "2018",
+          "license": "Open Data"
+        },
+        {
+          "name": "PMPML Vision 2027 (ITDP)",
+          "url": "https://itdp.in/",
+          "description": "ITDP Pune Municipal Parivahan Mahamandal Ltd bus reform vision document.",
+          "category": "transit_bus",
+          "indicators": [],
+          "dataType": "reference",
+          "year": "2023",
+          "license": "ITDP"
+        },
+        {
+          "name": "Pune Metro (Overpass/OSM)",
+          "url": "https://www.openstreetmap.org/",
+          "description": "Metro stations and lines fetched via Overpass API from OpenStreetMap. Phase 1 (partial, 2024): 33.3 km. Lines: Purple Line, Aqua Line.",
+          "category": "transit_metro",
+          "indicators": ["metro_network_km"],
+          "dataType": "live",
+          "year": "2024",
+          "license": "ODbL"
+        },
+        {
+          "name": "PMPML Bus Fleet",
+          "url": "https://www.pmpml.org/",
+          "description": "Pune Mahanagar Parivahan Mahamandal Limited: ~2,000 buses for ~78 lakh population = 25 per lakh.",
+          "category": "transit_bus",
+          "indicators": ["bus_fleet_per_lakh"],
+          "dataType": "static",
+          "year": "2023",
+          "license": "Government of Maharashtra"
+        },
+        {
+          "name": "OpenAQ — Pune Sensors",
+          "url": "https://explore.openaq.org/locations?country=IN&city=Pune",
+          "description": "7 PM2.5 monitoring stations. Sensor IDs: 12235540, 12236443, 12236457, 12236463, 12236449, 12304615, 12237987. Baseline 2023 annual: 36 µg/m³.",
+          "category": "air_quality",
+          "indicators": ["pm25_annual"],
+          "dataType": "live",
+          "year": "Live",
+          "license": "CC BY 4.0"
+        },
+        {
+          "name": "ARAI — Pune District Emission Inventory (2022)",
+          "url": "https://cms.araiindia.com/MediaFiles/SDC_CAPI_Pune_District_EI_Report_11822.pdf",
+          "description": "ARAI 2022 Pune emission inventory: Transport exhaust 20%, Road dust 19%, Industry 19%, Construction 12%, Agri waste 10%, Residential 6%, Waste burning 6%, DG sets 4%.",
+          "category": "energy",
+          "indicators": ["pm25_annual"],
+          "dataType": "research",
+          "year": "2022",
+          "license": "ARAI"
+        },
+        {
+          "name": "SAFAR — Pune Emission Inventory (2021)",
+          "url": "https://safar.tropmet.res.in/2021EIPUNE.pdf",
+          "description": "System of Air Quality Forecasting and Research (IITM Pune) emission inventory for Pune district.",
+          "category": "energy",
+          "indicators": ["pm25_annual"],
+          "dataType": "research",
+          "year": "2021",
+          "license": "Ministry of Earth Sciences"
+        },
+        {
+          "name": "UrbanEmissions — Pune APnA",
+          "url": "https://urbanemissions.info/india-apna/pune-india/",
+          "description": "PM2.5 source apportionment: Transport 30-39% (exhaust 20% + road dust 19%), Power generation 3-6% (no coal plants in city), Industry 19%. 25% of ambient PM2.5 from outside urban airshed.",
+          "category": "energy",
+          "indicators": ["pm25_annual"],
+          "dataType": "research",
+          "year": "2019",
+          "license": "Academic"
+        },
+        {
+          "name": "Maharashtra Grid Energy Mix",
+          "url": "https://www.mahagenco.in/generation/",
+          "description": "Maharashtra grid: ~18-22% renewable (6-8% wind, 4-6% solar, 5-7% hydro), ~72-78% coal/thermal, ~2-4% gas. MAHAGENCO FY2025: 89% thermal, 6.6% hydro, 4% gas, 0.6% solar.",
+          "category": "energy",
+          "indicators": [],
+          "dataType": "research",
+          "year": "2024-25",
+          "license": "Government of Maharashtra"
+        },
+        {
+          "name": "NCRB 2022 — Pune",
+          "url": "https://ncrb.gov.in/accidental-deaths-suicides-in-india.html",
+          "description": "Traffic fatalities: 7.1 per lakh population (2022) — lowest among Altmo cities. Source: NCRB.",
+          "category": "safety",
+          "indicators": ["traffic_fatalities"],
+          "dataType": "static",
+          "year": "2022",
+          "license": "Government of India"
+        },
+        {
+          "name": "TERI — Pune Action Prioritisation (2024)",
+          "url": "https://www.teriin.org/sites/default/files/2024-01/Prioritisation%20of%20actions%20in%20Pune%20n%20Nashik_16%20Jan%27%2024.pdf",
+          "description": "TERI report on prioritisation of NCAP actions for Pune and Nashik. Includes source apportionment validation.",
+          "category": "energy",
+          "indicators": ["pm25_annual"],
+          "dataType": "research",
+          "year": "2024",
+          "license": "TERI"
+        }
+      ]
+    }
+  }
+}
