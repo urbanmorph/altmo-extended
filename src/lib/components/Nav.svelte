@@ -14,6 +14,7 @@
     { href: '/impact', label: 'Impact' },
     { href: '/routes', label: 'Routes' },
     { href: '/forecast', label: 'Forecast' },
+    { href: '/benchmark', label: 'Benchmark' },
     { href: '/data-sources', label: 'Data Sources' }
   ];
 </script>

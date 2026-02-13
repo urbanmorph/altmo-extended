@@ -1,9 +1,10 @@
 /**
  * Shared QoL formatting helpers.
- * Avoids duplication across QoLScorecard, QoLRankedList, etc.
+ * Avoids duplication across QoLScorecard, QoLRankedList, BenchmarkTable, etc.
  */
 
 import { CITIES } from '$lib/config/cities';
+import { GRADE_BOUNDARIES } from '$lib/config/city-qol-data';
 
 export function cityName(cityId: string): string {
 	return CITIES.find((c) => c.id === cityId)?.name ?? cityId;
@@ -30,4 +31,31 @@ export function readinessScoreColor(total: number): string {
 	if (total >= 70) return 'var(--color-status-available)';
 	if (total >= 40) return 'var(--color-status-partial)';
 	return 'var(--color-status-unavailable)';
+}
+
+/**
+ * Compute how many points (on a 0-100 scale) a city needs to reach the next grade.
+ * Returns null if already at grade A.
+ */
+export function gapToNextGrade(composite: number): { grade: string; pointsNeeded: number } | null {
+	// GRADE_BOUNDARIES are sorted descending: A, B, C, D, E
+	for (const b of GRADE_BOUNDARIES) {
+		if (composite >= b.min) {
+			// Find the boundary above this one
+			const idx = GRADE_BOUNDARIES.indexOf(b);
+			if (idx === 0) return null; // Already A
+			const nextBoundary = GRADE_BOUNDARIES[idx - 1];
+			const pointsNeeded = Math.ceil(nextBoundary.min * 100 - composite * 100);
+			return { grade: nextBoundary.grade, pointsNeeded: Math.max(1, pointsNeeded) };
+		}
+	}
+	// Below E — need to reach D
+	return { grade: 'D', pointsNeeded: Math.ceil(0.30 * 100 - composite * 100) };
+}
+
+export function dimensionRankLabel(rank: number, total: number): string {
+	if (rank === 1) return 'Best';
+	if (rank === total) return 'Worst';
+	const suffix = rank === 2 ? 'nd' : rank === 3 ? 'rd' : 'th';
+	return `${rank}${suffix}`;
 }
