@@ -60,7 +60,8 @@
 
   const LIVE_SOURCE_LABELS: Record<string, string> = {
     traffic_fatalities: 'Supabase',
-    pm25_annual: 'OpenAQ'
+    pm25_annual: 'OpenAQ',
+    congestion_level: 'TomTom'
   };
 
   function isLiveIndicator(indicatorKey: string): boolean {
@@ -69,6 +70,11 @@
 
   function liveSourceLabel(indicatorKey: string): string {
     return LIVE_SOURCE_LABELS[indicatorKey] ?? 'live source';
+  }
+
+  function liveCount(total: number): { live: number; total: number } {
+    const live = overrides?.[cityId] ? Object.keys(overrides[cityId]).length : 0;
+    return { live, total };
   }
 </script>
 
@@ -80,16 +86,24 @@
         <h3 class="text-sm font-semibold text-text-primary">Transport QoL</h3>
         <p class="text-xs text-text-secondary">{gradeLabel(qol.grade)}</p>
       </div>
-      <div class="flex items-center gap-2">
-        <div class="flex items-center gap-1.5">
-          <span class="text-3xl font-bold" style="color: {gradeColor(qol.grade)}">{qol.grade}</span>
-          <i
-            class="{confidenceIcon(qol.confidence)} text-xs"
-            style="color: {confidenceColor(qol.confidence)}"
-            title="{confidenceLabel(qol.confidence)} confidence ({qol.indicatorsAvailable} of {qol.indicatorsTotal} indicators)"
-          ></i>
+      <div class="text-right">
+        <div class="flex items-center justify-end gap-2">
+          <div class="flex items-center gap-1.5">
+            <span class="text-3xl font-bold" style="color: {gradeColor(qol.grade)}">{qol.grade}</span>
+            <i
+              class="{confidenceIcon(qol.confidence)} text-xs"
+              style="color: {confidenceColor(qol.confidence)}"
+              title="{confidenceLabel(qol.confidence)} confidence ({qol.indicatorsAvailable} of {qol.indicatorsTotal} indicators)"
+            ></i>
+          </div>
+          <span class="text-sm text-text-secondary">{(qol.composite * 100).toFixed(0)}/100</span>
         </div>
-        <span class="text-sm text-text-secondary">{(qol.composite * 100).toFixed(0)}/100</span>
+        {#if liveCount(qol.indicatorsTotal).live > 0}
+          <p class="text-[0.6rem] text-text-secondary">
+            <i class="fa-solid fa-tower-broadcast" style="color: var(--color-altmo-500)"></i>
+            {liveCount(qol.indicatorsTotal).live} of {qol.indicatorsTotal} live
+          </p>
+        {/if}
       </div>
     </div>
 
