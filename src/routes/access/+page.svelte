@@ -724,32 +724,6 @@
 			<CityDataLayers cityId={data.cityId} />
 		</div>
 
-		<div class="mt-6 border-t border-border pt-4">
-			<h3 class="text-xs font-semibold uppercase tracking-wide text-text-secondary">Data Sources</h3>
-			<div class="mt-2 space-y-1 text-xs text-text-secondary">
-				<p>
-					<a href="https://github.com/Vonter/transitrouter" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">TransitRouter</a>
-					(MIT) — Bus stops &amp; routes
-				</p>
-				{#if data.cityId === 'bengaluru'}
-				<p>
-					<a href="https://github.com/geohacker/namma-metro" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">Namma Metro</a>
-					— Station locations &amp; lines
-				</p>
-				{:else if data.metroStationCount > 0}
-				<p>
-					<a href="https://www.openstreetmap.org" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">OpenStreetMap</a>
-					— Metro stations &amp; lines
-				</p>
-				{/if}
-				{#if data.railStationCount > 0}
-				<p>
-					<a href="https://www.openstreetmap.org" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">OpenStreetMap</a>
-					— Suburban rail stations &amp; lines
-				</p>
-				{/if}
-			</div>
-		</div>
 	</aside>
 
 	<div class="flex-1">
