@@ -623,13 +623,13 @@ export async function fetchTransitData(cityId: string): Promise<TransitData> {
 }
 
 async function fetchTransitDataImpl(cityId: string, cacheKey: string): Promise<TransitData> {
+	const empty: TransitData = { busStops: [], metroStations: [], metroLines: [], railStations: [], railLines: [] };
 	const city = getCityById(cityId);
 	const sources = city?.transitSources;
 
-	if (!sources) {
-		return { busStops: [], metroStations: [], metroLines: [], railStations: [], railLines: [] };
-	}
+	if (!sources) return empty;
 
+	try {
 	// Fetch bus, metro, and suburban rail in parallel
 	const [busResult, metro, suburbanRail] = await Promise.all([
 		(async () => {
@@ -685,6 +685,10 @@ async function fetchTransitDataImpl(cityId: string, cacheKey: string): Promise<T
 	}
 
 	return data;
+	} catch (e) {
+		console.error(`[transit] fetchTransitData failed for ${cityId}:`, (e as Error).message);
+		return empty;
+	}
 }
 
 /**
