@@ -36,9 +36,12 @@ interface RailBreakdown {
 async function buildRailTransitOverrides(): Promise<Record<string, RailBreakdown>> {
 	const results: Record<string, RailBreakdown> = {};
 
-	// Fetch cities sequentially to avoid Overpass 429 rate limiting on cold start.
+	// Fetch cities sequentially with a brief pause between Overpass-heavy cities
+	// to avoid 429/504 rate limiting on cold start.
 	// After first successful fetch, data is cached for 24h so subsequent calls are instant.
-	for (const city of CITIES.filter((c) => c.transitSources)) {
+	const cities = CITIES.filter((c) => c.transitSources);
+	for (let i = 0; i < cities.length; i++) {
+		const city = cities[i];
 		try {
 			const data = await fetchTransitData(city.id);
 			const metroKm = computeMetroNetworkKm(data.metroLines);
@@ -49,6 +52,10 @@ async function buildRailTransitOverrides(): Promise<Record<string, RailBreakdown
 			}
 		} catch (e) {
 			console.error(`[qol-overrides] Rail transit fetch failed for ${city.id}:`, (e as Error).message);
+		}
+		// Brief pause between cities to be a good Overpass API citizen
+		if (i < cities.length - 1) {
+			await new Promise((r) => setTimeout(r, 2000));
 		}
 	}
 

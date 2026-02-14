@@ -33,6 +33,9 @@ interface CacheEntry<T> {
 
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 const cache = new Map<string, CacheEntry<unknown>>();
+// In-flight request deduplication: if two callers request the same city
+// before the first finishes, they share the same promise (one Overpass call)
+const inflight = new Map<string, Promise<TransitData>>();
 
 function getCached<T>(key: string): T | null {
 	const entry = cache.get(key);
@@ -504,16 +507,24 @@ async function fetchSuburbanRailData(
 	if (!sources.suburbanRailOverpass) return empty;
 
 	try {
-		const results = await Promise.all(
-			sources.suburbanRailOverpass.queries.map((q) => fetchSuburbanRailSingleQuery(q))
-		);
+		// Run queries sequentially to avoid Overpass rate limiting / timeouts
+		// (Chennai has 2 queries: Southern Railway + MRTS)
+		const allStations: RailStation[] = [];
+		const allLines: RailLine[] = [];
 
-		const stations = results.flatMap((r) => r.stations);
-		const lines = results.flatMap((r) => r.lines);
+		for (const q of sources.suburbanRailOverpass.queries) {
+			try {
+				const result = await fetchSuburbanRailSingleQuery(q);
+				allStations.push(...result.stations);
+				allLines.push(...result.lines);
+			} catch (e) {
+				console.warn(`[transit] ${cityId}: suburban rail query "${q.network}" failed: ${(e as Error).message}`);
+			}
+		}
 
-		console.log(`[transit] ${cityId}: suburban rail — ${stations.length} stations, ${lines.length} lines`);
+		console.log(`[transit] ${cityId}: suburban rail — ${allStations.length} stations, ${allLines.length} lines`);
 
-		return { stations, lines };
+		return { stations: allStations, lines: allLines };
 	} catch (e) {
 		console.error(`[transit] Failed to fetch suburban rail for ${cityId}:`, (e as Error).message);
 		return empty;
@@ -598,6 +609,20 @@ export async function fetchTransitData(cityId: string): Promise<TransitData> {
 	const cached = getCached<TransitData>(cacheKey);
 	if (cached) return cached;
 
+	// Deduplicate concurrent requests for the same city
+	const pending = inflight.get(cacheKey);
+	if (pending) return pending;
+
+	const promise = fetchTransitDataImpl(cityId, cacheKey);
+	inflight.set(cacheKey, promise);
+	try {
+		return await promise;
+	} finally {
+		inflight.delete(cacheKey);
+	}
+}
+
+async function fetchTransitDataImpl(cityId: string, cacheKey: string): Promise<TransitData> {
 	const city = getCityById(cityId);
 	const sources = city?.transitSources;
 
