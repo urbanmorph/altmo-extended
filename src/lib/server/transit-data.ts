@@ -5,7 +5,7 @@
  */
 
 import { inflateRawSync } from 'node:zlib';
-import { getCityById, type TransitDataSources } from '$lib/config/cities';
+import { getCityById, type TransitDataSources, type SuburbanRailQuery } from '$lib/config/cities';
 import {
 	parseTransitRouterStops,
 	computeRouteCountsFromServices,
@@ -21,6 +21,8 @@ import {
 	type BusStop,
 	type MetroStation,
 	type MetroLine,
+	type RailStation,
+	type RailLine,
 	type RidershipMetrics
 } from '$lib/utils/transit';
 
@@ -281,6 +283,239 @@ out body qt;`;
 }
 
 /**
+ * Regex to normalize suburban rail corridor names.
+ * Strips "Fast", "Slow", "Up", "Down", "Local" suffixes and route direction variants
+ * so all relations for the same corridor collapse into a single line.
+ */
+const CORRIDOR_STRIP_RE = /\s*\(?(Fast|Slow|Up|Down|Local|Express|Stopping|Semi-?Fast)\)?/gi;
+
+/**
+ * Fetch suburban/commuter rail data from the Overpass API for a single query.
+ * Uses route=train (not subway/light_rail which is metro).
+ * Stations: railway=station or railway=halt (exclude station=subway).
+ */
+async function fetchSuburbanRailSingleQuery(
+	query: SuburbanRailQuery
+): Promise<{ stations: RailStation[]; lines: RailLine[] }> {
+	// Build the Overpass QL — include optional operator filter
+	const operatorFilter = query.operator ? `["operator"="${query.operator}"]` : '';
+	const overpassQL = `[out:json][timeout:90];
+relation["network"="${query.network}"]["route"="train"]${operatorFilter};
+out body;
+>;
+out body qt;`;
+
+	const res = await fetch(OVERPASS_API, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+		body: `data=${encodeURIComponent(overpassQL)}`
+	});
+
+	if (!res.ok) {
+		throw new Error(`Overpass API error for ${query.network}: ${res.status} ${res.statusText}`);
+	}
+
+	const data: OverpassResponse = await res.json();
+
+	// Build lookup maps
+	const nodeMap = new Map<number, { lat: number; lon: number; tags?: Record<string, string> }>();
+	const wayMap = new Map<number, number[]>();
+	const relations: OverpassRelation[] = [];
+
+	for (const el of data.elements) {
+		if (el.type === 'node') {
+			nodeMap.set(el.id, { lat: el.lat, lon: el.lon, tags: el.tags });
+		} else if (el.type === 'way') {
+			wayMap.set(el.id, el.nodes);
+		} else if (el.type === 'relation') {
+			relations.push(el);
+		}
+	}
+
+	// Group relations by corridor name (strip fast/slow/up/down variants)
+	const corridors = new Map<string, { relName: string; wayRefs: number[] }>();
+
+	for (const rel of relations) {
+		const tags = rel.tags ?? {};
+		const relName = tags.name ?? tags.ref ?? '';
+		if (!relName) continue;
+
+		// Normalize: strip direction/speed variants to get corridor name
+		const corridorKey = relName.replace(CORRIDOR_STRIP_RE, '').trim().toLowerCase();
+
+		if (!corridors.has(corridorKey)) {
+			corridors.set(corridorKey, { relName, wayRefs: [] });
+		}
+
+		// Collect way refs from all relations in this corridor
+		const wayRefs = rel.members.filter((m) => m.type === 'way').map((m) => m.ref);
+		corridors.get(corridorKey)!.wayRefs.push(...wayRefs);
+	}
+
+	// Build RailLine[] — match corridors to configured line names
+	const railLines: RailLine[] = [];
+	const configLineNames = Object.keys(query.lines);
+
+	for (const [, corridor] of corridors) {
+		// Match this corridor to a configured line name
+		let matchedName: string | undefined;
+		let matchedColor: string | undefined;
+
+		for (const [configName, color] of Object.entries(query.lines)) {
+			if (
+				corridor.relName.toLowerCase().includes(configName.toLowerCase()) ||
+				configName.toLowerCase().includes(corridor.relName.toLowerCase())
+			) {
+				matchedName = configName;
+				matchedColor = color;
+				break;
+			}
+		}
+
+		// Second pass: partial keyword match
+		if (!matchedName) {
+			for (const [configName, color] of Object.entries(query.lines)) {
+				const keywords = configName.toLowerCase().split(/[-\s]+/).filter((w) => w.length > 2);
+				const corridorLower = corridor.relName.toLowerCase();
+				if (keywords.some((kw) => corridorLower.includes(kw))) {
+					matchedName = configName;
+					matchedColor = color;
+					break;
+				}
+			}
+		}
+
+		if (!matchedName || !matchedColor) continue;
+
+		// Skip if we already built this line
+		if (railLines.some((l) => l.name === matchedName)) continue;
+
+		// Deduplicate way refs and build geometry
+		const uniqueWayRefs = [...new Set(corridor.wayRefs)];
+		const segments: [number, number][][] = [];
+		let currentSegment: [number, number][] = [];
+
+		for (const wayId of uniqueWayRefs) {
+			const nodeRefs = wayMap.get(wayId);
+			if (!nodeRefs) continue;
+
+			const wayCoords: [number, number][] = [];
+			for (const nid of nodeRefs) {
+				const node = nodeMap.get(nid);
+				if (node) {
+					wayCoords.push([node.lon, node.lat]);
+				}
+			}
+
+			if (wayCoords.length === 0) continue;
+
+			if (currentSegment.length > 0) {
+				const lastCoord = currentSegment[currentSegment.length - 1];
+				const firstWay = wayCoords[0];
+				const lastWay = wayCoords[wayCoords.length - 1];
+
+				if (lastCoord[0] === firstWay[0] && lastCoord[1] === firstWay[1]) {
+					currentSegment.push(...wayCoords.slice(1));
+				} else if (lastCoord[0] === lastWay[0] && lastCoord[1] === lastWay[1]) {
+					wayCoords.reverse();
+					currentSegment.push(...wayCoords.slice(1));
+				} else {
+					segments.push(currentSegment);
+					currentSegment = [...wayCoords];
+				}
+			} else {
+				currentSegment = [...wayCoords];
+			}
+		}
+		if (currentSegment.length > 0) segments.push(currentSegment);
+
+		if (segments.length > 0) {
+			railLines.push({
+				name: matchedName,
+				color: matchedColor,
+				coordinates: segments.flat(),
+				segments
+			});
+		}
+	}
+
+	// Identify station nodes — railway=station or railway=halt, exclude station=subway
+	const stationNodes: { name: string; lat: number; lon: number }[] = [];
+	for (const [, node] of nodeMap) {
+		const tags = node.tags;
+		if (!tags) continue;
+
+		const isRailStation =
+			(tags['railway'] === 'station' || tags['railway'] === 'halt') &&
+			tags['station'] !== 'subway' &&
+			tags['station'] !== 'light_rail';
+
+		if (isRailStation && tags['name']) {
+			stationNodes.push({ name: tags['name'], lat: node.lat, lon: node.lon });
+		}
+	}
+
+	// Deduplicate stations by name
+	const seenNames = new Set<string>();
+	const uniqueStations = stationNodes.filter((s) => {
+		if (seenNames.has(s.name)) return false;
+		seenNames.add(s.name);
+		return true;
+	});
+
+	// Assign each station to the nearest line
+	const railStations: RailStation[] = uniqueStations.map((stn) => {
+		let nearestLine = configLineNames[0] ?? 'suburban';
+		let minDist = Infinity;
+
+		for (const line of railLines) {
+			// Sample every 10th coordinate for performance
+			for (let i = 0; i < line.coordinates.length; i += 10) {
+				const [lng, lat] = line.coordinates[i];
+				const d = haversine(stn.lat, stn.lon, lat, lng);
+				if (d < minDist) {
+					minDist = d;
+					nearestLine = line.name;
+				}
+			}
+		}
+
+		return { name: stn.name, lng: stn.lon, lat: stn.lat, line: nearestLine };
+	});
+
+	return { stations: railStations, lines: railLines };
+}
+
+/**
+ * Fetch suburban rail data for a city by iterating over all configured queries.
+ * Chennai needs 2 queries (Southern Railway + MRTS), others need 1.
+ */
+async function fetchSuburbanRailData(
+	cityId: string,
+	sources: TransitDataSources
+): Promise<{ stations: RailStation[]; lines: RailLine[] }> {
+	const empty = { stations: [] as RailStation[], lines: [] as RailLine[] };
+
+	if (!sources.suburbanRailOverpass) return empty;
+
+	try {
+		const results = await Promise.all(
+			sources.suburbanRailOverpass.queries.map((q) => fetchSuburbanRailSingleQuery(q))
+		);
+
+		const stations = results.flatMap((r) => r.stations);
+		const lines = results.flatMap((r) => r.lines);
+
+		console.log(`[transit] ${cityId}: suburban rail — ${stations.length} stations, ${lines.length} lines`);
+
+		return { stations, lines };
+	} catch (e) {
+		console.error(`[transit] Failed to fetch suburban rail for ${cityId}:`, (e as Error).message);
+		return empty;
+	}
+}
+
+/**
  * Fetch and parse metro station/line data, dispatching to the correct parser per city.
  * Returns { stations, lines } or empty arrays if no metro sources are configured.
  */
@@ -362,49 +597,54 @@ export async function fetchTransitData(cityId: string): Promise<TransitData> {
 	const sources = city?.transitSources;
 
 	if (!sources) {
-		return { busStops: [], metroStations: [], metroLines: [] };
+		return { busStops: [], metroStations: [], metroLines: [], railStations: [], railLines: [] };
 	}
 
-	// Fetch bus sources in parallel (shared across all cities)
-	const [rawStops, rawServices] = await Promise.all([
-		sources.busStops
-			? fetchJSON<Record<string, [number, number, string, string, string]>>(sources.busStops).catch((e) => {
-					console.error('[transit] Failed to fetch bus stops:', e.message);
-					return null;
-				})
-			: null,
-		sources.busServices
-			? fetchJSON<Record<string, Record<string, unknown>>>(sources.busServices).catch((e) => {
-					console.error('[transit] Failed to fetch bus services:', e.message);
-					return null;
-				})
-			: null
+	// Fetch bus, metro, and suburban rail in parallel
+	const [busResult, metro, suburbanRail] = await Promise.all([
+		(async () => {
+			const [rawStops, rawServices] = await Promise.all([
+				sources.busStops
+					? fetchJSON<Record<string, [number, number, string, string, string]>>(sources.busStops).catch((e) => {
+							console.error('[transit] Failed to fetch bus stops:', e.message);
+							return null;
+						})
+					: null,
+				sources.busServices
+					? fetchJSON<Record<string, Record<string, unknown>>>(sources.busServices).catch((e) => {
+							console.error('[transit] Failed to fetch bus services:', e.message);
+							return null;
+						})
+					: null
+			]);
+
+			let busStops: BusStop[] = [];
+			if (rawStops) {
+				const parsedStops = parseTransitRouterStops(rawStops);
+				const routeCounts = rawServices
+					? computeRouteCountsFromServices(rawServices as Record<string, { name: string; [k: string]: string | string[][] }>)
+					: new Map<string, number>();
+
+				busStops = parsedStops.map((s) => ({
+					...s,
+					routeCount: routeCounts.get(s.id) ?? 0
+				}));
+			}
+			return busStops;
+		})(),
+		fetchMetroData(cityId, sources),
+		fetchSuburbanRailData(cityId, sources)
 	]);
 
-	// Parse bus stops and compute route counts
-	let busStops: BusStop[] = [];
-	if (rawStops) {
-		const parsedStops = parseTransitRouterStops(rawStops);
-		const routeCounts = rawServices
-			? computeRouteCountsFromServices(rawServices as Record<string, { name: string; [k: string]: string | string[][] }>)
-			: new Map<string, number>();
-
-		busStops = parsedStops.map((s) => ({
-			...s,
-			routeCount: routeCounts.get(s.id) ?? 0
-		}));
-	}
-
-	// Parse metro data — dispatch to city-specific parsers
-	const metro = await fetchMetroData(cityId, sources);
-
 	const data: TransitData = {
-		busStops,
+		busStops: busResult,
 		metroStations: metro.stations,
-		metroLines: metro.lines
+		metroLines: metro.lines,
+		railStations: suburbanRail.stations,
+		railLines: suburbanRail.lines
 	};
 
-	console.log(`[transit] ${cityId}: ${busStops.length} bus stops, ${metro.stations.length} metro stations, ${metro.lines.length} metro lines`);
+	console.log(`[transit] ${cityId}: ${busResult.length} bus stops, ${metro.stations.length} metro stations, ${metro.lines.length} metro lines, ${suburbanRail.stations.length} rail stations, ${suburbanRail.lines.length} rail lines`);
 
 	setCache(cacheKey, data);
 	return data;

@@ -11,6 +11,10 @@
  * then /v3/locations/{id}/sensors to find active PM2.5 sensor IDs (last reported 2025+).
  */
 export const CITY_OPENAQ_SENSORS: Record<string, { name: string; sensorIds: number[] }> = {
+	ahmedabad: {
+		name: 'Ahmedabad',
+		sensorIds: [] // Discover via: /v3/locations?coordinates=23.023,72.571&radius=25000&parameters_id=2
+	},
 	bengaluru: {
 		name: 'Bengaluru',
 		sensorIds: [12235361, 12235370, 12235267, 12235240, 12235285, 12235258, 12235249]
@@ -35,6 +39,10 @@ export const CITY_OPENAQ_SENSORS: Record<string, { name: string; sensorIds: numb
 		name: 'Kochi',
 		sensorIds: [12235842]
 	},
+	mumbai: {
+		name: 'Mumbai',
+		sensorIds: [] // Discover via: /v3/locations?coordinates=19.076,72.878&radius=25000&parameters_id=2
+	},
 	pune: {
 		name: 'Pune',
 		sensorIds: [12235540, 12236443, 12236457, 12236463, 12236449, 12304615, 12237987]
@@ -51,12 +59,14 @@ export const CITY_OPENAQ_SENSORS: Record<string, { name: string; sensorIds: numb
  * To populate: run the discovery query above with OPENAQ_API_KEY set.
  */
 export const CITY_OPENAQ_NO2_SENSORS: Record<string, { name: string; sensorIds: number[] }> = {
+	ahmedabad: { name: 'Ahmedabad', sensorIds: [] },
 	bengaluru: { name: 'Bengaluru', sensorIds: [] },
 	chennai: { name: 'Chennai', sensorIds: [] },
 	delhi: { name: 'Delhi', sensorIds: [] },
 	hyderabad: { name: 'Hyderabad', sensorIds: [] },
 	indore: { name: 'Indore', sensorIds: [] },
 	kochi: { name: 'Kochi', sensorIds: [] },
+	mumbai: { name: 'Mumbai', sensorIds: [] },
 	pune: { name: 'Pune', sensorIds: [] }
 };
 

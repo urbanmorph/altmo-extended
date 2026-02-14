@@ -26,11 +26,28 @@ export const DATA_LAYERS: DataLayer[] = [
 	{ key: 'bus_frequency', label: 'Bus Frequency', description: 'Bus service frequency data' },
 	{ key: 'walking_infra', label: 'Walking Infrastructure', description: 'Footpath, TenderSURE, and pedestrian facility data' },
 	{ key: 'cycling_infra', label: 'Cycling Infrastructure', description: 'Cycle lanes, bike parking, PBS data' },
+	{ key: 'suburban_rail', label: 'Suburban Rail', description: 'Suburban/commuter rail station locations and line geometry' },
 	{ key: 'safety_data', label: 'Safety / Accident Data', description: 'Pedestrian and cyclist crash statistics' },
 	{ key: 'air_quality', label: 'Air Quality', description: 'CPCB/SAFAR monitoring station data' }
 ];
 
 export const CITY_READINESS: CityDataReadiness[] = [
+	{
+		cityId: 'ahmedabad',
+		layers: {
+			altmo_traces: 'partial',
+			bus_stops: 'available',
+			metro_stations: 'available',
+			metro_frequency: 'partial',
+			metro_ridership: 'unavailable',
+			bus_frequency: 'available',
+			suburban_rail: 'unavailable',
+			walking_infra: 'unavailable',
+			cycling_infra: 'partial',
+			safety_data: 'partial',
+			air_quality: 'available'
+		}
+	},
 	{
 		cityId: 'bengaluru',
 		layers: {
@@ -40,6 +57,7 @@ export const CITY_READINESS: CityDataReadiness[] = [
 			metro_frequency: 'available',
 			metro_ridership: 'available',
 			bus_frequency: 'available',
+			suburban_rail: 'unavailable',
 			walking_infra: 'partial',
 			cycling_infra: 'partial',
 			safety_data: 'available',
@@ -55,6 +73,7 @@ export const CITY_READINESS: CityDataReadiness[] = [
 			metro_frequency: 'partial',
 			metro_ridership: 'unavailable',
 			bus_frequency: 'available',
+			suburban_rail: 'available',
 			walking_infra: 'unavailable',
 			cycling_infra: 'unavailable',
 			safety_data: 'partial',
@@ -70,6 +89,7 @@ export const CITY_READINESS: CityDataReadiness[] = [
 			metro_frequency: 'partial',
 			metro_ridership: 'unavailable',
 			bus_frequency: 'available',
+			suburban_rail: 'partial',
 			walking_infra: 'unavailable',
 			cycling_infra: 'unavailable',
 			safety_data: 'partial',
@@ -85,6 +105,7 @@ export const CITY_READINESS: CityDataReadiness[] = [
 			metro_frequency: 'available',
 			metro_ridership: 'unavailable',
 			bus_frequency: 'available',
+			suburban_rail: 'available',
 			walking_infra: 'unavailable',
 			cycling_infra: 'unavailable',
 			safety_data: 'partial',
@@ -96,10 +117,11 @@ export const CITY_READINESS: CityDataReadiness[] = [
 		layers: {
 			altmo_traces: 'partial',
 			bus_stops: 'available',
-			metro_stations: 'unavailable',
+			metro_stations: 'partial',
 			metro_frequency: 'unavailable',
 			metro_ridership: 'unavailable',
 			bus_frequency: 'partial',
+			suburban_rail: 'unavailable',
 			walking_infra: 'unavailable',
 			cycling_infra: 'unavailable',
 			safety_data: 'unavailable',
@@ -115,10 +137,27 @@ export const CITY_READINESS: CityDataReadiness[] = [
 			metro_frequency: 'available',
 			metro_ridership: 'unavailable',
 			bus_frequency: 'available',
+			suburban_rail: 'unavailable',
 			walking_infra: 'unavailable',
 			cycling_infra: 'unavailable',
 			safety_data: 'unavailable',
 			air_quality: 'partial'
+		}
+	},
+	{
+		cityId: 'mumbai',
+		layers: {
+			altmo_traces: 'partial',
+			bus_stops: 'partial',
+			metro_stations: 'available',
+			metro_frequency: 'partial',
+			metro_ridership: 'unavailable',
+			bus_frequency: 'partial',
+			suburban_rail: 'available',
+			walking_infra: 'unavailable',
+			cycling_infra: 'unavailable',
+			safety_data: 'available',
+			air_quality: 'available'
 		}
 	},
 	{
@@ -130,6 +169,7 @@ export const CITY_READINESS: CityDataReadiness[] = [
 			metro_frequency: 'unavailable',
 			metro_ridership: 'unavailable',
 			bus_frequency: 'available',
+			suburban_rail: 'partial',
 			walking_infra: 'unavailable',
 			cycling_infra: 'unavailable',
 			safety_data: 'unavailable',
@@ -152,7 +192,7 @@ export interface ScoreCategory {
 }
 
 export const SCORE_CATEGORIES: ScoreCategory[] = [
-	{ key: 'core', label: 'Core Transit', layers: ['altmo_traces', 'bus_stops', 'metro_stations'], weightPerLayer: 15 },
+	{ key: 'core', label: 'Core Transit', layers: ['altmo_traces', 'bus_stops', 'metro_stations', 'suburban_rail'], weightPerLayer: 15 },
 	{ key: 'infra', label: 'Infrastructure', layers: ['walking_infra', 'cycling_infra'], weightPerLayer: 15 },
 	{ key: 'freq', label: 'Frequency & Ridership', layers: ['metro_frequency', 'bus_frequency', 'metro_ridership'], weightPerLayer: 5 },
 	{ key: 'context', label: 'Contextual', layers: ['safety_data', 'air_quality'], weightPerLayer: 5 }

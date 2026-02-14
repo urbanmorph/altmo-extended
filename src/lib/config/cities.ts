@@ -15,6 +15,12 @@ export interface CityConfig {
 	transitSources?: TransitDataSources;
 }
 
+export interface SuburbanRailQuery {
+	network: string;
+	operator?: string;
+	lines: Record<string, string>; // display name -> hex color
+}
+
 export interface TransitDataSources {
 	busStops?: string;
 	busServices?: string;
@@ -24,6 +30,7 @@ export interface TransitDataSources {
 	metroGTFS?: string;
 	cycleways?: string;
 	metroOverpass?: { network: string; lines: Record<string, string> };
+	suburbanRailOverpass?: { queries: SuburbanRailQuery[] };
 }
 
 /**
@@ -57,10 +64,65 @@ const DELHI_TRANSIT: TransitDataSources = {
 const HYDERABAD_TRANSIT: TransitDataSources = {
 	...transitRouterSources('telangana'),
 	metroStations: 'https://raw.githubusercontent.com/kavyajeetbora/metro_accessibility/master/data/hyderabad/Hyderabad_station_buildings.geojson',
-	metroLines: 'https://raw.githubusercontent.com/kavyajeetbora/metro_accessibility/master/data/hyderabad/Hyderabad_public_transport_route.geojson'
+	metroLines: 'https://raw.githubusercontent.com/kavyajeetbora/metro_accessibility/master/data/hyderabad/Hyderabad_public_transport_route.geojson',
+	suburbanRailOverpass: {
+		queries: [{
+			network: 'Hyderabad MMTS',
+			lines: {
+				'Lingampalli-Falaknuma': '#dc2626',
+				'Secunderabad-Medchal': '#2563eb',
+				'Lingampalli-Ghatkesar': '#16a34a'
+			}
+		}]
+	}
+};
+
+const AHMEDABAD_TRANSIT: TransitDataSources = {
+	...transitRouterSources('ahmedabad'),
+	metroOverpass: {
+		network: 'Ahmedabad Metro',
+		lines: {
+			'Blue Line (East-West)': '#2563eb',
+			'Red Line (North-South)': '#dc2626'
+		}
+	}
+};
+
+const MUMBAI_TRANSIT: TransitDataSources = {
+	// TransitRouter does NOT have Mumbai — bus data from ChaloBEST/OpenCity
+	metroOverpass: {
+		network: 'Mumbai Metro',
+		lines: {
+			'Blue Line (Line 1)': '#2563eb',
+			'Yellow Line (Line 2A)': '#eab308',
+			'Red Line (Line 7)': '#dc2626',
+			'Aqua Line (Line 3)': '#06b6d4'
+		}
+	},
+	suburbanRailOverpass: {
+		queries: [{
+			network: 'Mumbai Suburban Railway',
+			lines: {
+				'Western Line': '#2563eb',
+				'Central Line': '#dc2626',
+				'Harbour Line': '#16a34a',
+				'Trans-Harbour Line': '#9333ea',
+				'Vasai-Diva Line': '#f97316',
+				'Nerul-Uran Line': '#06b6d4'
+			}
+		}]
+	}
 };
 
 export const CITIES: CityConfig[] = [
+	{
+		id: 'ahmedabad',
+		name: 'Ahmedabad',
+		lat: 23.0225,
+		lng: 72.5714,
+		zoom: 12,
+		transitSources: AHMEDABAD_TRANSIT
+	},
 	{
 		id: 'bengaluru',
 		name: 'Bengaluru',
@@ -80,6 +142,27 @@ export const CITIES: CityConfig[] = [
 			metroOverpass: {
 				network: 'Chennai Metro',
 				lines: { 'Blue Line': '#2563eb', 'Green Line': '#16a34a' }
+			},
+			suburbanRailOverpass: {
+				queries: [
+					{
+						network: 'Southern Railway',
+						operator: 'Chennai Suburban Railway',
+						lines: {
+							'Beach-Tambaram': '#dc2626',
+							'Beach-Velachery': '#9333ea',
+							'Chennai Central-Arakkonam': '#2563eb',
+							'Chennai Central-Tiruvallur': '#f97316',
+							'Chennai Central-Gummidipoondi': '#16a34a'
+						}
+					},
+					{
+						network: 'Chennai MRTS',
+						lines: {
+							'MRTS (Beach-Velachery)': '#ec4899'
+						}
+					}
+				]
 			}
 		}
 	},
@@ -119,6 +202,14 @@ export const CITIES: CityConfig[] = [
 		}
 	},
 	{
+		id: 'mumbai',
+		name: 'Mumbai',
+		lat: 19.076,
+		lng: 72.8777,
+		zoom: 11,
+		transitSources: MUMBAI_TRANSIT
+	},
+	{
 		id: 'pune',
 		name: 'Pune',
 		lat: 18.5204,
@@ -129,6 +220,14 @@ export const CITIES: CityConfig[] = [
 			metroOverpass: {
 				network: 'Pune Metro',
 				lines: { 'Purple Line': '#9333ea', 'Aqua Line': '#06b6d4' }
+			},
+			suburbanRailOverpass: {
+				queries: [{
+					network: 'Pune Suburban Railway',
+					lines: {
+						'Pune-Lonavala': '#dc2626'
+					}
+				}]
 			}
 		}
 	}

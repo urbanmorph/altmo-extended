@@ -5,9 +5,35 @@ import {
 	busStopsToGeoJSON,
 	metroStationsToGeoJSON,
 	metroLinesToGeoJSON,
-	computeMetroNetworkKm
+	railStationsToGeoJSON,
+	railLinesToGeoJSON
 } from '$lib/utils/transit';
 import { buildQoLOverrides } from '$lib/server/qol-overrides';
+import { getGeoMarkers } from '$lib/server/altmo-core';
+import type { GeoMarker } from '$lib/server/altmo-core';
+
+const emptyFC: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: [] };
+
+/** Build GeoJSON from geo_markers, filtering by associable_type */
+function geoMarkersToGeoJSON(markers: GeoMarker[], types: string[]): GeoJSON.FeatureCollection {
+	return {
+		type: 'FeatureCollection',
+		features: markers
+			.filter((m) => m.lat && m.lon && types.includes(m.type))
+			.map((m) => ({
+				type: 'Feature' as const,
+				geometry: {
+					type: 'Point' as const,
+					coordinates: [m.lon, m.lat]
+				},
+				properties: {
+					id: m.id,
+					name: m.name,
+					marker_type: m.type
+				}
+			}))
+	};
+}
 
 export const load: PageServerLoad = async ({ url, cookies }) => {
 	const cityId = url.searchParams.get('city') ?? cookies.get('city') ?? 'bengaluru';
@@ -18,21 +44,19 @@ export const load: PageServerLoad = async ({ url, cookies }) => {
 	const resolvedCity = city ?? getCityById('bengaluru')!;
 
 	const hasTransitSources = !!resolvedCity.transitSources;
-	const [transitResult, qolOverrides] = await Promise.all([
+	const [transitResult, qolOverrides, geoMarkers] = await Promise.all([
 		hasTransitSources
 			? fetchTransitData(resolvedCityId)
-			: Promise.resolve({ busStops: [], metroStations: [], metroLines: [] }),
-		buildQoLOverrides()
+			: Promise.resolve({ busStops: [], metroStations: [], metroLines: [], railStations: [], railLines: [] }),
+		buildQoLOverrides(),
+		getGeoMarkers()
 	]);
 
-	// Override metro_network_km from live transit line geometries
-	const metroNetworkKm = computeMetroNetworkKm(transitResult.metroLines);
-	if (metroNetworkKm > 0) {
-		qolOverrides[resolvedCityId] = {
-			...qolOverrides[resolvedCityId],
-			metro_network_km: metroNetworkKm
-		};
-	}
+	// rail_transit_km override is handled centrally by buildQoLOverrides()
+
+	// Split geo_markers by type: Company/Campus → commuter destinations, TransitPoint → separate layer
+	const companiesGeoJSON = geoMarkers ? geoMarkersToGeoJSON(geoMarkers, ['Company', 'Campus']) : emptyFC;
+	const transitPointsGeoJSON = geoMarkers ? geoMarkersToGeoJSON(geoMarkers, ['TransitPoint']) : emptyFC;
 
 	return {
 		cityId: resolvedCityId,
@@ -43,8 +67,15 @@ export const load: PageServerLoad = async ({ url, cookies }) => {
 		busStopsGeoJSON: busStopsToGeoJSON(transitResult.busStops),
 		metroStationsGeoJSON: metroStationsToGeoJSON(transitResult.metroStations),
 		metroLinesGeoJSON: metroLinesToGeoJSON(transitResult.metroLines),
+		railStationsGeoJSON: railStationsToGeoJSON(transitResult.railStations),
+		railLinesGeoJSON: railLinesToGeoJSON(transitResult.railLines),
 		busStopCount: transitResult.busStops.length,
 		metroStationCount: transitResult.metroStations.length,
+		railStationCount: transitResult.railStations.length,
+		companiesGeoJSON,
+		companyCount: companiesGeoJSON.features.length,
+		transitPointsGeoJSON,
+		transitPointCount: transitPointsGeoJSON.features.length,
 		qolOverrides
 	};
 };

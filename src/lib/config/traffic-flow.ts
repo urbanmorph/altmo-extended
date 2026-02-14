@@ -16,6 +16,17 @@ export interface CityTrafficConfig {
 }
 
 export const CITY_TRAFFIC_POINTS: Record<string, CityTrafficConfig> = {
+	ahmedabad: {
+		name: 'Ahmedabad',
+		samplePoints: [
+			{ lat: 23.0225, lng: 72.5714, label: 'Lal Darwaja / Old City' },
+			{ lat: 23.0276, lng: 72.5071, label: 'SG Highway / Bodakdev' },
+			{ lat: 23.0469, lng: 72.5313, label: 'Ashram Road / Nehru Bridge' },
+			{ lat: 22.9973, lng: 72.6003, label: 'Naroda' },
+			{ lat: 23.0733, lng: 72.5170, label: 'Sabarmati / Gandhinagar Highway' },
+			{ lat: 23.0120, lng: 72.5136, label: 'Satellite / Jodhpur' }
+		]
+	},
 	bengaluru: {
 		name: 'Bengaluru',
 		samplePoints: [
@@ -78,6 +89,19 @@ export const CITY_TRAFFIC_POINTS: Record<string, CityTrafficConfig> = {
 			{ lat: 9.9674, lng: 76.3204, label: 'Vytilla' },
 			{ lat: 9.9943, lng: 76.2913, label: 'Kaloor' },
 			{ lat: 10.1004, lng: 76.3570, label: 'Aluva' }
+		]
+	},
+	mumbai: {
+		name: 'Mumbai',
+		samplePoints: [
+			{ lat: 19.076, lng: 72.8777, label: 'CST / Fort (City Centre)' },
+			{ lat: 19.1136, lng: 72.8697, label: 'Dadar (Central Junction)' },
+			{ lat: 19.0633, lng: 72.8502, label: 'Haji Ali / Worli Sea Link' },
+			{ lat: 19.1197, lng: 72.8464, label: 'Sion Junction' },
+			{ lat: 19.1368, lng: 72.837, label: 'Andheri (Western Express Highway)' },
+			{ lat: 19.2183, lng: 72.8459, label: 'Borivali (Western Suburb)' },
+			{ lat: 19.0427, lng: 73.0286, label: 'Vashi / Sion-Panvel Highway' },
+			{ lat: 19.1867, lng: 72.9511, label: 'Mulund (Eastern Express Highway)' }
 		]
 	},
 	pune: {

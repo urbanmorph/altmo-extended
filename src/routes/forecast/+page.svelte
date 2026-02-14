@@ -7,7 +7,7 @@
     computeScenarioResult,
     getDefaultInterventions,
     resolvePresetForCity,
-    getCityMetroKm,
+    getCityRailKm,
     type InterventionValues,
     type ScenarioPreset,
     type ScenarioResult

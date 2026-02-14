@@ -208,16 +208,25 @@
 				value={data.metrics.totalMetroStations.toLocaleString()}
 				icon="fa-solid fa-train-subway"
 			/>
+			{#if (data.metrics.totalRailStations ?? 0) > 0}
+				<MetricCard
+					label="Suburban Rail Stations"
+					value={(data.metrics.totalRailStations ?? 0).toLocaleString()}
+					icon="fa-solid fa-train"
+				/>
+			{/if}
 			<MetricCard
 				label="Bus Routes"
 				value={data.metrics.totalBusRoutes.toLocaleString()}
 				icon="fa-solid fa-route"
 			/>
-			<MetricCard
-				label="Avg Routes/Stop"
-				value={data.metrics.avgRoutesPerStop.toFixed(1)}
-				icon="fa-solid fa-chart-simple"
-			/>
+			{#if !(data.metrics.totalRailStations ?? 0)}
+				<MetricCard
+					label="Avg Routes/Stop"
+					value={data.metrics.avgRoutesPerStop.toFixed(1)}
+					icon="fa-solid fa-chart-simple"
+				/>
+			{/if}
 		</div>
 	{/if}
 
@@ -302,6 +311,27 @@
 					</div>
 					<p class="mt-2 text-sm text-text-secondary">
 						{data.metrics.totalMetroStations} stations across {Object.keys(data.metroByLine).length} lines
+					</p>
+				</div>
+			{/if}
+
+			<!-- Suburban rail lines as compact pills -->
+			{#if data.railByLine && Object.keys(data.railByLine).length > 0}
+				<div class="mb-4">
+					<h4 class="text-sm font-medium text-text-secondary mb-2">Suburban Rail Lines</h4>
+					<div class="flex flex-wrap gap-2">
+						{#each Object.entries(data.railByLine) as [lineName, stations]}
+							<span
+								class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium text-white"
+								style="background-color: #b45309"
+							>
+								{lineName}
+								<span class="rounded-full bg-white/20 px-1.5 text-xs">{stations.length}</span>
+							</span>
+						{/each}
+					</div>
+					<p class="mt-2 text-sm text-text-secondary">
+						{data.metrics.totalRailStations ?? 0} stations across {Object.keys(data.railByLine).length} corridors
 					</p>
 				</div>
 			{/if}

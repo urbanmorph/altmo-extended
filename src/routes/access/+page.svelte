@@ -15,6 +15,10 @@
 	let showBusStops = $state(true);
 	let showMetroStations = $state(true);
 	let showMetroLines = $state(false);
+	let showRailStations = $state(false);
+	let showRailLines = $state(false);
+	let showCompanies = $state(false);
+	let showTransitPoints = $state(false);
 	let showCatchmentWalk400 = $state(false);
 	let showCatchmentWalk800 = $state(false);
 	let showCatchmentCycle = $state(false);
@@ -50,6 +54,10 @@
 		const busStops = data.busStopsGeoJSON;
 		const metroStations = data.metroStationsGeoJSON;
 		const metroLines = data.metroLinesGeoJSON;
+		const railStations = data.railStationsGeoJSON;
+		const railLines = data.railLinesGeoJSON;
+		const companies = data.companiesGeoJSON;
+		const transitPoints = data.transitPointsGeoJSON;
 		const center = data.cityCenter;
 		const zoom = data.cityZoom;
 
@@ -57,10 +65,18 @@
 			const busSource = map.getSource('bus-stops') as maplibregl.GeoJSONSource | undefined;
 			const metroStationSource = map.getSource('metro-stations') as maplibregl.GeoJSONSource | undefined;
 			const metroLineSource = map.getSource('metro-lines') as maplibregl.GeoJSONSource | undefined;
+			const railStationSource = map.getSource('rail-stations') as maplibregl.GeoJSONSource | undefined;
+			const railLineSource = map.getSource('rail-lines') as maplibregl.GeoJSONSource | undefined;
+			const companySource = map.getSource('companies') as maplibregl.GeoJSONSource | undefined;
+			const transitPointSource = map.getSource('transit-points') as maplibregl.GeoJSONSource | undefined;
 
 			if (busSource) busSource.setData(busStops as GeoJSON.FeatureCollection);
 			if (metroStationSource) metroStationSource.setData(metroStations as GeoJSON.FeatureCollection);
 			if (metroLineSource) metroLineSource.setData(metroLines as GeoJSON.FeatureCollection);
+			if (railStationSource) railStationSource.setData(railStations as GeoJSON.FeatureCollection);
+			if (railLineSource) railLineSource.setData(railLines as GeoJSON.FeatureCollection);
+			if (companySource) companySource.setData(companies as GeoJSON.FeatureCollection);
+			if (transitPointSource) transitPointSource.setData(transitPoints as GeoJSON.FeatureCollection);
 
 			// Clear catchment rings on city change
 			const emptyFC = { type: 'FeatureCollection' as const, features: [] };
@@ -122,6 +138,26 @@
 			mapInstance.addSource('catchment-cycle', {
 				type: 'geojson',
 				data: { type: 'FeatureCollection' as const, features: [] }
+			});
+
+			mapInstance.addSource('companies', {
+				type: 'geojson',
+				data: data.companiesGeoJSON as GeoJSON.FeatureCollection
+			});
+
+			mapInstance.addSource('rail-stations', {
+				type: 'geojson',
+				data: data.railStationsGeoJSON as GeoJSON.FeatureCollection
+			});
+
+			mapInstance.addSource('rail-lines', {
+				type: 'geojson',
+				data: data.railLinesGeoJSON as GeoJSON.FeatureCollection
+			});
+
+			mapInstance.addSource('transit-points', {
+				type: 'geojson',
+				data: data.transitPointsGeoJSON as GeoJSON.FeatureCollection
 			});
 
 		// Add layers for bus stops
@@ -269,7 +305,127 @@
 			}
 		});
 
+		// Add companies layer (tangerine dots, default hidden)
+		mapInstance.addLayer({
+			id: 'companies',
+			type: 'circle',
+			source: 'companies',
+			paint: {
+				'circle-radius': 5,
+				'circle-color': '#FF7B27',
+				'circle-opacity': 0.8,
+				'circle-stroke-width': 1,
+				'circle-stroke-color': '#ffffff'
+			},
+			layout: {
+				visibility: showCompanies ? 'visible' : 'none'
+			}
+		});
+
+		// Add suburban rail line layer (dashed, color from feature property)
+		mapInstance.addLayer({
+			id: 'rail-lines',
+			type: 'line',
+			source: 'rail-lines',
+			paint: {
+				'line-color': ['get', 'color'],
+				'line-width': 3,
+				'line-dasharray': [4, 2]
+			},
+			layout: {
+				visibility: showRailLines ? 'visible' : 'none'
+			}
+		});
+
+		// Add suburban rail station layer
+		mapInstance.addLayer({
+			id: 'rail-stations',
+			type: 'circle',
+			source: 'rail-stations',
+			paint: {
+				'circle-radius': 5,
+				'circle-color': TRANSIT_COLORS.railSuburban,
+				'circle-opacity': 0.8,
+				'circle-stroke-width': 1.5,
+				'circle-stroke-color': '#ffffff'
+			},
+			layout: {
+				visibility: showRailStations ? 'visible' : 'none'
+			}
+		});
+
+		// Add transit points layer (Altmo geo_markers of type TransitPoint, hidden by default)
+		mapInstance.addLayer({
+			id: 'transit-points',
+			type: 'circle',
+			source: 'transit-points',
+			paint: {
+				'circle-radius': 4,
+				'circle-color': '#059669',
+				'circle-opacity': 0.7,
+				'circle-stroke-width': 1,
+				'circle-stroke-color': '#ffffff'
+			},
+			layout: {
+				visibility: showTransitPoints ? 'visible' : 'none'
+			}
+		});
+
 		// Add click handlers for popups
+		mapInstance.on('click', 'rail-stations', (e) => {
+			if (!e.features || e.features.length === 0) return;
+			const feature = e.features[0];
+			const { name, line } = feature.properties || {};
+
+			import('maplibre-gl').then(({ Popup }) => {
+				new Popup()
+					.setLngLat(e.lngLat)
+					.setHTML(
+						`<div class="text-sm">
+							<div class="font-semibold">${name || 'Rail Station'}</div>
+							<div class="text-text-secondary">${line || 'Suburban'}</div>
+						</div>`
+					)
+					.addTo(mapInstance);
+			});
+		});
+
+		mapInstance.on('click', 'transit-points', (e) => {
+			if (!e.features || e.features.length === 0) return;
+			const feature = e.features[0];
+			const { name, marker_type } = feature.properties || {};
+
+			import('maplibre-gl').then(({ Popup }) => {
+				new Popup()
+					.setLngLat(e.lngLat)
+					.setHTML(
+						`<div class="text-sm">
+							<div class="font-semibold">${name || 'Transit Point'}</div>
+							<div class="text-text-secondary">${marker_type || 'TransitPoint'}</div>
+						</div>`
+					)
+					.addTo(mapInstance);
+			});
+		});
+
+		mapInstance.on('click', 'companies', (e) => {
+			if (!e.features || e.features.length === 0) return;
+			const feature = e.features[0];
+			const { name, marker_type } = feature.properties || {};
+
+			import('maplibre-gl').then(({ Popup }) => {
+				new Popup()
+					.setLngLat(e.lngLat)
+					.setHTML(
+						`<div class="text-sm">
+							<div class="font-semibold">${name || 'Location'}</div>
+							<div class="text-text-secondary">${marker_type || ''}</div>
+						</div>`
+					)
+					.addTo(mapInstance);
+			});
+		});
+
 		mapInstance.on('click', 'bus-stops', (e) => {
 			if (!e.features || e.features.length === 0) return;
 			const feature = e.features[0];
@@ -320,6 +476,24 @@
 		mapInstance.on('mouseleave', 'metro-stations', () => {
 			mapInstance.getCanvas().style.cursor = '';
 		});
+		mapInstance.on('mouseenter', 'companies', () => {
+			mapInstance.getCanvas().style.cursor = 'pointer';
+		});
+		mapInstance.on('mouseleave', 'companies', () => {
+			mapInstance.getCanvas().style.cursor = '';
+		});
+		mapInstance.on('mouseenter', 'rail-stations', () => {
+			mapInstance.getCanvas().style.cursor = 'pointer';
+		});
+		mapInstance.on('mouseleave', 'rail-stations', () => {
+			mapInstance.getCanvas().style.cursor = '';
+		});
+		mapInstance.on('mouseenter', 'transit-points', () => {
+			mapInstance.getCanvas().style.cursor = 'pointer';
+		});
+		mapInstance.on('mouseleave', 'transit-points', () => {
+			mapInstance.getCanvas().style.cursor = '';
+		});
 
 		layersAdded = true;
 
@@ -356,6 +530,26 @@
 	$effect(() => {
 		if (!map) return;
 		map.setLayoutProperty('metro-lines', 'visibility', showMetroLines ? 'visible' : 'none');
+	});
+
+	$effect(() => {
+		if (!map) return;
+		map.setLayoutProperty('companies', 'visibility', showCompanies ? 'visible' : 'none');
+	});
+
+	$effect(() => {
+		if (!map) return;
+		map.setLayoutProperty('rail-stations', 'visibility', showRailStations ? 'visible' : 'none');
+	});
+
+	$effect(() => {
+		if (!map) return;
+		map.setLayoutProperty('rail-lines', 'visibility', showRailLines ? 'visible' : 'none');
+	});
+
+	$effect(() => {
+		if (!map) return;
+		map.setLayoutProperty('transit-points', 'visibility', showTransitPoints ? 'visible' : 'none');
 	});
 
 	$effect(() => {
@@ -456,8 +650,45 @@
 						bind:checked={showMetroLines}
 					/>
 					{/if}
+					{#if data.railStationCount > 0}
+					<MapLayerToggle
+						label="Suburban rail stations"
+						color={TRANSIT_COLORS.railSuburban}
+						count={data.railStationCount}
+						bind:checked={showRailStations}
+					/>
+					<MapLayerToggle
+						label="Suburban rail lines"
+						color={TRANSIT_COLORS.railSuburban}
+						bind:checked={showRailLines}
+					/>
+					{/if}
 				</div>
 			</div>
+
+			{#if data.companyCount > 0 || data.transitPointCount > 0}
+			<div>
+				<h3 class="text-xs font-semibold uppercase tracking-wide text-text-secondary">Demand Indicators</h3>
+				<div class="mt-2 space-y-1">
+					{#if data.companyCount > 0}
+					<MapLayerToggle
+						label="Commuter Destinations"
+						color="#FF7B27"
+						count={data.companyCount}
+						bind:checked={showCompanies}
+					/>
+					{/if}
+					{#if data.transitPointCount > 0}
+					<MapLayerToggle
+						label="Transit Points (Altmo)"
+						color="#059669"
+						count={data.transitPointCount}
+						bind:checked={showTransitPoints}
+					/>
+					{/if}
+				</div>
+			</div>
+			{/if}
 
 			<div>
 				<h3 class="text-xs font-semibold uppercase tracking-wide text-text-secondary">
@@ -509,6 +740,12 @@
 				<p>
 					<a href="https://www.openstreetmap.org" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">OpenStreetMap</a>
 					— Metro stations &amp; lines
+				</p>
+				{/if}
+				{#if data.railStationCount > 0}
+				<p>
+					<a href="https://www.openstreetmap.org" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">OpenStreetMap</a>
+					— Suburban rail stations &amp; lines
 				</p>
 				{/if}
 			</div>

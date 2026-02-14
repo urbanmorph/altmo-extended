@@ -44,7 +44,7 @@ export const INDICATOR_BENCHMARKS: Record<string, IndicatorBenchmark> = {
 	walking_share:          { worstRef: 10,  target: 35,  source: 'Low-walk Indian city / Barcelona-class walkability' },
 	cycling_share:          { worstRef: 1,   target: 25,  source: 'Negligible cycling / Amsterdam-class cycling city' },
 	footpath_coverage:      { worstRef: 10,  target: 90,  source: 'Minimal footpaths / Dutch-Copenhagen class' },
-	metro_network_km:       { worstRef: 0,   target: 400, source: 'No metro / Delhi DMRC (largest in India)' },
+	rail_transit_km:        { worstRef: 0,   target: 600, source: 'No rail transit / Mumbai class (metro + suburban combined)' },
 	bus_fleet_per_lakh:     { worstRef: 5,   target: 60,  source: 'Below minimum / BMTC-class fleet' },
 	transit_stop_density:   { worstRef: 3,   target: 30,  source: 'Sparse coverage / dense European city' },
 	cycle_infra_km:         { worstRef: 0,   target: 500, source: 'No cycle infra / Amsterdam-class network' },
@@ -175,12 +175,12 @@ export const QOL_DIMENSIONS: QoLDimension[] = [
 		weight: 0.23,
 		indicators: [
 			{
-				key: 'metro_network_km',
-				label: 'Metro Network',
+				key: 'rail_transit_km',
+				label: 'Rail Transit',
 				unit: 'km',
 				effect: 'positive',
-				source: 'Metro corps',
-				description: 'Operational metro/rail rapid transit length'
+				source: 'Metro corps / Indian Railways',
+				description: 'Operational metro + suburban/commuter rail network length'
 			},
 			{
 				key: 'bus_fleet_per_lakh',
@@ -276,6 +276,30 @@ export const QOL_DIMENSIONS: QoLDimension[] = [
 
 export const CITY_QOL_DATA: CityQoLValues[] = [
 	{
+		cityId: 'ahmedabad',
+		values: {
+			// Health
+			traffic_fatalities: 7.6, // NCRB 2022: ~418 deaths, pop ~55 lakh (AMC area)
+			vru_fatality_share: 44, // NCRB 2022: pedestrian + cyclist fatalities ~44%
+			walking_share: 24, // Census/CEPT CTTS 2019
+			cycling_share: 8, // Census/CEPT — moderate NMT culture
+			footpath_coverage: 25, // AMC Smart City report / CEPT walkability audit
+			// Accessibility
+			rail_transit_km: 40, // Ahmedabad Metro Phase 1 (Blue + Red lines)
+			bus_fleet_per_lakh: 23, // AMTS ~1,200 + Janmarg BRT ~200; pop ~55 lakh
+			transit_stop_density: 9.8, // (3000 bus + 32 metro + BRT) / 464 km² (AMC area)
+			cycle_infra_km: 20, // Sabarmati Riverfront + BRTS corridor cycle tracks
+			pt_accessibility: 60, // BRT spine gives good corridor coverage, gaps in eastern wards
+			// Environmental
+			pm25_annual: 55, // CPCB/GPCB 2023 — industrial + vehicular
+			no2_annual: 35, // CPCB 2023 — moderate
+			congestion_level: 49, // TomTom 2023
+			// Mobility
+			sustainable_mode_share: 43, // CEPT CTTS: walk 24% + cycle 8% + bus ~8% + metro ~3%
+			road_density: 5.5 // ~2,550 km roads / 464 km² (AMC area)
+		}
+	},
+	{
 		cityId: 'bengaluru',
 		values: {
 			// Health
@@ -285,7 +309,7 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			vru_fatality_share: 40, // NCRB 2022: (310+75)/960 = 40%
 			footpath_coverage: 37, // CMP 2020 / DULT audit
 			// Accessibility
-			metro_network_km: 73.8, // Namma Metro Phase 1 + 2A (as of 2024)
+			rail_transit_km: 73.8, // Namma Metro Phase 1 + 2A (as of 2024)
 			bus_fleet_per_lakh: 53, // BMTC ~6,500 buses, pop ~1.23 cr
 			transit_stop_density: 11.2, // (8500 bus + 62 metro) / 764 km²
 			cycle_infra_km: 15, // TenderSURE + cycle tracks
@@ -307,11 +331,11 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			cycling_share: 4, // Census/CTTS
 			vru_fatality_share: 43, // NCRB 2022: (345+55)/920 = 43%
 			footpath_coverage: 45, // CTTS 2018
-			metro_network_km: 54.6, // Phase 1 + extension (2024)
+			rail_transit_km: 584, // Metro 54.6 + Southern Railway suburban ~510 + MRTS 19.3
 			bus_fleet_per_lakh: 40, // MTC ~3,500 buses, pop ~87 lakh
-			transit_stop_density: 29.8, // (5200 bus + 40 metro) / 176 km²
+			transit_stop_density: 30.6, // (5200 bus + 40 metro + 148 suburban/MRTS) / 176 km²
 			cycle_infra_km: 10, // Smart City corridors
-			pt_accessibility: 85, // 5,240 stops / 176 km² — very dense
+			pt_accessibility: 87, // 5,388 stops / 176 km² — suburban rail adds peripheral coverage
 			pm25_annual: 31, // CPCB 2023
 			no2_annual: 25, // CPCB 2023 annual average
 			congestion_level: 39, // TomTom 2023
@@ -327,11 +351,11 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			cycling_share: 6, // Census
 			vru_fatality_share: 62, // NCRB 2022: (750+280)/1670 = 62% — worst
 			footpath_coverage: 25, // DIMTS pedestrian audit
-			metro_network_km: 393, // DMRC — largest network in India
+			rail_transit_km: 448, // DMRC 393 + RRTS/Namo Bharat 55 (operational)
 			bus_fleet_per_lakh: 32, // DTC ~3,700 + cluster ~3,500; pop ~2.1 cr
-			transit_stop_density: 4.8, // (6800 bus + 288 metro) / 1483 km²
+			transit_stop_density: 4.8, // (6800 bus + 288 metro + 14 RRTS) / 1483 km²
 			cycle_infra_km: 25, // DDA painted cycle tracks
-			pt_accessibility: 55, // 7,088 stops / 1,483 km² — sparse outer NCT
+			pt_accessibility: 56, // 7,102 stops / 1,483 km² — RRTS adds outskirt coverage
 			pm25_annual: 99, // CPCB 2023 — worst in India
 			no2_annual: 60, // CPCB 2023 — worst in India
 			congestion_level: 44, // TomTom 2023
@@ -347,11 +371,11 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			cycling_share: 5, // Census/CMP
 			vru_fatality_share: 39, // NCRB 2022: (260+65)/840 = 39%
 			footpath_coverage: 30, // HMDA CMP
-			metro_network_km: 69.2, // HMR L1+L2+L3
+			rail_transit_km: 159, // HMR 69.2 + MMTS 90
 			bus_fleet_per_lakh: 30, // TSRTC city services ~3,000, pop ~1 cr
-			transit_stop_density: 7.0, // (4500 bus + 57 metro) / 650 km²
+			transit_stop_density: 7.1, // (4500 bus + 57 metro + 36 MMTS) / 650 km²
 			cycle_infra_km: 8, // Limited cycle infra
-			pt_accessibility: 50, // 4,557 stops / 650 km² — gaps in ORR-outer areas
+			pt_accessibility: 52, // 4,593 stops / 650 km² — MMTS adds peripheral coverage
 			pm25_annual: 37, // CPCB 2023
 			no2_annual: 28, // CPCB 2023 annual average
 			congestion_level: 36, // TomTom 2023
@@ -369,7 +393,7 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			vru_fatality_share: 42, // NCRB 2022: (175+95)/640 = 42%
 			footpath_coverage: 20, // Smart City CDP estimate
 			// Accessibility
-			metro_network_km: 0, // Under construction in 2024; priority corridor opened May 2025
+			rail_transit_km: 6, // Priority corridor opened June 2025 (6 km)
 			bus_fleet_per_lakh: 11, // AICTSL ~387 buses, metro pop ~35 lakh
 			transit_stop_density: 4.5, // (1200 bus + 0 metro) / 269 km²
 			cycle_infra_km: 12, // BRTS corridor cycle tracks
@@ -391,7 +415,7 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			cycling_share: 5, // Census
 			vru_fatality_share: 51, // NCRB 2022: (85+15)/195 = 51%
 			footpath_coverage: 35, // Kerala urban walkability study
-			metro_network_km: 25.6, // KMRL single line
+			rail_transit_km: 28.8, // KMRL extended to Thripunithura (2025)
 			bus_fleet_per_lakh: 20, // KSRTC city ~400 + private; pop ~21 lakh
 			transit_stop_density: 19.2, // (1800 bus + 22 metro) / 95 km²
 			cycle_infra_km: 5, // Minimal dedicated cycle infra
@@ -404,6 +428,30 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 		}
 	},
 	{
+		cityId: 'mumbai',
+		values: {
+			// Health
+			traffic_fatalities: 2.8, // Mumbai Road Safety Report 2022 (Bloomberg BIGRS): 365 deaths, pop ~1.3 cr
+			vru_fatality_share: 44, // Pedestrians 44% of fatalities; cyclist share ~2-3%
+			walking_share: 27, // CMP/Census estimates for work trips
+			cycling_share: 3, // Very low — geography, climate, road conditions
+			footpath_coverage: 35, // MCGM Pedestrian First policy — arterials have footpaths but poor quality
+			// Accessibility
+			rail_transit_km: 545, // Metro 80 + suburban railway 465
+			bus_fleet_per_lakh: 22, // BEST ~2,900 buses, pop ~1.3 cr
+			transit_stop_density: 7.8, // (4500 bus + 69 metro + 125 suburban) / 603 km²
+			cycle_infra_km: 5, // Virtually none — BKC track defunct
+			pt_accessibility: 75, // Suburban rail spine + BEST bus coverage; gaps in eastern suburbs
+			// Environmental
+			pm25_annual: 38, // CPCB/IQAir estimates — industrial + port activity
+			no2_annual: 32, // CPCB 2023 estimate
+			congestion_level: 53, // TomTom 2023 — one of India's worst
+			// Mobility
+			sustainable_mode_share: 58, // Walk 27% + cycle 3% + bus 15% + rail 15% + metro 1%
+			road_density: 8.3 // ~5,000 km roads / 603 km² (BMC area)
+		}
+	},
+	{
 		cityId: 'pune',
 		values: {
 			traffic_fatalities: 7.1, // NCRB 2022 — lowest of the 6
@@ -411,11 +459,11 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			cycling_share: 15, // Census (high — flat terrain, cycle culture)
 			vru_fatality_share: 53, // NCRB 2022: (210+85)/555 = 53%
 			footpath_coverage: 40, // PMC footpath survey
-			metro_network_km: 33.3, // Pune Metro Phase 1 (partial, 2024)
+			rail_transit_km: 97, // Metro 33.3 + suburban rail ~64 (Pune-Lonavala)
 			bus_fleet_per_lakh: 25, // PMPML ~2,000 buses, pop ~78 lakh
-			transit_stop_density: 10.7, // (3500 bus + 30 metro) / 330 km²
+			transit_stop_density: 10.8, // (3500 bus + 30 metro + 17 suburban) / 330 km²
 			cycle_infra_km: 50, // PMC cycle tracks + BRT (strongest cycle culture)
-			pt_accessibility: 55, // 3,530 stops / 330 km² — moderate coverage
+			pt_accessibility: 57, // 3,547 stops / 330 km² — suburban rail corridor adds coverage
 			pm25_annual: 36, // CPCB 2023
 			no2_annual: 32, // CPCB 2023 annual average
 			congestion_level: 41, // TomTom 2023

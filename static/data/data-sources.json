@@ -1,6 +1,6 @@
 {
-  "version": "1.1",
-  "lastUpdated": "2026-02-13",
+  "version": "1.2",
+  "lastUpdated": "2026-02-14",
   "categories": {
     "air_quality": { "label": "Air Quality", "icon": "fa-solid fa-wind" },
     "safety": { "label": "Road Safety", "icon": "fa-solid fa-shield-halved" },
@@ -56,7 +56,7 @@
     {
       "name": "OpenAQ v3 API",
       "url": "https://api.openaq.org/v3",
-      "description": "Real-time PM2.5 and NO2 measurements from CPCB-operated government monitoring stations. Sensor-based endpoint: /sensors/{id}/measurements. PM2.5 sensors (parameters_id=2) active for all 7 cities. NO2 sensors (parameters_id=4) to be discovered — cities with empty sensor config fall back to CPCB annual averages.",
+      "description": "Real-time PM2.5 and NO2 measurements from CPCB-operated government monitoring stations. Sensor-based endpoint: /sensors/{id}/measurements. PM2.5 sensors (parameters_id=2) active for 9 cities. NO2 sensors (parameters_id=4) to be discovered — cities with empty sensor config fall back to CPCB annual averages.",
       "category": "air_quality",
       "indicators": ["pm25_annual", "no2_annual"],
       "dataType": "live",
@@ -187,6 +187,122 @@
     }
   ],
   "cities": {
+    "ahmedabad": {
+      "name": "Ahmedabad",
+      "state": "Gujarat",
+      "sources": [
+        {
+          "name": "CEPT CTTS 2019 — Ahmedabad Mode Share",
+          "url": "https://cept.ac.in/",
+          "description": "CEPT University Comprehensive Traffic & Transportation Study for Ahmedabad. Mode share: Walking 24%, Cycling 8%, PT ~11%. Footpath coverage: 25% of roads (AMC Smart City report).",
+          "category": "mobility",
+          "indicators": ["walking_share", "cycling_share", "sustainable_mode_share", "footpath_coverage"],
+          "dataType": "static",
+          "confidence": "medium",
+          "year": "2019",
+          "license": "CEPT / Government of Gujarat"
+        },
+        {
+          "name": "Ahmedabad Metro (Overpass/OSM)",
+          "url": "https://www.openstreetmap.org/",
+          "description": "Metro stations and lines fetched via Overpass API from OpenStreetMap. Phase 1: 40 km (Blue Line East-West + Red Line North-South). 32 stations.",
+          "category": "transit_metro",
+          "indicators": ["rail_transit_km"],
+          "dataType": "live",
+          "confidence": "medium",
+          "year": "2025",
+          "license": "ODbL"
+        },
+        {
+          "name": "AMTS + Janmarg BRT — Bus Fleet",
+          "url": "https://www.amts.co.in/",
+          "description": "Ahmedabad Municipal Transport Service ~1,200 buses + Janmarg BRT ~200 vehicles for ~55 lakh AMC population = 23 per lakh. India's first BRT system (2009).",
+          "category": "transit_bus",
+          "indicators": ["bus_fleet_per_lakh"],
+          "dataType": "static",
+          "confidence": "medium",
+          "year": "2023",
+          "license": "Government of Gujarat"
+        },
+        {
+          "name": "Sabarmati Riverfront + BRTS Cycle Tracks",
+          "url": "https://www.sabarmatiriverfront.com/",
+          "description": "Cycle tracks along Sabarmati Riverfront promenade and Janmarg BRT corridors: ~20 km of dedicated cycle infrastructure.",
+          "category": "infrastructure",
+          "indicators": ["cycle_infra_km"],
+          "dataType": "static",
+          "confidence": "medium",
+          "year": "2023",
+          "license": "AMC / Government of Gujarat"
+        },
+        {
+          "name": "OpenAQ — Ahmedabad Sensors",
+          "url": "https://explore.openaq.org/locations?country=IN&city=Ahmedabad",
+          "description": "CPCB/GPCB PM2.5 monitoring stations near Ahmedabad. Sensor IDs pending discovery via /v3/locations endpoint. Baseline 2023 annual: PM2.5 55 ug/m3, NO2 35 ug/m3.",
+          "category": "air_quality",
+          "indicators": ["pm25_annual", "no2_annual"],
+          "dataType": "live",
+          "confidence": "medium",
+          "year": "Live",
+          "license": "CC BY 4.0"
+        },
+        {
+          "name": "UrbanEmissions — Ahmedabad APnA",
+          "url": "https://urbanemissions.info/india-apna/ahmedabad-india/",
+          "description": "PM2.5 source apportionment: Industry dominant at 63% (textile mills, chemical plants, Naroda industrial estate), Transport only 11% (lowest among Altmo cities), Power generation 10%. Modeled annual: 52 ug/m3.",
+          "category": "energy",
+          "indicators": ["pm25_annual"],
+          "dataType": "research",
+          "confidence": "medium",
+          "year": "2019",
+          "license": "Academic"
+        },
+        {
+          "name": "Gujarat Grid Energy Mix",
+          "url": "https://ember-energy.org/data/india-electricity-data-explorer/",
+          "description": "Gujarat grid: ~30-38% renewable (15-20% solar — Charanka Solar Park + rooftop, 8-12% wind — Kutch corridor, 2-3% hydro), ~40-50% coal, ~15-20% gas (Hazira RLNG). Leading solar state with aggressive RPO targets.",
+          "category": "energy",
+          "indicators": [],
+          "dataType": "research",
+          "confidence": "medium",
+          "year": "2024-25",
+          "license": "Open Data"
+        },
+        {
+          "name": "NCRB 2022 — Ahmedabad",
+          "url": "https://ncrb.gov.in/accidental-deaths-suicides-in-india.html",
+          "description": "Traffic fatalities: 418 deaths in 2022, ~55 lakh AMC population = 7.6 per lakh. Source: NCRB / AMC Traffic Cell.",
+          "category": "safety",
+          "indicators": ["traffic_fatalities"],
+          "dataType": "static",
+          "confidence": "high",
+          "year": "2022",
+          "license": "Government of India"
+        },
+        {
+          "name": "CEPT / Janmarg — Ahmedabad Transport Coefficients",
+          "url": "https://cept.ac.in/",
+          "description": "Scenario intervention coefficients calibrated from CEPT CTTS mode share data, Janmarg BRT ridership elasticities, Gujarat Metro DPR demand forecasts, and Census 2011 baselines. Metro congestion: -0.025 pp/km, mode share: +0.025 pp/km. Bus congestion: -4 pp/2x, mode share: +5 pp/2x. High cycle lane responsiveness (+0.025 pp/km) reflecting moderate existing cycling culture (8% mode share).",
+          "category": "scenario",
+          "indicators": ["congestion_level", "sustainable_mode_share", "cycling_share", "walking_share", "traffic_fatalities"],
+          "dataType": "research",
+          "confidence": "medium",
+          "year": "2023",
+          "license": "CEPT / Government of Gujarat"
+        },
+        {
+          "name": "AMC Road Network",
+          "url": "https://ahmedabadcity.gov.in/",
+          "description": "AMC jurisdiction: 464 km2 with ~2,550 km of roads = 5.5 km/km2 road density. Source: AMC Smart City CDP.",
+          "category": "infrastructure",
+          "indicators": ["road_density"],
+          "dataType": "static",
+          "confidence": "medium",
+          "year": "2023",
+          "license": "Government of Gujarat"
+        }
+      ]
+    },
     "bengaluru": {
       "name": "Bengaluru",
       "state": "Karnataka",
@@ -218,7 +334,7 @@
           "url": "https://github.com/geohacker/namma-metro",
           "description": "Metro station locations and line geometry for BMRCL Phase 1 + 2A (73.8 km operational as of 2024). GeoJSON with station Name and line color.",
           "category": "transit_metro",
-          "indicators": ["metro_network_km"],
+          "indicators": ["rail_transit_km"],
           "dataType": "static",
           "confidence": "high",
           "year": "2024",
@@ -352,11 +468,32 @@
           "license": "JICA"
         },
         {
-          "name": "Chennai Metro (Overpass/OSM)",
+          "name": "Southern Railway Suburban / MRTS — Chennai",
+          "url": "https://sr.indianrailways.gov.in/",
+          "description": "Chennai suburban railway (Southern Railway): ~510 km broad gauge network + MRTS 19.3 km elevated. 148 stations. ~1.2M daily riders. Key corridors: Beach-Tambaram, Beach-Velachery (MRTS), Arakkonam line, Tiruvallur line. Combined with metro: 584 km rail transit.",
+          "category": "transit_metro",
+          "indicators": ["rail_transit_km", "transit_stop_density", "pt_accessibility"],
+          "dataType": "static",
+          "confidence": "high",
+          "year": "2024",
+          "license": "Indian Railways"
+        },
+        {
+          "name": "Chennai Suburban Rail (Overpass/OSM)",
+          "url": "https://www.openstreetmap.org/",
+          "description": "Suburban rail stations and lines fetched via Overpass API from OpenStreetMap. Networks: Southern Railway (Chennai Suburban Railway) + Chennai MRTS. Corridors: Beach-Tambaram, Beach-Velachery (MRTS), Arakkonam, Tiruvallur, Gummidipoondi.",
+          "category": "transit_metro",
+          "indicators": ["rail_transit_km", "transit_stop_density"],
+          "dataType": "live",
+          "confidence": "medium",
+          "year": "2025",
+          "license": "ODbL"
+        },
+        {
           "url": "https://www.openstreetmap.org/",
           "description": "Metro stations and lines fetched via Overpass API from OpenStreetMap. Phase 1 + extension: 54.6 km (2024). Lines: Blue Line, Green Line.",
           "category": "transit_metro",
-          "indicators": ["metro_network_km"],
+          "indicators": ["rail_transit_km"],
           "dataType": "live",
           "confidence": "medium",
           "year": "2024",
@@ -479,11 +616,21 @@
           "license": "Open Data"
         },
         {
-          "name": "DMRC (Delhi Metro Rail Corporation)",
+          "name": "RRTS / Namo Bharat — Delhi NCR",
+          "url": "https://ncrtc.in/",
+          "description": "Regional Rapid Transit System (NCRTC): Delhi-Meerut corridor 55 km operational (2025). Namo Bharat branded. Adds commuter rail capacity to Delhi NCT. Combined with DMRC: 448 km rail transit.",
+          "category": "transit_metro",
+          "indicators": ["rail_transit_km", "transit_stop_density", "pt_accessibility"],
+          "dataType": "static",
+          "confidence": "high",
+          "year": "2025",
+          "license": "NCRTC"
+        },
+        {
           "url": "https://www.delhimetrorail.com/",
           "description": "Delhi Metro: 393 km operational — largest in India (2024). Station data from dhirajt/delhi-metro-stations GitHub.",
           "category": "transit_metro",
-          "indicators": ["metro_network_km"],
+          "indicators": ["rail_transit_km"],
           "dataType": "static",
           "confidence": "high",
           "year": "2024",
@@ -494,7 +641,7 @@
           "url": "https://github.com/dhirajt/delhi-metro-stations",
           "description": "GeoJSON of all Delhi metro stations. Used for map rendering and accessibility analysis.",
           "category": "transit_metro",
-          "indicators": ["metro_network_km"],
+          "indicators": ["rail_transit_km"],
           "dataType": "static",
           "confidence": "medium",
           "year": "2023",
@@ -617,11 +764,32 @@
           "license": "Government of India"
         },
         {
-          "name": "HMRL Open Data",
+          "name": "MMTS (Multi-Modal Transport System) — Hyderabad",
+          "url": "https://scr.indianrailways.gov.in/",
+          "description": "Hyderabad MMTS suburban rail: 90 km network (South Central Railway), 36 stations. Key corridors: Lingampalli-Falaknuma, Hyderabad-Secunderabad. Combined with HMR: 159 km rail transit.",
+          "category": "transit_metro",
+          "indicators": ["rail_transit_km", "transit_stop_density", "pt_accessibility"],
+          "dataType": "static",
+          "confidence": "high",
+          "year": "2024",
+          "license": "Indian Railways"
+        },
+        {
+          "name": "Hyderabad MMTS (Overpass/OSM)",
+          "url": "https://www.openstreetmap.org/",
+          "description": "MMTS suburban rail stations and lines fetched via Overpass API from OpenStreetMap. Network: Hyderabad MMTS. Corridors: Lingampalli-Falaknuma, Secunderabad-Medchal, Lingampalli-Ghatkesar.",
+          "category": "transit_metro",
+          "indicators": ["rail_transit_km", "transit_stop_density"],
+          "dataType": "live",
+          "confidence": "medium",
+          "year": "2025",
+          "license": "ODbL"
+        },
+        {
           "url": "https://hmrl.co.in/open-data/",
           "description": "Hyderabad Metro Rail Limited open data portal. HMR Line 1 + Line 2 + Line 3: 69.2 km operational (2024).",
           "category": "transit_metro",
-          "indicators": ["metro_network_km"],
+          "indicators": ["rail_transit_km"],
           "dataType": "static",
           "confidence": "high",
           "year": "2024",
@@ -632,7 +800,7 @@
           "url": "https://github.com/kavyajeetbora/metro_accessibility",
           "description": "Station buildings and route GeoJSON for Hyderabad metro mapping and accessibility analysis.",
           "category": "transit_metro",
-          "indicators": ["metro_network_km"],
+          "indicators": ["rail_transit_km"],
           "dataType": "static",
           "confidence": "medium",
           "year": "2023",
@@ -759,7 +927,7 @@
           "url": "https://www.mpidc.co.in/",
           "description": "Metro under construction as of 2024. Priority corridor opened May 2025. Current operational km: 0 (at time of data entry).",
           "category": "transit_metro",
-          "indicators": ["metro_network_km"],
+          "indicators": ["rail_transit_km"],
           "dataType": "static",
           "confidence": "low",
           "year": "2024",
@@ -878,7 +1046,7 @@
           "url": "https://kochimetro.org/open-data/",
           "description": "Kochi Metro Rail Limited GTFS feed — first Indian metro to publish GTFS (March 2018). Single line: 25.6 km. Includes stops.txt, shapes.txt, routes.txt.",
           "category": "transit_metro",
-          "indicators": ["metro_network_km"],
+          "indicators": ["rail_transit_km"],
           "dataType": "live",
           "confidence": "high",
           "year": "2024",
@@ -965,6 +1133,144 @@
         }
       ]
     },
+    "mumbai": {
+      "name": "Mumbai",
+      "state": "Maharashtra",
+      "sources": [
+        {
+          "name": "Census/CMP — Mumbai Mode Share",
+          "url": "https://censusindia.gov.in/",
+          "description": "Mumbai mode share: Walking 27%, Cycling 3%, Suburban rail 15%, Bus 15%, Metro 1%. Sustainable mode share: 58% (highest among Altmo cities). MCGM Pedestrian First: 35% footpath coverage on arterials.",
+          "category": "mobility",
+          "indicators": ["walking_share", "cycling_share", "sustainable_mode_share", "footpath_coverage"],
+          "dataType": "static",
+          "confidence": "low",
+          "year": "2011",
+          "license": "Government of India"
+        },
+        {
+          "name": "Mumbai Suburban Railway (Western + Central + Harbour)",
+          "url": "https://www.wr.indianrailways.gov.in/",
+          "description": "Mumbai suburban railway backbone: 465 km total (Western Railway 124 km, Central Railway 170 km, Harbour Line 54 km, Trans-Harbour 22 km, others). 125 stations. 7.5M daily riders — world's densest commuter rail. Combined with metro: 545 km rail transit.",
+          "category": "transit_metro",
+          "indicators": ["rail_transit_km", "transit_stop_density", "pt_accessibility"],
+          "dataType": "static",
+          "confidence": "high",
+          "year": "2024",
+          "license": "Indian Railways"
+        },
+        {
+          "name": "Mumbai Suburban Rail (Overpass/OSM)",
+          "url": "https://www.openstreetmap.org/",
+          "description": "Suburban rail stations and lines fetched via Overpass API from OpenStreetMap. Network: Mumbai Suburban Railway. Lines: Western, Central, Harbour, Trans-Harbour, Vasai-Diva, Nerul-Uran.",
+          "category": "transit_metro",
+          "indicators": ["rail_transit_km", "transit_stop_density"],
+          "dataType": "live",
+          "confidence": "medium",
+          "year": "2025",
+          "license": "ODbL"
+        },
+        {
+          "name": "Mumbai Metro (Overpass/OSM)",
+          "url": "https://www.openstreetmap.org/",
+          "description": "Metro stations and lines fetched via Overpass API from OpenStreetMap. 80 km operational (2025): Blue Line 1 (11.4 km), Yellow Line 2A (18.6 km), Red Line 7 (16.5 km), Aqua Line 3 (33.5 km). 69 stations.",
+          "category": "transit_metro",
+          "indicators": ["rail_transit_km"],
+          "dataType": "live",
+          "confidence": "medium",
+          "year": "2025",
+          "license": "ODbL"
+        },
+        {
+          "name": "BEST Bus Fleet",
+          "url": "https://www.bestundertaking.com/",
+          "description": "Brihanmumbai Electric Supply and Transport: ~2,900 buses for ~1.3 crore population = 22 per lakh. Includes 386 electric buses (2024). BEST ridership: ~30 lakh/day.",
+          "category": "transit_bus",
+          "indicators": ["bus_fleet_per_lakh"],
+          "dataType": "static",
+          "confidence": "medium",
+          "year": "2023",
+          "license": "BEST / BMC"
+        },
+        {
+          "name": "OpenAQ — Mumbai Sensors",
+          "url": "https://explore.openaq.org/locations?country=IN&city=Mumbai",
+          "description": "CPCB PM2.5 monitoring stations near Mumbai. Sensor IDs pending discovery via /v3/locations endpoint. Baseline 2023 annual: PM2.5 38 ug/m3, NO2 32 ug/m3.",
+          "category": "air_quality",
+          "indicators": ["pm25_annual", "no2_annual"],
+          "dataType": "live",
+          "confidence": "medium",
+          "year": "Live",
+          "license": "CC BY 4.0"
+        },
+        {
+          "name": "Cycle Infrastructure — Mumbai",
+          "url": null,
+          "description": "Virtually no dedicated cycle infrastructure in Mumbai: ~5 km (BKC track defunct). Geography (narrow peninsula) and traffic volumes limit cycling.",
+          "category": "infrastructure",
+          "indicators": ["cycle_infra_km"],
+          "dataType": "static",
+          "confidence": "low",
+          "year": "2023",
+          "license": null
+        },
+        {
+          "name": "UrbanEmissions — Mumbai APnA / NEERI-MCGM Study",
+          "url": "https://urbanemissions.info/india-apna/mumbai-india/",
+          "description": "PM2.5 source apportionment: Transport 25-35% (NEERI-MCGM receptor study), Power generation 6-10% (Dahanu TPS + industrial), Industry 25-30% (port, refineries), Sea salt/secondary 15-20%. Emission inventory: 48,500 tonnes/year.",
+          "category": "energy",
+          "indicators": ["pm25_annual"],
+          "dataType": "research",
+          "confidence": "medium",
+          "year": "2019",
+          "license": "Academic"
+        },
+        {
+          "name": "Maharashtra Grid Energy Mix",
+          "url": "https://www.mahagenco.in/generation/",
+          "description": "Maharashtra grid: ~18-22% renewable, ~72-78% coal/thermal. Same state as Pune. Baseline: 20% renewable.",
+          "category": "energy",
+          "indicators": [],
+          "dataType": "research",
+          "confidence": "medium",
+          "year": "2024-25",
+          "license": "Government of Maharashtra"
+        },
+        {
+          "name": "Mumbai Road Safety Report 2022 (Bloomberg BIGRS)",
+          "url": "https://www.bloomberg.org/public-health/reducing-tobacco-use/road-safety/",
+          "description": "Bloomberg Initiative for Global Road Safety partner city. 365 fatalities in 2022, ~1.3 crore population = 2.8 per lakh — lowest fatality rate among all Altmo cities. Pedestrians account for 44% of fatalities.",
+          "category": "safety",
+          "indicators": ["traffic_fatalities", "vru_fatality_share"],
+          "dataType": "static",
+          "confidence": "high",
+          "year": "2022",
+          "license": "BMC / Bloomberg Philanthropies"
+        },
+        {
+          "name": "BMC Road Network",
+          "url": "https://portal.mcgm.gov.in/",
+          "description": "BMC jurisdiction: 603 km2 with ~5,000 km of roads = 8.3 km/km2 road density. Source: MCGM infrastructure report.",
+          "category": "infrastructure",
+          "indicators": ["road_density"],
+          "dataType": "static",
+          "confidence": "medium",
+          "year": "2023",
+          "license": "BMC"
+        },
+        {
+          "name": "NEERI / BEST — Mumbai Transport Coefficients",
+          "url": "https://www.bestundertaking.com/",
+          "description": "Scenario intervention coefficients calibrated from BEST ridership data, suburban railway mode share elasticities, MMRDA CTTS forecasts, and Census 2011 baselines. Metro congestion: -0.025 pp/km, mode share: +0.03 pp/km. Bus congestion: -3.5 pp/2x, mode share: +4 pp/2x. Cycle effects muted due to geography and traffic density.",
+          "category": "scenario",
+          "indicators": ["congestion_level", "sustainable_mode_share", "cycling_share", "walking_share", "traffic_fatalities"],
+          "dataType": "research",
+          "confidence": "medium",
+          "year": "2023",
+          "license": "BMC / MMRDA"
+        }
+      ]
+    },
     "pune": {
       "name": "Pune",
       "state": "Maharashtra",
@@ -992,11 +1298,32 @@
           "license": "ITDP"
         },
         {
-          "name": "Pune Metro (Overpass/OSM)",
+          "name": "Pune Suburban Railway (Pune-Lonavala)",
+          "url": "https://cr.indianrailways.gov.in/",
+          "description": "Pune suburban rail (Central Railway): ~64 km Pune-Lonavala corridor, 17 stations. Under expansion as part of Pune Metro Region Development Authority plans. Combined with metro: 97 km rail transit.",
+          "category": "transit_metro",
+          "indicators": ["rail_transit_km", "transit_stop_density", "pt_accessibility"],
+          "dataType": "static",
+          "confidence": "medium",
+          "year": "2024",
+          "license": "Indian Railways"
+        },
+        {
+          "name": "Pune Suburban Rail (Overpass/OSM)",
+          "url": "https://www.openstreetmap.org/",
+          "description": "Suburban rail stations and lines fetched via Overpass API from OpenStreetMap. Network: Pune Suburban Railway. Corridor: Pune-Lonavala.",
+          "category": "transit_metro",
+          "indicators": ["rail_transit_km", "transit_stop_density"],
+          "dataType": "live",
+          "confidence": "medium",
+          "year": "2025",
+          "license": "ODbL"
+        },
+        {
           "url": "https://www.openstreetmap.org/",
           "description": "Metro stations and lines fetched via Overpass API from OpenStreetMap. Phase 1 (partial, 2024): 33.3 km. Lines: Purple Line, Aqua Line.",
           "category": "transit_metro",
-          "indicators": ["metro_network_km"],
+          "indicators": ["rail_transit_km"],
           "dataType": "live",
           "confidence": "medium",
           "year": "2024",

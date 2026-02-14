@@ -15,6 +15,19 @@ Altmo Intelligence is a government-focused active mobility analytics platform fo
 - **Runtime:** Node 20 required (`.nvmrc` in repo root)
 - **Env vars:** Use `$env/dynamic/*` (not `$env/static/*`) so build works without env vars present
 
+### Dependency Versions — Pinned, Do Not Change
+All versions in `package.json` are pinned to exact versions (no `^` or `~`). **Do NOT modify dependency versions as part of feature work, bug fixes, or refactoring.** This includes `npm install <new-package>` — always use `--save-exact`.
+
+Version upgrades are a separate software upgrade effort:
+1. Create a dedicated branch (e.g., `chore/upgrade-deps-YYYY-MM`)
+2. Update versions one group at a time (framework, then tooling, then runtime deps)
+3. Run `npm run check`, start the dev server, and verify all pages return 200
+4. Curl each page and check the HTML content for errors (500 traces, "Error:", empty body, missing key elements)
+5. Test `/`, `/benchmark`, `/forecast`, `/access`, `/data-sources` before merging
+6. Never bundle version upgrades with feature or bugfix commits
+
+**Known breakage:** Vite 6.3+ breaks SvelteKit's dev server (`Cannot find module '__SERVER__/internal.js'`). Vite is pinned to 6.2.7.
+
 ## Architecture & Patterns
 
 ### Svelte 5 Runes
@@ -33,6 +46,19 @@ Pages that support city switching use `?city=` URL params. The `CitySelector` co
 
 ### Adding or Modifying Cities
 When adding a new city or changing city-specific config, follow the checklist in `supporting-docs/NEW_CITY_READY_RECKONER.md`. That reckoner lists every config file that needs a city entry (cities.ts, city-qol-data.ts, scenarios.ts, air-quality.ts, traffic-flow.ts, data-readiness.ts, city-qol-gaps.ts, data-sources.json, etc.) and the verification steps. **Update the reckoner itself** if you add new city-scoped config files or change the onboarding process.
+
+**Note:** `src/lib/server/altmo-core.ts` is the shared Rails API data layer (global stats, challenges, geo_markers, company detail). It does NOT need per-city config. However, the geo_markers it fetches are city-scoped via the `city_id` field on each marker, so new cities added in the Rails app will automatically appear in the access map companies layer without any config changes in this project.
+
+### Live Data & QoL Overrides
+`src/lib/server/qol-overrides.ts` (`buildQoLOverrides()`) is the **single source of truth** for all live data that feeds into ETQOLI scoring. Every page that displays QoL scores calls this function. When adding a new live data source:
+
+1. Create a fetcher in `src/lib/server/` (with 24h cache)
+2. Wire it into `buildQoLOverrides()` — add to the `Promise.all` call and merge into the overrides object
+3. Do NOT add local per-page overrides — that causes score drift between pages
+4. If the new data has sub-components (like metro + suburban = rail transit), store display-only breakdown fields in overrides (e.g. `metro_km`, `suburban_rail_km`) alongside the scoring field (`rail_transit_km`). Display-only fields don't affect scoring because they're not in `INDICATOR_DEFINITIONS`.
+5. Update `static/data/data-sources.json` with the new source entry
+
+Current live sources: safety (Supabase), PM2.5 + NO2 (OpenAQ), congestion (TomTom), rail transit km (Overpass).
 
 ### Data Provenance
 `static/data/data-sources.json` is the canonical registry of all data sources, organized by city and category. **Update it** whenever you add, remove, or change a data source (new API endpoint, new OpenAQ sensor, new transit GeoJSON, etc.). Each entry tracks the source name, URL, license, update frequency, and confidence level. The `/data-sources` page renders this file directly.
@@ -76,7 +102,7 @@ src/
   lib/
     components/        — Svelte components (Nav, Map, Chart, MetricCard, DataTable, CitySelector, etc.)
     config/            — Static config (cities.ts, data-readiness.ts, city-qol-data.ts, scenarios.ts, air-quality.ts)
-    server/            — Server-only code (transit-data.ts)
+    server/            — Server-only code (transit-data.ts, altmo-core.ts)
     stores/            — Svelte stores (city, dateRange, auth)
     utils/             — Helpers (transit, h3, geo, format)
 supporting-docs/       — Analysis docs (gitignored, not deployed)
@@ -110,41 +136,37 @@ The Rails app is the primary activity data backend. Stack: Ruby 3.1.2, Rails 7.0
 **API Base URL:** `https://www.altmo.app/api/v1/`
 **API Docs:** `https://altmo.app/api/docs`
 
-**ETL endpoint mapping (needs migration — see NEW_API_ENDPOINTS_SPEC.md):**
-
-| ETL Route | Currently Calls | Status | Migration Needed |
-|---|---|---|---|
-| `sync-routes` | `/api/v1/routes/bulk` | **Blocked** — date format parsing error on Rails side | Fix date parsing in Rails |
-| `sync-stats` | `/api/v1/leaderboard` | **Broken** — endpoint removed from new API | Rewrite or remove |
-| `sync-stats` | `/api/v1/stats/global` | **Broken** — replaced by `/api/v1/statistics/overall` (different shape) | Rewrite to use new endpoint |
-| `sync-facilities` | `/api/v1/companies` | **Slow** — times out on large response | Add pagination or timeout handling |
-| `sync-facilities` | `/api/v1/facilities` | **Broken** — endpoint removed from new API | Rewrite or remove |
+**Full API reference:** See `supporting-docs/ALTMO_API_REFERENCE.md` for complete endpoint docs, test results, and bug report.
 
 > **Setup:** Run `scripts/migrations/001-create-etl-tables.sql` against Supabase before first ETL run.
 
-**Verified Rails API endpoints (tested 2026-02-13):**
+**Verified Rails API endpoints (tested 2026-02-14, post-Apipie fix):**
 
-*All endpoints require `access_token` query param.*
+*All endpoints require `access_token` query param. Internal endpoints also require `role: "internal"` on the ApiUser.*
 
 *Working endpoints:*
-- `GET /api/v1/cities` — City name→numeric_id mapping (100+ cities). Response: `{ success, cities: { "Bengaluru": 18326, ... } }`
-- `GET /api/v1/statistics/overall` — Global impact totals. Response: `{ success, overall_statistics: { people, activitiesCount, distance, co2Offset, fuelSaved, moneySaved } }`. Note: `city_id` filter has no effect
-- `GET /api/v1/geo_markers` — GeoMarker boundaries with lat/lon, associable_type/name, city_id. Response: `{ success, data: { geo_markers: [...] } }`
-- `GET /api/v1/challenges` — Challenge list with scope, dates, status. Response: `{ success, challenges: [...] }` (camelCase keys)
-- `GET /api/v1/campuses` — Campus name→id mapping. Response: `{ success, campuses: { "ELCITA": 32, ... } }`
-- `GET /api/v1/companies` — Company data (very slow, may timeout)
+- `GET /cities` — 200, 3.5s. 113 cities, name→numeric_id map
+- `GET /statistics/overall` — 200, 4.6s. Returns `{ success, overall_statistics: { people, activitiesCount, distance(metres), co2Offset(kg), fuelSaved(L), moneySaved(INR) } }`. Note: `city_id` filter has no effect
+- `GET /campuses` — 200, 3.8s. 6 campuses, name→id map
+- `GET /challenges` — 200, 4.6s. 13 challenges with scope, dates, status, eligibleEntities
+- `GET /challenges/:id` — 200, 0.1s. Challenge detail with leaderboard (no `success` wrapper). Some IDs return 404
+- `GET /companies/:id` — 200, 18.0s. Company detail with stats, campusNames, campusIds. Very slow
+- `GET /countries` — 200, 5.2s. 12 countries
+- `GET /states?country_id=1` — 200, 5.1s. Fixed by Apipie PR (was 422). Returns empty array
+- `GET /geo_markers` — 200, 9.2s, 1.2MB. 2,111 markers (internal-only). Returns `{ success, data: { geo_markers: [{ id, associable_type, associable_id, associable_name, lat, lon, layer_type, city_id }] } }`
+- `GET /geo_markers?city_id=18326` — 200, 7.3s. City filter now works (was 422). Fixed by Apipie PR
+- `GET /routes/bulk?start_date=...&end_date=...` — 200, 14.6s, 4.5MB. Returns `{ success, data: { routes: [{ activity_id, activity_type, start_date, distance, moving_time, start_lat, start_lng, end_lat, end_lng, direction, company_id, path }] } }`. 500 routes. Fixed by Apipie PR. Requires date params (500 without them)
 
-*Endpoints with issues (need Rails-side fixes):*
-- `GET /api/v1/routes/bulk` — Date format rejected (tried YYYY-MM-DD, ISO 8601, DD/MM/YYYY)
-- `GET /api/v1/transit_activities` — Same date format issue
-- `GET /api/v1/activities/summary` — Returns 500 Internal Server Error
-- `GET /api/v1/companies/:id`, `/challenges/:id`, `/campuses/:id` — Timeout or param type errors
-- `GET /api/v1/countries`, `/states` — Timeout
+*Broken — Rails controller bugs (NOT Apipie — these fail even after the type validator fix):*
+- `GET /activities/summary` — 500 server error regardless of params (controller bug)
+- `GET /transit_activities` — 500 server error regardless of params (internal-only, controller bug)
+- `GET /routes/bulk` (without dates) — 500 (requires start_date + end_date params)
+- `GET /campuses/:id` — 400, empty response body (controller bug)
 
-*Endpoints not found in new API:*
-- `/api/v1/leaderboard`, `/api/v1/group_leaderboard`, `/api/v1/facilities`, `/api/v1/stats/global`, `/api/v1/stats/daily/:date`, `/api/v1/activities/map`, `/api/v1/cities/list`
+*Performance issues:*
+- `GET /companies` (list, no filter) — Timeout (>38 min, 987 companies, no pagination)
 
-*Key city IDs:* Bengaluru=18326, Chennai=18586, Delhi=18215, Hyderabad=18629, Indore=18396, Kochi=18363
+*Key city IDs:* Bengaluru=18326, Chennai=18586, Delhi=18215, Hyderabad=18629, Indore=18396, Kochi=18363, Mumbai=18445, Pune=18455, Ahmedabad=18220
 
 **Key Rails data models:**
 - **Activity**: Strava-sourced GPS rides (≥1km, company-linked), direction (to/from work), distance, speed, CO2/fuel/money saved

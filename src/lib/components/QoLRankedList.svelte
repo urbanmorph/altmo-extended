@@ -1,13 +1,39 @@
 <script lang="ts">
   import { computeAllQoL, gradeColor, gradeLabel, type ConfidenceTier, type QoLOverrides } from '$lib/config/city-qol-data';
   import { computeAllGaps } from '$lib/config/city-qol-gaps';
-  import { cityName, fmtIndicatorValue, barPercent, dimensionColor } from '$lib/utils/qol-format';
+  import { CITY_READINESS, type ReadinessScore, type DataStatus } from '$lib/config/data-readiness';
+  import { cityName, fmtIndicatorValue, barPercent, dimensionColor, readinessScoreColor } from '$lib/utils/qol-format';
 
   interface Props {
     overrides?: QoLOverrides;
+    readinessScores?: ReadinessScore[];
   }
 
-  let { overrides }: Props = $props();
+  let { overrides, readinessScores }: Props = $props();
+
+  function getReadiness(cityId: string) {
+    return readinessScores?.find((r) => r.cityId === cityId);
+  }
+
+  function readinessDotColor(total: number): string {
+    if (total >= 70) return 'var(--color-status-available)';
+    if (total >= 40) return 'var(--color-status-partial)';
+    return 'var(--color-status-unavailable)';
+  }
+
+  function countLayers(cityId: string, status: DataStatus): number {
+    const city = CITY_READINESS.find((r) => r.cityId === cityId);
+    if (!city) return 0;
+    return Object.values(city.layers).filter((s) => s === status).length;
+  }
+
+  function missingLayerNames(cityId: string): string[] {
+    const city = CITY_READINESS.find((r) => r.cityId === cityId);
+    if (!city) return [];
+    return Object.entries(city.layers)
+      .filter(([, s]) => s === 'unavailable' || s === 'partial')
+      .map(([key]) => key.replace(/_/g, ' '));
+  }
 
   const scores = $derived(computeAllQoL(overrides));
   const gaps = $derived(computeAllGaps(overrides));
@@ -65,6 +91,7 @@
     {@const color = gradeColor(entry.grade)}
     {@const gap = getGap(entry.cityId)}
     {@const expanded = expandedIndex === i}
+    {@const readinessEntry = getReadiness(entry.cityId)}
 
     <div class="rounded-xl border border-border bg-surface-card transition-shadow" class:shadow-md={expanded}>
       <!-- Collapsed header -->
@@ -103,6 +130,12 @@
             <p class="text-[0.6rem] text-text-secondary">
               <i class="fa-solid fa-tower-broadcast" style="color: var(--color-altmo-500)"></i>
               {liveIndicatorCount(entry.cityId)} of {entry.indicatorsAvailable} live
+            </p>
+          {/if}
+          {#if readinessEntry}
+            <p class="text-[0.6rem] text-text-secondary" title="Data readiness: {countLayers(entry.cityId, 'available')} available, {countLayers(entry.cityId, 'partial')} partial, {countLayers(entry.cityId, 'unavailable')} missing layers">
+              <span class="mr-0.5 inline-block h-1.5 w-1.5 rounded-full" style="background-color: {readinessDotColor(readinessEntry.total)}"></span>
+              {Math.round(readinessEntry.total)}%
             </p>
           {/if}
         </div>
@@ -152,6 +185,31 @@
               </div>
             {/each}
           </div>
+
+          <!-- Data gap strip -->
+          {#if readinessEntry}
+            {@const missingLayers = missingLayerNames(entry.cityId)}
+            <div class="mt-4 rounded-lg bg-earth-50 p-3">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-medium text-text-primary">
+                  <i class="fa-solid fa-database mr-1 text-text-secondary"></i>
+                  Data Readiness
+                </span>
+                <span class="font-bold" style="color: {readinessScoreColor(readinessEntry.total)}">{Math.round(readinessEntry.total)}/100</span>
+              </div>
+              <div class="mt-1.5 h-1.5 w-full rounded-full bg-earth-100">
+                <div
+                  class="h-1.5 rounded-full transition-all"
+                  style="width: {readinessEntry.total}%; background-color: {readinessScoreColor(readinessEntry.total)}"
+                ></div>
+              </div>
+              {#if missingLayers.length > 0}
+                <p class="mt-1.5 text-[0.65rem] text-text-secondary">
+                  Missing/partial: {missingLayers.join(', ')}
+                </p>
+              {/if}
+            </div>
+          {/if}
 
           <!-- Recommendation callout -->
           {#if gap}

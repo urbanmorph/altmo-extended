@@ -85,12 +85,14 @@ export interface ScenarioPreset {
 // powerShare = fraction of ambient PM2.5 from power generation
 
 export const CITY_PM25_COEFFICIENTS: Record<string, { transportShare: number; powerShare: number }> = {
+	ahmedabad: { transportShare: 0.11, powerShare: 0.10 }, // GPCB/CPCB — industrial dominant (63%); transport low
 	bengaluru: { transportShare: 0.44, powerShare: 0.01 }, // Guttikunda 2019 — negligible local coal power
 	chennai: { transportShare: 0.22, powerShare: 0.20 }, // North Chennai thermal plants in airshed
 	delhi: { transportShare: 0.33, powerShare: 0.05 }, // Post-Badarpur closure (2018), TERI 2018
 	hyderabad: { transportShare: 0.40, powerShare: 0.04 }, // CPCB receptor + UE inventory
 	indore: { transportShare: 0.50, powerShare: 0.02 }, // UE inventory — no nearby coal plants
 	kochi: { transportShare: 0.37, powerShare: 0.03 }, // UE inventory — Kerala minimal coal
+	mumbai: { transportShare: 0.30, powerShare: 0.08 }, // NEERI/MCGM source apportionment — Dahanu TPS + industrial
 	pune: { transportShare: 0.35, powerShare: 0.04 } // ARAI 2022 + NCAP convergence
 };
 
@@ -99,12 +101,14 @@ export const CITY_PM25_COEFFICIENTS: Record<string, { transportShare: number; po
 // Sources: CEA, Ember SET 2024, GENCO reports, MNRE statistics
 
 export const CITY_GRID_RENEWABLE_BASELINE: Record<string, number> = {
+	ahmedabad: 35, // Gujarat — solar + wind growing, but gas + coal dominant
 	bengaluru: 58, // Karnataka — hydro + solar + wind dominant
 	chennai: 42, // Tamil Nadu — wind + solar + nuclear
 	delhi: 29, // NCT — imports ~90%, ~70% coal
 	hyderabad: 21, // Telangana — coal dominant (~80%)
 	indore: 28, // Madhya Pradesh — solar + wind growing
 	kochi: 28, // Kerala — in-state hydro, but imports ~70% (mostly coal)
+	mumbai: 20, // Maharashtra — coal dominant (~75-78%)
 	pune: 20 // Maharashtra — coal dominant (~75%)
 };
 
@@ -124,6 +128,12 @@ export const CITY_TRANSPORT_COEFFICIENTS: Record<string, {
 	cycleCongestionPerKm: number;
 	cycleFatalitiesPerKm: number;
 }> = {
+	ahmedabad: {
+		metroCongestionPerKm: -0.025, metroModeSharePerKm: 0.025,
+		busCongestionPer2x: -4, busModeSharePer2x: 5,
+		cycleCyclingSharePerKm: 0.025, cycleWalkingSharePerKm: 0.01,
+		cycleModeSharePerKm: 0.025, cycleCongestionPerKm: -0.01, cycleFatalitiesPerKm: -0.005
+	},
 	bengaluru: {
 		metroCongestionPerKm: -0.03, metroModeSharePerKm: 0.03,
 		busCongestionPer2x: -4, busModeSharePer2x: 4,
@@ -165,6 +175,12 @@ export const CITY_TRANSPORT_COEFFICIENTS: Record<string, {
 		busCongestionPer2x: -5, busModeSharePer2x: 5,
 		cycleCyclingSharePerKm: 0.03, cycleWalkingSharePerKm: 0.01,
 		cycleModeSharePerKm: 0.03, cycleCongestionPerKm: -0.01, cycleFatalitiesPerKm: -0.008
+	},
+	mumbai: {
+		metroCongestionPerKm: -0.025, metroModeSharePerKm: 0.03,
+		busCongestionPer2x: -3.5, busModeSharePer2x: 4,
+		cycleCyclingSharePerKm: 0.015, cycleWalkingSharePerKm: 0.008,
+		cycleModeSharePerKm: 0.015, cycleCongestionPerKm: -0.008, cycleFatalitiesPerKm: -0.004
 	}
 };
 
@@ -175,17 +191,17 @@ export const CITY_TRANSPORT_COEFFICIENTS: Record<string, {
 export const INTERVENTIONS: InterventionDef[] = [
 	{
 		key: 'metro_km',
-		label: 'Metro Expansion',
+		label: 'Rail Transit Expansion',
 		icon: 'fa-solid fa-train-subway',
 		unit: 'km',
 		min: 'city_metro',
-		max: 400,
+		max: 600,
 		step: 5,
 		defaultValue: 'city_metro',
 		effects: [
-			{ indicator: 'metro_network_km', mode: 'set', value: 1 },
-			{ indicator: 'congestion_level', mode: 'delta_per_unit', value: -0.03, baselineKey: 'metro_network_km' },
-			{ indicator: 'sustainable_mode_share', mode: 'delta_per_unit', value: 0.03, baselineKey: 'metro_network_km' }
+			{ indicator: 'rail_transit_km', mode: 'set', value: 1 },
+			{ indicator: 'congestion_level', mode: 'delta_per_unit', value: -0.03, baselineKey: 'rail_transit_km' },
+			{ indicator: 'sustainable_mode_share', mode: 'delta_per_unit', value: 0.03, baselineKey: 'rail_transit_km' }
 		]
 	},
 	{
@@ -354,14 +370,14 @@ function getBaselineValue(
 	return cityData?.values[indicatorKey] ?? null;
 }
 
-/** Resolve the city's current metro km for slider defaults/min. */
-export function getCityMetroKm(cityId: string, overrides?: QoLOverrides): number {
-	return getBaselineValue(cityId, 'metro_network_km', overrides) ?? 0;
+/** Resolve the city's current rail transit km for slider defaults/min. */
+export function getCityRailKm(cityId: string, overrides?: QoLOverrides): number {
+	return getBaselineValue(cityId, 'rail_transit_km', overrides) ?? 0;
 }
 
 /** Get default intervention values for a city (all sliders at baseline / no change). */
 export function getDefaultInterventions(cityId: string, overrides?: QoLOverrides): InterventionValues {
-	const metroKm = getCityMetroKm(cityId, overrides);
+	const metroKm = getCityRailKm(cityId, overrides);
 	return {
 		metro_km: metroKm,
 		bus_multiplier: 1,
@@ -377,7 +393,7 @@ export function resolvePresetForCity(
 	cityId: string,
 	overrides?: QoLOverrides
 ): InterventionValues {
-	const cityMetro = getCityMetroKm(cityId, overrides);
+	const cityMetro = getCityRailKm(cityId, overrides);
 	const cityRenewable = CITY_GRID_RENEWABLE_BASELINE[cityId] ?? 26;
 	return {
 		...preset.values,
@@ -415,7 +431,7 @@ export function computeScenarioResult(
 	const baselineValues: Record<string, number | null> = { ...modified };
 
 	// Apply metro expansion effects
-	const metroBaseline = baselineValues.metro_network_km ?? 0;
+	const metroBaseline = baselineValues.rail_transit_km ?? 0;
 	const metroDelta = interventions.metro_km - metroBaseline;
 
 	// Apply bus multiplier effects

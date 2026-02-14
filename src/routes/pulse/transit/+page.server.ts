@@ -1,7 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { fetchTransitMetrics, fetchMetroRidership } from '$lib/server/transit-data';
 import { getCityById } from '$lib/config/cities';
-import { computeMetroNetworkKm } from '$lib/utils/transit';
 import { buildQoLOverrides } from '$lib/server/qol-overrides';
 
 export const load: PageServerLoad = async ({ url, cookies }) => {
@@ -38,14 +37,7 @@ export const load: PageServerLoad = async ({ url, cookies }) => {
 		fetchMetroRidership(resolvedCityId)
 	]);
 
-	// Override metro_network_km from live transit line geometries
-	const metroNetworkKm = computeMetroNetworkKm(data.metroLines);
-	if (metroNetworkKm > 0) {
-		qolOverrides[resolvedCityId] = {
-			...qolOverrides[resolvedCityId],
-			metro_network_km: metroNetworkKm
-		};
-	}
+	// rail_transit_km override is handled centrally by buildQoLOverrides()
 
 	return {
 		cityId: resolvedCityId,
@@ -54,6 +46,7 @@ export const load: PageServerLoad = async ({ url, cookies }) => {
 		metrics: {
 			totalBusStops: metrics.totalBusStops,
 			totalMetroStations: metrics.totalMetroStations,
+			totalRailStations: metrics.totalRailStations,
 			totalBusRoutes: metrics.totalBusRoutes,
 			avgRoutesPerStop: metrics.avgRoutesPerStop
 		},
@@ -63,6 +56,12 @@ export const load: PageServerLoad = async ({ url, cookies }) => {
 		})),
 		metroByLine: Object.fromEntries(
 			Object.entries(metrics.metroByLine).map(([line, stations]) => [
+				line,
+				stations.map(s => ({ name: s.name }))
+			])
+		),
+		railByLine: Object.fromEntries(
+			Object.entries(metrics.railByLine).map(([line, stations]) => [
 				line,
 				stations.map(s => ({ name: s.name }))
 			])

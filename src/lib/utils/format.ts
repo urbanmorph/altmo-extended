@@ -35,3 +35,11 @@ export function formatDuration(seconds: number): string {
 export function formatPercent(value: number, decimals = 1): string {
   return `${value.toFixed(decimals)}%`;
 }
+
+/** Format Indian Rupees in compact form (Cr/L) */
+export function formatINR(value: number): string {
+  if (value >= 1_00_00_000) return `₹${(value / 1_00_00_000).toFixed(1)} Cr`;
+  if (value >= 1_00_000) return `₹${(value / 1_00_000).toFixed(1)} L`;
+  if (value >= 1_000) return `₹${(value / 1_000).toFixed(1)}K`;
+  return `₹${Math.round(value)}`;
+}

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { INTERVENTIONS, getCityMetroKm, type InterventionValues } from '$lib/config/scenarios';
+  import { INTERVENTIONS, getCityRailKm, type InterventionValues } from '$lib/config/scenarios';
   import type { QoLOverrides } from '$lib/config/city-qol-data';
 
   interface Props {
@@ -11,7 +11,18 @@
 
   let { interventions = $bindable(), cityId, baselineOverrides, onchange }: Props = $props();
 
-  const cityMetroKm = $derived(getCityMetroKm(cityId, baselineOverrides));
+  const cityMetroKm = $derived(getCityRailKm(cityId, baselineOverrides));
+
+  /** Get metro/suburban breakdown text for the rail slider subtitle */
+  function railBreakdownText(): string | null {
+    const metroKm = baselineOverrides?.[cityId]?.['metro_km'];
+    const suburbanKm = baselineOverrides?.[cityId]?.['suburban_rail_km'];
+    if (metroKm == null && suburbanKm == null) return null;
+    const parts: string[] = [];
+    if (metroKm != null && metroKm > 0) parts.push(`Metro ${Math.round(metroKm as number)} km`);
+    if (suburbanKm != null && suburbanKm > 0) parts.push(`Suburban ${Math.round(suburbanKm as number)} km`);
+    return parts.length > 0 ? `Current: ${parts.join(' + ')}` : null;
+  }
 
   function resolveMin(min: number | 'city_metro'): number {
     return min === 'city_metro' ? cityMetroKm : min;
@@ -62,6 +73,12 @@
         <span>{formatValue(min, intv.unit)}</span>
         <span>{formatValue(intv.max, intv.unit)}</span>
       </div>
+      {#if intv.key === 'metro_km'}
+        {@const rb = railBreakdownText()}
+        {#if rb}
+          <p class="mt-1 text-[0.65rem] text-text-secondary">{rb}</p>
+        {/if}
+      {/if}
     </div>
   {/each}
 </div>

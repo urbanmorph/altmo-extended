@@ -114,6 +114,17 @@
   function isLive(cityId: string, indicatorKey: string): boolean {
     return overrides?.[cityId]?.[indicatorKey] !== undefined;
   }
+
+  /** Get metro/suburban rail breakdown text for a city, or null if not available */
+  function railBreakdown(cityId: string): string | null {
+    const metroKm = overrides?.[cityId]?.['metro_km'];
+    const suburbanKm = overrides?.[cityId]?.['suburban_rail_km'];
+    if (metroKm == null && suburbanKm == null) return null;
+    const parts: string[] = [];
+    if (metroKm != null && metroKm > 0) parts.push(`Metro ${Math.round(metroKm as number)}`);
+    if (suburbanKm != null && suburbanKm > 0) parts.push(`Suburban ${Math.round(suburbanKm as number)}`);
+    return parts.length > 0 ? parts.join(' + ') + ' km' : null;
+  }
 </script>
 
 <div class="space-y-6">
@@ -180,6 +191,12 @@
                           ></i>
                         {/if}
                       </div>
+                      {#if ind.key === 'rail_transit_km'}
+                        {@const rb = railBreakdown(entry.cityId)}
+                        {#if rb}
+                          <div class="text-[0.6rem] text-text-secondary text-right">{rb}</div>
+                        {/if}
+                      {/if}
                     {:else}
                       <span class="text-text-secondary">--</span>
                     {/if}

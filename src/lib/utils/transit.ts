@@ -29,19 +29,37 @@ export interface MetroLine {
 	segments?: [number, number][][];
 }
 
+export interface RailStation {
+	name: string;
+	lng: number;
+	lat: number;
+	line: string;
+}
+
+export interface RailLine {
+	name: string;
+	color: string;
+	coordinates: [number, number][];
+	segments?: [number, number][][];
+}
+
 export interface TransitData {
 	busStops: BusStop[];
 	metroStations: MetroStation[];
 	metroLines: MetroLine[];
+	railStations: RailStation[];
+	railLines: RailLine[];
 }
 
 export interface TransitMetrics {
 	totalBusStops: number;
 	totalMetroStations: number;
+	totalRailStations: number;
 	totalBusRoutes: number;
 	avgRoutesPerStop: number;
 	topHubs: BusStop[];
 	metroByLine: Record<string, MetroStation[]>;
+	railByLine: Record<string, RailStation[]>;
 }
 
 // --- Ridership Types ---
@@ -82,6 +100,7 @@ export const TRANSIT_COLORS = {
 	metroRed: '#dc2626',
 	metroAqua: '#06b6d4',
 	rail: '#dc2626',
+	railSuburban: '#b45309',
 	catchmentWalk: '#FF7B27',
 	catchmentCycle: '#008409'
 } as const;
@@ -551,6 +570,52 @@ export function metroLinesToGeoJSON(lines: MetroLine[]): GeoJSON.FeatureCollecti
 	};
 }
 
+export function railStationsToGeoJSON(stations: RailStation[]): GeoJSON.FeatureCollection {
+	return {
+		type: 'FeatureCollection',
+		features: stations.map((s) => ({
+			type: 'Feature' as const,
+			properties: { name: s.name, line: s.line },
+			geometry: { type: 'Point' as const, coordinates: [s.lng, s.lat] }
+		}))
+	};
+}
+
+export function railLinesToGeoJSON(lines: RailLine[]): GeoJSON.FeatureCollection {
+	return {
+		type: 'FeatureCollection',
+		features: lines.map((l) => ({
+			type: 'Feature' as const,
+			properties: { name: l.name, color: l.color },
+			geometry: l.segments
+				? { type: 'MultiLineString' as const, coordinates: l.segments }
+				: { type: 'LineString' as const, coordinates: l.coordinates }
+		}))
+	};
+}
+
+/**
+ * Compute total suburban rail network length in km from rail line geometries.
+ * Same algorithm as computeMetroNetworkKm().
+ */
+export function computeRailNetworkKm(lines: RailLine[]): number {
+	let totalMeters = 0;
+
+	for (const line of lines) {
+		const coordSets = line.segments ?? [line.coordinates];
+
+		for (const coords of coordSets) {
+			for (let i = 1; i < coords.length; i++) {
+				const [lng1, lat1] = coords[i - 1];
+				const [lng2, lat2] = coords[i];
+				totalMeters += haversine(lat1, lng1, lat2, lng2);
+			}
+		}
+	}
+
+	return Math.round((totalMeters / 1000) * 10) / 10;
+}
+
 /** Generate a circle polygon (for catchment rings on the map) */
 export function circlePolygon(
 	centerLng: number,
@@ -618,12 +683,21 @@ export function computeMetrics(data: TransitData, totalBusRoutes: number): Trans
 		metroByLine[line].push(station);
 	}
 
+	const railByLine: Record<string, RailStation[]> = {};
+	for (const station of data.railStations) {
+		const line = station.line;
+		if (!railByLine[line]) railByLine[line] = [];
+		railByLine[line].push(station);
+	}
+
 	return {
 		totalBusStops: data.busStops.length,
 		totalMetroStations: data.metroStations.length,
+		totalRailStations: data.railStations.length,
 		totalBusRoutes,
 		avgRoutesPerStop: Math.round(avgRoutesPerStop * 10) / 10,
 		topHubs,
-		metroByLine
+		metroByLine,
+		railByLine
 	};
 }

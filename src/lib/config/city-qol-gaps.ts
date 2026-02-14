@@ -17,6 +17,11 @@ export interface CityGapAnalysis {
 
 /** Hand-crafted gap narratives derived from indicator data + TQOLI plan. */
 const GAP_DATA: Record<string, Omit<CityGapAnalysis, 'cityId' | 'worstDimension' | 'worstIndicator'>> = {
+	ahmedabad: {
+		gapSentence: 'PM2.5 at 55 \u00B5g/m\u00B3 is 3.7x the WHO guideline \u2014 industrial pollution dominates (63%) and bus fleet at 23 per lakh limits transit access',
+		recommendation: 'Completing Metro Phase 2 to 68 km + scaling AMTS fleet to 40 per lakh would lift accessibility from D to C',
+		dataUnlockSentence: 'Publishing AMTS GTFS feeds and walking infrastructure data enables corridor-level access analysis'
+	},
 	delhi: {
 		gapSentence: 'PM2.5 at 99 \u00B5g/m\u00B3 is 6.6x the WHO guideline',
 		recommendation: 'Fleet electrification + congestion pricing could cut transport PM2.5 by 30%',
@@ -33,8 +38,8 @@ const GAP_DATA: Record<string, Omit<CityGapAnalysis, 'cityId' | 'worstDimension'
 		dataUnlockSentence: 'Publishing ridership, safety, and NMT infrastructure data enables full multi-modal analysis'
 	},
 	kochi: {
-		gapSentence: 'Metro network at 25.6 km \u2014 second smallest of 7 cities',
-		recommendation: 'Phase 2 expansion to 40 km improves accessibility score by 35%',
+		gapSentence: 'Only 5 km of cycle infrastructure and metro at 29 km \u2014 compact city held back by NMT infrastructure gaps',
+		recommendation: 'Building 50 km of protected cycle lanes + metro Phase 2 to 40 km would lift accessibility from D to C',
 		dataUnlockSentence: 'Publishing safety and NMT infrastructure data unlocks health dimension scoring'
 	},
 	chennai: {
@@ -43,12 +48,17 @@ const GAP_DATA: Record<string, Omit<CityGapAnalysis, 'cityId' | 'worstDimension'
 		dataUnlockSentence: 'Publishing walking/cycling infrastructure data enables corridor-level safety analysis'
 	},
 	hyderabad: {
-		gapSentence: 'Metro at 69 km but bus fleet of only 30 per lakh limits last-mile access',
-		recommendation: 'Expanding TSRTC city fleet to 50 per lakh with feeder routes to metro would lift accessibility from D to C',
+		gapSentence: 'Only 8 km of cycle infrastructure and bus fleet of 30 per lakh \u2014 strong rail transit (159 km) undermined by last-mile access gaps',
+		recommendation: 'Building 100 km of protected cycle lanes + expanding TSRTC city fleet to 50 per lakh would lift accessibility from D to C',
 		dataUnlockSentence: 'Publishing walking/cycling infrastructure data would enable complete active mobility assessment'
 	},
+	mumbai: {
+		gapSentence: 'Bus fleet at just 22 per lakh and only 5 km of cycle infrastructure \u2014 accessibility undermined despite world-class suburban rail',
+		recommendation: 'Expanding BEST fleet to 40 per lakh with electric buses and building 100 km of protected cycle lanes would lift accessibility from E to C',
+		dataUnlockSentence: 'Publishing BEST GTFS feeds and walking infrastructure data enables corridor-level gap analysis'
+	},
 	indore: {
-		gapSentence: 'No operational metro and bus fleet of just 11 per lakh \u2014 lowest transit coverage',
+		gapSentence: 'Metro just 6 km and bus fleet of just 11 per lakh \u2014 lowest transit coverage',
 		recommendation: 'Scaling AICTSL fleet to 30 per lakh and completing metro Phase 1 would triple transit accessibility',
 		dataUnlockSentence: 'Publishing bus frequency and walking infrastructure data enables transit coverage gap analysis'
 	}

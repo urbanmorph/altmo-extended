@@ -5,7 +5,7 @@
 
   // Compute real stats for module teasers
   const citiesWithBus = CITY_READINESS.filter((r) => r.layers.bus_stops === 'available').length;
-  const totalMetroKm = CITY_QOL_DATA.reduce((sum, c) => sum + (c.values.metro_network_km ?? 0), 0);
+  const totalRailKm = CITY_QOL_DATA.reduce((sum, c) => sum + (c.values.rail_transit_km ?? 0), 0);
   const citiesWithRidership = CITY_READINESS.filter((r) => r.layers.metro_ridership === 'available').length;
 
   interface Module {
@@ -21,7 +21,7 @@
       href: '/access',
       icon: 'fa-solid fa-map-location-dot',
       title: 'Access',
-      teaser: `Bus stop mapping for ${citiesWithBus} cities, ${Math.round(totalMetroKm)} km metro covered`
+      teaser: `Bus stop mapping for ${citiesWithBus} cities, ${Math.round(totalRailKm)} km rail transit covered`
     },
     {
       href: '/pulse',
@@ -33,7 +33,7 @@
       href: '/impact',
       icon: 'fa-solid fa-leaf',
       title: 'Impact',
-      teaser: 'Corporate mobility tracking and ESG reporting'
+      teaser: 'City-level air quality, road safety, and congestion data'
     },
     {
       href: '/routes',
