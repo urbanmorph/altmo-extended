@@ -439,14 +439,15 @@ out body qt;`;
 		}
 	}
 
-	// Identify station nodes — railway=station or railway=halt, exclude station=subway
+	// Identify station nodes — railway=station/halt/stop, exclude station=subway
+	// OSM uses both old (railway=station) and new (railway=stop + public_transport=stop_position) schemas
 	const stationNodes: { name: string; lat: number; lon: number }[] = [];
 	for (const [, node] of nodeMap) {
 		const tags = node.tags;
 		if (!tags) continue;
 
 		const isRailStation =
-			(tags['railway'] === 'station' || tags['railway'] === 'halt') &&
+			(tags['railway'] === 'station' || tags['railway'] === 'halt' || tags['railway'] === 'stop') &&
 			tags['station'] !== 'subway' &&
 			tags['station'] !== 'light_rail';
 
