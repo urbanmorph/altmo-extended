@@ -36,23 +36,19 @@ interface RailBreakdown {
 async function buildRailTransitOverrides(): Promise<Record<string, RailBreakdown>> {
 	const results: Record<string, RailBreakdown> = {};
 
-	const transitResults = await Promise.all(
-		CITIES.filter((c) => c.transitSources).map(async (city) => {
-			try {
-				const data = await fetchTransitData(city.id);
-				const metroKm = computeMetroNetworkKm(data.metroLines);
-				const suburbanRailKm = computeRailNetworkKm(data.railLines);
-				return { cityId: city.id, metroKm, suburbanRailKm, totalKm: metroKm + suburbanRailKm };
-			} catch (e) {
-				console.error(`[qol-overrides] Rail transit fetch failed for ${city.id}:`, (e as Error).message);
-				return { cityId: city.id, metroKm: 0, suburbanRailKm: 0, totalKm: 0 };
+	// Fetch cities sequentially to avoid Overpass 429 rate limiting on cold start.
+	// After first successful fetch, data is cached for 24h so subsequent calls are instant.
+	for (const city of CITIES.filter((c) => c.transitSources)) {
+		try {
+			const data = await fetchTransitData(city.id);
+			const metroKm = computeMetroNetworkKm(data.metroLines);
+			const suburbanRailKm = computeRailNetworkKm(data.railLines);
+			const totalKm = metroKm + suburbanRailKm;
+			if (totalKm > 0) {
+				results[city.id] = { totalKm, metroKm, suburbanRailKm };
 			}
-		})
-	);
-
-	for (const { cityId, totalKm, metroKm, suburbanRailKm } of transitResults) {
-		if (totalKm > 0) {
-			results[cityId] = { totalKm, metroKm, suburbanRailKm };
+		} catch (e) {
+			console.error(`[qol-overrides] Rail transit fetch failed for ${city.id}:`, (e as Error).message);
 		}
 	}
 

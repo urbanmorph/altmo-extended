@@ -651,7 +651,14 @@ export async function fetchTransitData(cityId: string): Promise<TransitData> {
 
 	console.log(`[transit] ${cityId}: ${busResult.length} bus stops, ${metro.stations.length} metro stations, ${metro.lines.length} metro lines, ${suburbanRail.stations.length} rail stations, ${suburbanRail.lines.length} rail lines`);
 
-	setCache(cacheKey, data);
+	// Only cache if suburban rail data loaded (or city has no suburban rail configured).
+	// Avoids caching Overpass 429 failures for 24h.
+	const suburbanRailConfigured = !!sources.suburbanRailOverpass;
+	const suburbanRailLoaded = suburbanRail.stations.length > 0 || suburbanRail.lines.length > 0;
+	if (!suburbanRailConfigured || suburbanRailLoaded) {
+		setCache(cacheKey, data);
+	}
+
 	return data;
 }
 
