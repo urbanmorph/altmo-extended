@@ -69,9 +69,7 @@ const HYDERABAD_TRANSIT: TransitDataSources = {
 		queries: [{
 			network: 'Hyderabad MMTS',
 			lines: {
-				'Lingampalli-Falaknuma': '#dc2626',
-				'Secunderabad-Medchal': '#2563eb',
-				'Lingampalli-Ghatkesar': '#16a34a'
+				'MMTS': '#dc2626'
 			}
 		}]
 	}
@@ -149,17 +147,13 @@ export const CITIES: CityConfig[] = [
 						network: 'Southern Railway',
 						operator: 'Chennai Suburban Railway',
 						lines: {
-							'Beach-Tambaram': '#dc2626',
-							'Beach-Velachery': '#9333ea',
-							'Chennai Central-Arakkonam': '#2563eb',
-							'Chennai Central-Tiruvallur': '#f97316',
-							'Chennai Central-Gummidipoondi': '#16a34a'
+							'Chennai Suburban': '#2563eb'
 						}
 					},
 					{
 						network: 'Chennai MRTS',
 						lines: {
-							'MRTS (Beach-Velachery)': '#ec4899'
+							'MRTS': '#ec4899'
 						}
 					}
 				]

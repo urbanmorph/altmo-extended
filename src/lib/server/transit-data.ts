@@ -332,66 +332,70 @@ out body qt;`;
 		}
 	}
 
-	// Group relations by corridor name (strip fast/slow/up/down variants)
-	const corridors = new Map<string, { relName: string; wayRefs: number[] }>();
+	// Normalize dashes (en-dash, em-dash → hyphen) for matching
+	const normDash = (s: string) => s.replace(/[\u2013\u2014]/g, '-').toLowerCase();
+
+	// Match a relation name to a configured line name.
+	// Sorted longest-first so "Trans-Harbour Line" matches before "Harbour Line".
+	const sortedConfigEntries = Object.entries(query.lines).sort((a, b) => b[0].length - a[0].length);
+
+	function matchRelToConfig(relName: string): { name: string; color: string } | null {
+		const relNorm = normDash(relName);
+
+		// Pass 1: the config name appears inside the relation name (or vice versa)
+		for (const [configName, color] of sortedConfigEntries) {
+			const cfgNorm = normDash(configName);
+			if (relNorm.includes(cfgNorm) || cfgNorm.includes(relNorm)) {
+				return { name: configName, color };
+			}
+		}
+
+		// Pass 2: keyword match — require all significant keywords (skip "line", short words)
+		for (const [configName, color] of sortedConfigEntries) {
+			const keywords = normDash(configName).split(/[-\s]+/).filter((w) => w.length > 2 && w !== 'line');
+			if (keywords.length > 0 && keywords.every((kw) => relNorm.includes(kw))) {
+				return { name: configName, color };
+			}
+		}
+
+		// Pass 3: any single distinctive keyword (shortest names first — most specific match wins)
+		const shortestFirst = [...sortedConfigEntries].reverse();
+		for (const [configName, color] of shortestFirst) {
+			const keywords = normDash(configName).split(/[-\s]+/).filter((w) => w.length > 3 && w !== 'line');
+			if (keywords.length > 0 && keywords.some((kw) => relNorm.includes(kw))) {
+				return { name: configName, color };
+			}
+		}
+
+		return null;
+	}
+
+	// Group all way refs by matched config line name (not by corridor)
+	// This merges Central Line: CSMT→Kalyan (Fast/Slow) + CSMT→Kasara etc. into one "Central Line"
+	const lineWayRefs = new Map<string, { color: string; wayRefs: number[] }>();
 
 	for (const rel of relations) {
 		const tags = rel.tags ?? {};
 		const relName = tags.name ?? tags.ref ?? '';
 		if (!relName) continue;
 
-		// Normalize: strip direction/speed variants to get corridor name
-		const corridorKey = relName.replace(CORRIDOR_STRIP_RE, '').trim().toLowerCase();
+		const match = matchRelToConfig(relName);
+		if (!match) continue;
 
-		if (!corridors.has(corridorKey)) {
-			corridors.set(corridorKey, { relName, wayRefs: [] });
+		if (!lineWayRefs.has(match.name)) {
+			lineWayRefs.set(match.name, { color: match.color, wayRefs: [] });
 		}
 
-		// Collect way refs from all relations in this corridor
 		const wayRefs = rel.members.filter((m) => m.type === 'way').map((m) => m.ref);
-		corridors.get(corridorKey)!.wayRefs.push(...wayRefs);
+		lineWayRefs.get(match.name)!.wayRefs.push(...wayRefs);
 	}
 
-	// Build RailLine[] — match corridors to configured line names
+	// Build RailLine[] from grouped way refs
 	const railLines: RailLine[] = [];
 	const configLineNames = Object.keys(query.lines);
 
-	for (const [, corridor] of corridors) {
-		// Match this corridor to a configured line name
-		let matchedName: string | undefined;
-		let matchedColor: string | undefined;
-
-		for (const [configName, color] of Object.entries(query.lines)) {
-			if (
-				corridor.relName.toLowerCase().includes(configName.toLowerCase()) ||
-				configName.toLowerCase().includes(corridor.relName.toLowerCase())
-			) {
-				matchedName = configName;
-				matchedColor = color;
-				break;
-			}
-		}
-
-		// Second pass: partial keyword match
-		if (!matchedName) {
-			for (const [configName, color] of Object.entries(query.lines)) {
-				const keywords = configName.toLowerCase().split(/[-\s]+/).filter((w) => w.length > 2);
-				const corridorLower = corridor.relName.toLowerCase();
-				if (keywords.some((kw) => corridorLower.includes(kw))) {
-					matchedName = configName;
-					matchedColor = color;
-					break;
-				}
-			}
-		}
-
-		if (!matchedName || !matchedColor) continue;
-
-		// Skip if we already built this line
-		if (railLines.some((l) => l.name === matchedName)) continue;
-
-		// Deduplicate way refs and build geometry
-		const uniqueWayRefs = [...new Set(corridor.wayRefs)];
+	for (const [lineName, { color, wayRefs }] of lineWayRefs) {
+		const uniqueWayRefs = [...new Set(wayRefs)];
 		const segments: [number, number][][] = [];
 		let currentSegment: [number, number][] = [];
 
@@ -431,8 +435,8 @@ out body qt;`;
 
 		if (segments.length > 0) {
 			railLines.push({
-				name: matchedName,
-				color: matchedColor,
+				name: lineName,
+				color,
 				coordinates: segments.flat(),
 				segments
 			});
