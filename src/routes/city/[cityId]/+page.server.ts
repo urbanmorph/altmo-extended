@@ -239,13 +239,18 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	// ── Phase 9: Company presence from geo markers ──
 
-	const cityCompanies = cityGeoMarkers
-		.filter((m) => m.type === 'Company')
-		.map((m) => m.name)
-		.filter((name) => name && name.trim().length > 0)
-		.sort();
-	// Deduplicate company names (some companies have multiple facilities)
-	const uniqueCompanyNames = [...new Set(cityCompanies)];
+	// Count facilities per company — more facilities suggests larger presence
+	const companyCounts = new Map<string, number>();
+	for (const m of cityGeoMarkers) {
+		if (m.type !== 'Company') continue;
+		const name = m.name?.trim();
+		if (!name) continue;
+		companyCounts.set(name, (companyCounts.get(name) ?? 0) + 1);
+	}
+	// Sort by facility count (desc), then alphabetically for ties
+	const uniqueCompanyNames = [...companyCounts.entries()]
+		.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+		.map(([name]) => name);
 
 	// ── Return consolidated data ──
 
