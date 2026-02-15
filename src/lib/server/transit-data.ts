@@ -60,6 +60,32 @@ async function fetchJSON<T>(url: string): Promise<T> {
 // --- Overpass API (OpenStreetMap) ---
 
 const OVERPASS_API = 'https://overpass-api.de/api/interpreter';
+const OVERPASS_FETCH_TIMEOUT_MS = 30_000; // 30s fetch-level timeout (separate from Overpass QL timeout)
+
+/** Fetch from Overpass with an AbortController timeout so we don't hang when the API is slow */
+async function overpassFetch(query: string): Promise<Response> {
+	const controller = new AbortController();
+	const timer = setTimeout(() => controller.abort(), OVERPASS_FETCH_TIMEOUT_MS);
+	try {
+		const res = await fetch(OVERPASS_API, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+			body: `data=${encodeURIComponent(query)}`,
+			signal: controller.signal
+		});
+		if (!res.ok) {
+			throw new Error(`Overpass API error: ${res.status} ${res.statusText}`);
+		}
+		return res;
+	} catch (e) {
+		if ((e as Error).name === 'AbortError') {
+			throw new Error('Overpass API timeout (30s)');
+		}
+		throw e;
+	} finally {
+		clearTimeout(timer);
+	}
+}
 
 /** OSM element types returned by the Overpass JSON response */
 interface OverpassNode {
@@ -100,22 +126,13 @@ interface OverpassResponse {
 async function fetchMetroFromOverpass(
 	config: { network: string; lines: Record<string, string> }
 ): Promise<{ stations: MetroStation[]; lines: MetroLine[] }> {
-	const query = `[out:json][timeout:60];
+	const query = `[out:json][timeout:25];
 relation["network"="${config.network}"]["route"~"subway|light_rail"];
 out body;
 >;
 out body qt;`;
 
-	const res = await fetch(OVERPASS_API, {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-		body: `data=${encodeURIComponent(query)}`
-	});
-
-	if (!res.ok) {
-		throw new Error(`Overpass API error: ${res.status} ${res.statusText}`);
-	}
-
+	const res = await overpassFetch(query);
 	const data: OverpassResponse = await res.json();
 
 	// Build lookup maps from the flat element array
@@ -302,22 +319,13 @@ async function fetchSuburbanRailSingleQuery(
 ): Promise<{ stations: RailStation[]; lines: RailLine[] }> {
 	// Build the Overpass QL — include optional operator filter
 	const operatorFilter = query.operator ? `["operator"="${query.operator}"]` : '';
-	const overpassQL = `[out:json][timeout:90];
+	const overpassQL = `[out:json][timeout:25];
 relation["network"="${query.network}"]["route"="train"]${operatorFilter};
 out body;
 >;
 out body qt;`;
 
-	const res = await fetch(OVERPASS_API, {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-		body: `data=${encodeURIComponent(overpassQL)}`
-	});
-
-	if (!res.ok) {
-		throw new Error(`Overpass API error for ${query.network}: ${res.status} ${res.statusText}`);
-	}
-
+	const res = await overpassFetch(overpassQL);
 	const data: OverpassResponse = await res.json();
 
 	// Build lookup maps

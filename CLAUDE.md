@@ -36,6 +36,24 @@ All components use Svelte 5 runes: `$props()`, `$state()`, `$effect()`, `$derive
 ### Server-Side Data Fetching
 Transit data is fetched on-demand from open-source GitHub repositories (TransitRouter, namma-metro, BMRCL ridership), transformed server-side, and cached in-memory with 24h TTL. No transit data is stored in the database in Phase 1.
 
+### Static Data Files & Refresh Scripts
+Some data is pre-fetched and stored as static JSON files for instant cold starts on Vercel (no runtime Overpass/Rails API calls needed). Static files are git-tracked and live in `src/lib/data/`:
+
+- `src/lib/data/transit/{cityId}.json` — Transit data (bus stops, metro, rail) per city
+- `src/lib/data/geo-markers.json` — Company/campus locations from Rails API
+- `src/lib/data/global-stats.json` — Global impact totals from Rails API
+
+**Refresh scripts** (run with dev server active in another terminal):
+```bash
+bash scripts/refresh-transit-data.sh   # Re-fetches all 9 cities from Overpass/GitHub
+bash scripts/refresh-core-data.sh      # Re-fetches geo markers + global stats from Rails API
+```
+
+The app prefers static data when available and falls back to live API calls. After running refresh scripts, commit the updated JSON files. Run refresh scripts when:
+- A new city is added
+- Transit network data changes (new metro line, etc.)
+- Rails API data changes significantly
+
 ### ETL Routes
 - Located at `src/routes/api/etl/`
 - Use Bearer token auth via `CRON_SECRET` env var
@@ -58,7 +76,10 @@ When adding a new city or changing city-specific config, follow the checklist in
 4. If the new data has sub-components (like metro + suburban = rail transit), store display-only breakdown fields in overrides (e.g. `metro_km`, `suburban_rail_km`) alongside the scoring field (`rail_transit_km`). Display-only fields don't affect scoring because they're not in `INDICATOR_DEFINITIONS`.
 5. Update `static/data/data-sources.json` with the new source entry
 
-Current live sources: safety (Supabase), PM2.5 + NO2 (OpenAQ), congestion (TomTom), rail transit km (Overpass).
+Current live sources: safety (Supabase), PM2.5 + NO2 (OpenAQ), congestion (TomTom), rail transit km (static JSON via Overpass, with live fallback).
+
+### Activity Route Data
+`src/lib/server/activity-data.ts` queries the `activity_routes` Supabase table (synced from Rails `/routes/bulk` via the ETL sync-routes endpoint). It maps app city slugs to Rails integer city_ids internally. Functions: `getActivitySummary()`, `getActivityByHour()`, `getActivityByDayOfWeek()`, `getTopCorridors()`, `getActivityTrends()`, `getDistanceDistribution()`. Uses 1h cache (shorter than transit's 24h since activity data updates more frequently).
 
 ### Data Provenance
 `static/data/data-sources.json` is the canonical registry of all data sources, organized by city and category. **Update it** whenever you add, remove, or change a data source (new API endpoint, new OpenAQ sensor, new transit GeoJSON, etc.). Each entry tracks the source name, URL, license, update frequency, and confidence level. The `/data-sources` page renders this file directly.
@@ -95,14 +116,20 @@ src/
     pulse/activity/    — Activity analytics (Altmo data)
     impact/            — Environmental impact
     impact/company/    — Company-level impact
-    routes/            — Route explorer
+    pulse/trips/       — Trip analysis (activity routes data)
+    pulse/commute/     — Commute patterns (to/from work)
+    pulse/recreation/  — Recreational activity (leisure, runs)
+    pulse/trends/      — Activity trends (monthly time-series)
+    routes/            — Route explorer (corridors, mode split)
     forecast/          — Scenario comparison tool (ETQOLI what-if modelling)
     data-sources/      — Data provenance & source references per city
     api/etl/           — 5 ETL server routes (sync-routes, sync-stats, sync-facilities, sync-external, sync-safety)
+    api/internal/      — Dev-only data dump endpoints (dump-transit, dump-core-data)
   lib/
     components/        — Svelte components (Nav, Map, Chart, MetricCard, DataTable, CitySelector, etc.)
     config/            — Static config (cities.ts, data-readiness.ts, city-qol-data.ts, scenarios.ts, air-quality.ts)
-    server/            — Server-only code (transit-data.ts, altmo-core.ts)
+    data/              — Static JSON data files (transit/{city}.json, geo-markers.json, global-stats.json)
+    server/            — Server-only code (transit-data.ts, transit-static.ts, activity-data.ts, altmo-core.ts)
     stores/            — Svelte stores (city, dateRange, auth)
     utils/             — Helpers (transit, h3, geo, format)
 supporting-docs/       — Analysis docs (gitignored, not deployed)

@@ -28,11 +28,22 @@
     });
   });
 
+  // Update chart when data changes (e.g. client-side navigation)
+  let prevData: object | undefined;
+  $effect(() => {
+    if (!chart) return;
+    const currentData = data;
+    if (currentData === prevData) return;
+    prevData = currentData;
+    chart.data = currentData as any;
+    chart.update();
+  });
+
   onDestroy(() => {
     chart?.destroy();
   });
 </script>
 
-<div class="relative h-full {className}">
+<div class="relative {className}">
   <canvas bind:this={canvas}></canvas>
 </div>

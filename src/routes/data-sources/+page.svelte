@@ -109,13 +109,13 @@
 </script>
 
 <svelte:head>
-  <title>Data Sources — Altmo Intelligence</title>
+  <title>Data Provenance — Altmo Intelligence</title>
 </svelte:head>
 
 <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
   <!-- Header -->
   <div class="mb-6">
-    <h1 class="text-2xl font-bold text-text-primary">Data Sources</h1>
+    <h1 class="text-2xl font-bold text-text-primary">Data Provenance</h1>
     <p class="mt-1 text-text-secondary">
       All data sources referenced in Altmo scoring and analytics
     </p>

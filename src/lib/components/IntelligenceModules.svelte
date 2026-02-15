@@ -2,11 +2,26 @@
   import { CITIES } from '$lib/config/cities';
   import { CITY_READINESS } from '$lib/config/data-readiness';
   import { CITY_QOL_DATA } from '$lib/config/city-qol-data';
+  import { formatCompact } from '$lib/utils/format';
 
-  // Compute real stats for module teasers
+  interface Props {
+    globalActivities?: number;
+    globalUsers?: number;
+    globalDistanceKm?: number;
+    globalCo2Kg?: number;
+    routesAnalyzed?: number;
+  }
+
+  let {
+    globalActivities = 0,
+    globalUsers = 0,
+    globalDistanceKm = 0,
+    globalCo2Kg = 0,
+    routesAnalyzed = 0
+  }: Props = $props();
+
   const citiesWithBus = CITY_READINESS.filter((r) => r.layers.bus_stops === 'available').length;
   const totalRailKm = CITY_QOL_DATA.reduce((sum, c) => sum + (c.values.rail_transit_km ?? 0), 0);
-  const citiesWithRidership = CITY_READINESS.filter((r) => r.layers.metro_ridership === 'available').length;
 
   interface Module {
     href: string;
@@ -16,7 +31,7 @@
     preview?: boolean;
   }
 
-  const modules: Module[] = [
+  const modules: Module[] = $derived([
     {
       href: '/access',
       icon: 'fa-solid fa-map-location-dot',
@@ -27,20 +42,25 @@
       href: '/pulse',
       icon: 'fa-solid fa-wave-square',
       title: 'Pulse',
-      teaser: `Transit ridership data for ${citiesWithRidership > 0 ? citiesWithRidership : CITIES.length} cities`
+      teaser: globalActivities > 0
+        ? `${formatCompact(globalActivities)}+ activities from ${formatCompact(globalUsers)} users across ${CITIES.length} cities`
+        : `Activity analytics across ${CITIES.length} cities`
     },
     {
       href: '/impact',
       icon: 'fa-solid fa-leaf',
       title: 'Impact',
-      teaser: 'City-level air quality, road safety, and congestion data'
+      teaser: globalCo2Kg > 0
+        ? `${formatCompact(globalCo2Kg)} kg CO2 offset, ${formatCompact(globalDistanceKm)} km active mobility tracked`
+        : 'City-level air quality, road safety, and congestion data'
     },
     {
       href: '/routes',
       icon: 'fa-solid fa-route',
       title: 'Routes',
-      teaser: 'Route optimization and infrastructure planning',
-      preview: true
+      teaser: routesAnalyzed > 0
+        ? `${routesAnalyzed.toLocaleString()} GPS-traced routes with density heatmap and corridor analysis`
+        : 'Route density heatmap and corridor analysis'
     },
     {
       href: '/forecast',
@@ -51,10 +71,10 @@
     {
       href: '/data-sources',
       icon: 'fa-solid fa-database',
-      title: 'Data Sources',
+      title: 'Data Provenance',
       teaser: `References and provenance for all ${CITIES.length} cities`
     }
-  ];
+  ]);
 </script>
 
 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

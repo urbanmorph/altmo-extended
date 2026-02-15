@@ -7,7 +7,7 @@
   let currentId = $derived($selectedCity?.id ?? '');
 
   /** Pages that load city-specific data via ?city= param */
-  const CITY_PARAM_PAGES = ['/access', '/pulse/transit', '/forecast', '/data-sources'];
+  const CITY_PARAM_PAGES = ['/access', '/pulse/transit', '/pulse/trips', '/pulse/commute', '/pulse/recreation', '/pulse/trends', '/routes', '/forecast', '/data-sources'];
 
   function handleChange(event: Event) {
     const target = event.target as HTMLSelectElement;

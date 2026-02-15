@@ -15,7 +15,7 @@
     { href: '/routes', label: 'Routes' },
     { href: '/forecast', label: 'Forecast' },
     { href: '/benchmark', label: 'Benchmark' },
-    { href: '/data-sources', label: 'Data Sources' }
+    { href: '/data-sources', label: 'Data Provenance' }
   ];
 </script>
 
