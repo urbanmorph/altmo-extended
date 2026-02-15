@@ -23,7 +23,7 @@ Version upgrades are a separate software upgrade effort:
 2. Update versions one group at a time (framework, then tooling, then runtime deps)
 3. Run `npm run check`, start the dev server, and verify all pages return 200
 4. Curl each page and check the HTML content for errors (500 traces, "Error:", empty body, missing key elements)
-5. Test `/`, `/benchmark`, `/forecast`, `/access`, `/data-sources` before merging
+5. Test `/`, `/city/bengaluru` (all 6 tabs), `/benchmark`, `/data-sources` before merging
 6. Never bundle version upgrades with feature or bugfix commits
 
 **Known breakage:** Vite 6.3+ breaks SvelteKit's dev server (`Cannot find module '__SERVER__/internal.js'`). Vite is pinned to 6.2.7.
@@ -31,7 +31,7 @@ Version upgrades are a separate software upgrade effort:
 ## Architecture & Patterns
 
 ### Svelte 5 Runes
-All components use Svelte 5 runes: `$props()`, `$state()`, `$effect()`, `$derived()`, `$bindable()`. Do NOT use legacy Svelte 4 syntax (`export let`, `$:`, slots). Nav uses Svelte 5 snippets for city_selector and auth.
+All components use Svelte 5 runes: `$props()`, `$state()`, `$effect()`, `$derived()`, `$bindable()`. Do NOT use legacy Svelte 4 syntax (`export let`, `$:`, slots).
 
 ### Server-Side Data Fetching
 Transit data is fetched on-demand from open-source GitHub repositories (TransitRouter, namma-metro, BMRCL ridership), transformed server-side, and cached in-memory with 24h TTL. No transit data is stored in the database in Phase 1.
@@ -60,12 +60,12 @@ The app prefers static data when available and falls back to live API calls. Aft
 - All ETL routes create `supabaseAdmin` client inside the handler (not at module level)
 
 ### City Switching
-Pages that support city switching use `?city=` URL params. The `CitySelector` component syncs with `selectedCity` store and navigates with `goto()`.
+The primary city experience is the deep-dive page at `/city/{cityId}` (e.g., `/city/bengaluru`). A city selector dropdown within the deep-dive page navigates between cities using `goto()`. The `/benchmark` and `/data-sources` pages have their own local city selectors.
 
 ### Adding or Modifying Cities
 When adding a new city or changing city-specific config, follow the checklist in `supporting-docs/NEW_CITY_READY_RECKONER.md`. That reckoner lists every config file that needs a city entry (cities.ts, city-qol-data.ts, scenarios.ts, air-quality.ts, traffic-flow.ts, data-readiness.ts, city-qol-gaps.ts, data-sources.json, etc.) and the verification steps. **Update the reckoner itself** if you add new city-scoped config files or change the onboarding process.
 
-**Note:** `src/lib/server/altmo-core.ts` is the shared Rails API data layer (global stats, challenges, geo_markers, company detail). It does NOT need per-city config. However, the geo_markers it fetches are city-scoped via the `city_id` field on each marker, so new cities added in the Rails app will automatically appear in the access map companies layer without any config changes in this project.
+**Note:** `src/lib/server/altmo-core.ts` is the shared Rails API data layer (global stats, challenges, geo_markers, company detail). It does NOT need per-city config. However, the geo_markers it fetches are city-scoped via the `city_id` field on each marker, so new cities added in the Rails app will automatically appear in the city deep-dive Infrastructure tab's companies layer without any config changes in this project.
 
 ### Live Data & QoL Overrides
 `src/lib/server/qol-overrides.ts` (`buildQoLOverrides()`) is the **single source of truth** for all live data that feeds into ETQOLI scoring. Every page that displays QoL scores calls this function. When adding a new live data source:
@@ -109,27 +109,25 @@ src/
   app.css              — Tailwind @theme tokens (all colors)
   app.html             — HTML shell (fonts, meta)
   routes/
-    +page.svelte       — Home / dashboard overview
+    +page.svelte       — Home / Transport Quality of Life Ranking (leaderboard)
     +layout.svelte     — App shell with Nav
-    access/            — Active mobility access map (MapLibre)
-    pulse/transit/     — Transit analytics dashboard
-    pulse/activity/    — Activity analytics (Altmo data)
-    impact/            — Environmental impact
-    impact/company/    — Company-level impact
-    pulse/trips/       — Trip analysis (activity routes data)
-    pulse/commute/     — Commute patterns (to/from work)
-    pulse/recreation/  — Recreational activity (leisure, runs)
-    pulse/trends/      — Activity trends (monthly time-series)
-    routes/            — Route explorer (corridors, mode split)
-    forecast/          — Scenario comparison tool (ETQOLI what-if modelling)
-    data-sources/      — Data provenance & source references per city
+    city/[cityId]/     — City deep-dive (6 tabbed sections: score, infrastructure, activity, scenarios, data, action)
+    benchmark/         — Cross-city comparison (multi-select, radar chart, dimension tables)
+    data-sources/      — Data provenance, ETQOLI methodology, source references per city
+    compare/           — Redirect → /benchmark
+    access/            — Redirect → /city/{cityId}#infrastructure (legacy)
+    pulse/*/           — Redirects → /city/{cityId}#activity (legacy)
+    impact/            — Redirect → /city/{cityId}#activity (legacy)
+    forecast/          — Redirect → /city/{cityId}#scenarios (legacy)
+    routes/            — Redirect → /city/{cityId}#activity (legacy)
     api/etl/           — 5 ETL server routes (sync-routes, sync-stats, sync-facilities, sync-external, sync-safety)
     api/internal/      — Dev-only data dump endpoints (dump-transit, dump-core-data)
   lib/
-    components/        — Svelte components (Nav, Map, Chart, MetricCard, DataTable, CitySelector, etc.)
-    config/            — Static config (cities.ts, data-readiness.ts, city-qol-data.ts, scenarios.ts, air-quality.ts)
+    components/        — Svelte components (Nav, Map, Chart, MetricCard, DataTable, etc.)
+    components/city/   — City deep-dive section components (ScoreOverview, InfrastructureSection, ActivitySection, ScenariosSection, DataReadinessSection, TakeActionSection)
+    config/            — Static config (cities.ts, data-readiness.ts, city-qol-data.ts, scenarios.ts, air-quality.ts, action-guides.ts)
     data/              — Static JSON data files (transit/{city}.json, geo-markers.json, global-stats.json)
-    server/            — Server-only code (transit-data.ts, transit-static.ts, activity-data.ts, altmo-core.ts)
+    server/            — Server-only code (transit-data.ts, transit-static.ts, activity-data.ts, altmo-core.ts, qol-overrides.ts)
     stores/            — Svelte stores (city, dateRange, auth)
     utils/             — Helpers (transit, h3, geo, format)
 supporting-docs/       — Analysis docs (gitignored, not deployed)
