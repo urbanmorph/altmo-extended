@@ -4,7 +4,7 @@
  */
 
 import { CITIES } from '$lib/config/cities';
-import { GRADE_BOUNDARIES } from '$lib/config/city-qol-data';
+import { GRADE_BOUNDARIES, type ConfidenceTier, type ConfidenceBreakdown } from '$lib/config/city-qol-data';
 
 export function cityName(cityId: string): string {
 	return CITIES.find((c) => c.id === cityId)?.name ?? cityId;
@@ -63,4 +63,35 @@ export function dimensionRankLabel(rank: number, total: number): string {
 	if (rank === total) return 'Worst';
 	const suffix = rank === 2 ? 'nd' : rank === 3 ? 'rd' : 'th';
 	return `${rank}${suffix}`;
+}
+
+// ---- Confidence badge helpers ----
+
+export function confidenceIcon(tier: ConfidenceTier): string {
+	if (tier === 'gold') return 'fa-solid fa-certificate';
+	if (tier === 'silver') return 'fa-solid fa-certificate';
+	return 'fa-solid fa-circle-half-stroke';
+}
+
+export function confidenceColor(tier: ConfidenceTier): string {
+	if (tier === 'gold') return '#D4AF37';
+	if (tier === 'silver') return '#9CA3AF';
+	return '#CD7F32';
+}
+
+export function confidenceLabel(tier: ConfidenceTier): string {
+	if (tier === 'gold') return 'Gold';
+	if (tier === 'silver') return 'Silver';
+	return 'Bronze';
+}
+
+export function confidenceTooltipLines(breakdown: ConfidenceBreakdown): { label: string; score: number }[] {
+	return [
+		{ label: 'Indicator coverage', score: breakdown.factors.indicatorCoverage },
+		{ label: 'Live data freshness', score: breakdown.factors.liveDataFreshness },
+		{ label: 'Sensor coverage', score: breakdown.factors.sensorCoverage },
+		{ label: 'Transit data quality', score: breakdown.factors.transitDataQuality },
+		{ label: 'Data readiness', score: breakdown.factors.dataReadiness },
+		{ label: 'Altmo traces', score: breakdown.factors.altmoTraces }
+	];
 }

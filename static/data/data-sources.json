@@ -1133,6 +1133,133 @@
         }
       ]
     },
+    "kolkata": {
+      "name": "Kolkata",
+      "state": "West Bengal",
+      "sources": [
+        {
+          "name": "Census 2011 — Kolkata Mode Share",
+          "url": "https://censusindia.gov.in/",
+          "description": "Kolkata mode share: Walking 39% (highest among Indian metros), Cycling 10% (despite 62 arterial roads banning cycling), PT 31%. Sustainable mode share: 80%. Footpath coverage: ~20% (80% pavements encroached — KMC surveys).",
+          "category": "mobility",
+          "indicators": ["walking_share", "cycling_share", "sustainable_mode_share", "footpath_coverage"],
+          "dataType": "static",
+          "confidence": "low",
+          "year": "2011",
+          "license": "Government of India"
+        },
+        {
+          "name": "Kolkata Metro (Overpass/OSM)",
+          "url": "https://www.openstreetmap.org/",
+          "description": "Metro stations and lines fetched via Overpass API from OpenStreetMap. 5 operational lines: Blue (North-South, 33 km), Green (East-West, 13 km), Orange (Joka-Esplanade, 5.4 km), Purple (Baranagar-Barrackpore, 7 km), Yellow (Noapara-Jai Hind, 6.8 km). Total ~73 km. India's oldest metro system (1984).",
+          "category": "transit_metro",
+          "indicators": ["rail_transit_km"],
+          "dataType": "live",
+          "confidence": "medium",
+          "year": "2025",
+          "license": "ODbL"
+        },
+        {
+          "name": "Eastern Railway + South Eastern Railway Suburban (Overpass/OSM)",
+          "url": "https://www.openstreetmap.org/",
+          "description": "Suburban rail network within Kolkata Metropolitan Area: Eastern Railway + South Eastern Railway suburban services. ~350 km within KMA, 458 stations full network. Fetched via Overpass API.",
+          "category": "transit_metro",
+          "indicators": ["rail_transit_km"],
+          "dataType": "live",
+          "confidence": "medium",
+          "year": "2025",
+          "license": "ODbL"
+        },
+        {
+          "name": "WBTC — Bus Fleet",
+          "url": "https://wbtc.co.in/",
+          "description": "West Bengal Transport Corporation ~1,337 buses + private operators for ~60 lakh KMC population = 22 per lakh. Includes NBSTC and private services.",
+          "category": "transit_bus",
+          "indicators": ["bus_fleet_per_lakh"],
+          "dataType": "static",
+          "confidence": "medium",
+          "year": "2023",
+          "license": "Government of West Bengal"
+        },
+        {
+          "name": "New Town Kolkata Cycle Tracks",
+          "url": "https://www.nkdamar.org/",
+          "description": "Dedicated cycle infrastructure in New Town Rajarhat: ~35 km of cycle tracks along major corridors. New Town Kolkata Development Authority (NKDA) planned and maintained.",
+          "category": "infrastructure",
+          "indicators": ["cycle_infra_km"],
+          "dataType": "static",
+          "confidence": "medium",
+          "year": "2024",
+          "license": "NKDA / Government of West Bengal"
+        },
+        {
+          "name": "OpenAQ — Kolkata Sensors",
+          "url": "https://explore.openaq.org/locations?country=IN&city=Kolkata",
+          "description": "CPCB/WBPCB PM2.5 monitoring stations near Kolkata. Sensor IDs pending discovery via /v3/locations endpoint. Baseline 2023 annual: PM2.5 60 ug/m3, NO2 28 ug/m3.",
+          "category": "air_quality",
+          "indicators": ["pm25_annual", "no2_annual"],
+          "dataType": "live",
+          "confidence": "medium",
+          "year": "Live",
+          "license": "CC BY 4.0"
+        },
+        {
+          "name": "UrbanEmissions — Kolkata APnA",
+          "url": "https://urbanemissions.info/india-apna/kolkata-india/",
+          "description": "PM2.5 source apportionment: Transport 30%, Power generation 15% (WB coal-dominant grid — DPL, CESC thermal plants in airshed), Industry ~20%, Dust ~15%. Modeled annual: 58 ug/m3.",
+          "category": "energy",
+          "indicators": ["pm25_annual"],
+          "dataType": "research",
+          "confidence": "medium",
+          "year": "2019",
+          "license": "Academic"
+        },
+        {
+          "name": "West Bengal Grid Energy Mix",
+          "url": "https://ember-energy.org/data/india-electricity-data-explorer/",
+          "description": "West Bengal grid: ~15% renewable (5-7% solar, 2-3% wind, 3-5% hydro), ~80% coal (DPL, CESC, NTPC Farakka/Kahalgaon), ~5% gas. Coal-dominant state with limited renewable penetration.",
+          "category": "energy",
+          "indicators": [],
+          "dataType": "research",
+          "confidence": "medium",
+          "year": "2024-25",
+          "license": "Open Data"
+        },
+        {
+          "name": "NCRB 2022 — Kolkata",
+          "url": "https://ncrb.gov.in/accidental-deaths-suicides-in-india.html",
+          "description": "Traffic fatalities: ~185 deaths in 2022, ~60 lakh KMC population = 3.1 per lakh. VRU fatality share ~45% (WB state pattern). Source: NCRB / Kolkata Police Traffic Department.",
+          "category": "safety",
+          "indicators": ["traffic_fatalities", "vru_fatality_share"],
+          "dataType": "static",
+          "confidence": "high",
+          "year": "2022",
+          "license": "Government of India"
+        },
+        {
+          "name": "Kolkata Transport Coefficients",
+          "url": null,
+          "description": "Scenario intervention coefficients calibrated from Census 2011 mode share baselines, KMRC metro ridership data, suburban rail passenger volumes, and WBTC bus operations. Similar to Mumbai (dense city, high PT share): Metro congestion -0.025 pp/km, mode share +0.03 pp/km. Bus congestion -3.5 pp/2x, mode share +4 pp/2x. Low cycle lane responsiveness (+0.015 pp/km) due to cycling bans on 62 arterial roads.",
+          "category": "scenario",
+          "indicators": ["congestion_level", "sustainable_mode_share", "cycling_share", "walking_share", "traffic_fatalities"],
+          "dataType": "research",
+          "confidence": "medium",
+          "year": "2024",
+          "license": "Government of West Bengal"
+        },
+        {
+          "name": "KMC Road Network",
+          "url": "https://www.kmcgov.in/",
+          "description": "KMC jurisdiction: 206 km2 with ~1,850 km of roads = 9.0 km/km2 road density. Source: KMC Infrastructure Department.",
+          "category": "infrastructure",
+          "indicators": ["road_density"],
+          "dataType": "static",
+          "confidence": "medium",
+          "year": "2023",
+          "license": "Government of West Bengal"
+        }
+      ]
+    },
     "mumbai": {
       "name": "Mumbai",
       "state": "Maharashtra",

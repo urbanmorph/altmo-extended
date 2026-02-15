@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { computeAllQoL, gradeColor, gradeLabel, type ConfidenceTier, type QoLOverrides } from '$lib/config/city-qol-data';
+  import { computeAllQoL, gradeColor, gradeLabel, type QoLOverrides } from '$lib/config/city-qol-data';
   import { computeAllGaps } from '$lib/config/city-qol-gaps';
   import { CITY_READINESS, type ReadinessScore, type DataStatus } from '$lib/config/data-readiness';
-  import { cityName, cityRegionSubtitle, fmtIndicatorValue, barPercent, dimensionColor, readinessScoreColor } from '$lib/utils/qol-format';
+  import { cityName, cityRegionSubtitle, fmtIndicatorValue, barPercent, dimensionColor, readinessScoreColor, confidenceIcon, confidenceColor, confidenceLabel, confidenceTooltipLines } from '$lib/utils/qol-format';
 
   interface Props {
     overrides?: QoLOverrides;
@@ -42,23 +42,6 @@
     return gaps.find((g) => g.cityId === cityId);
   }
 
-  function confidenceIcon(tier: ConfidenceTier): string {
-    if (tier === 'gold') return 'fa-solid fa-certificate';
-    if (tier === 'silver') return 'fa-solid fa-certificate';
-    return 'fa-solid fa-circle-half-stroke';
-  }
-
-  function confidenceColor(tier: ConfidenceTier): string {
-    if (tier === 'gold') return '#D4AF37';
-    if (tier === 'silver') return '#9CA3AF';
-    return '#CD7F32';
-  }
-
-  function confidenceLabel(tier: ConfidenceTier): string {
-    if (tier === 'gold') return 'Gold';
-    if (tier === 'silver') return 'Silver';
-    return 'Bronze';
-  }
 
   const LIVE_SOURCE_LABELS: Record<string, string> = {
     traffic_fatalities: 'Supabase',
@@ -132,14 +115,7 @@
 
           <!-- Grade + score -->
           <div class="shrink-0 text-right">
-            <div class="flex items-center justify-end gap-1.5">
-              <span class="text-3xl font-bold sm:text-4xl" style="color: {color}">{entry.grade}</span>
-              <i
-                class="{confidenceIcon(entry.confidence)} text-sm"
-                style="color: {confidenceColor(entry.confidence)}"
-                title="{confidenceLabel(entry.confidence)} confidence ({entry.indicatorsAvailable} of {entry.indicatorsTotal} indicators)"
-              ></i>
-            </div>
+            <span class="text-3xl font-bold sm:text-4xl" style="color: {color}">{entry.grade}</span>
             <p class="text-xs text-text-secondary sm:text-sm">{Math.round(entry.composite * 100)}/100</p>
           </div>
 
@@ -181,23 +157,78 @@
         <!-- Meta badges row -->
         <div class="mt-2 flex flex-wrap items-center gap-2 sm:mt-3">
           {#if liveIndicatorCount(entry.cityId) > 0}
-            <span class="inline-flex items-center gap-1 rounded-full bg-altmo-50 px-2 py-0.5 text-[0.65rem] text-altmo-800 sm:text-xs">
+            <span class="group relative inline-flex items-center gap-1 rounded-full bg-altmo-50 px-2 py-0.5 text-[0.65rem] text-altmo-800 sm:text-xs cursor-default">
               <i class="fa-solid fa-tower-broadcast text-[0.55rem]" style="color: var(--color-altmo-500)"></i>
               {liveIndicatorCount(entry.cityId)}/{entry.indicatorsAvailable} live
+              <div class="pointer-events-none absolute bottom-full left-0 z-50 mb-2 rounded-lg border border-border bg-surface-card p-3 opacity-0 shadow-lg transition-opacity group-hover:opacity-100 w-52">
+                <p class="text-xs font-semibold text-text-primary">
+                  <i class="fa-solid fa-tower-broadcast mr-1" style="color: var(--color-altmo-500)"></i>
+                  Live Data Sources
+                </p>
+                {#each entry.dimensions as dim}
+                  {#each dim.indicators as ind}
+                    {#if isLiveIndicator(entry.cityId, ind.key)}
+                      <div class="mt-1.5 flex items-center justify-between text-[0.65rem]">
+                        <span class="text-text-secondary">{ind.label}</span>
+                        <span class="font-medium text-altmo-700">{liveSourceLabel(ind.key)}</span>
+                      </div>
+                    {/if}
+                  {/each}
+                {/each}
+              </div>
             </span>
           {/if}
           {#if readinessEntry}
-            <span
-              class="inline-flex items-center gap-1 rounded-full bg-earth-50 px-2 py-0.5 text-[0.65rem] text-text-secondary sm:text-xs"
-              title="Data readiness: {countLayers(entry.cityId, 'available')} available, {countLayers(entry.cityId, 'partial')} partial, {countLayers(entry.cityId, 'unavailable')} missing"
-            >
+            {@const avail = countLayers(entry.cityId, 'available')}
+            {@const partial = countLayers(entry.cityId, 'partial')}
+            {@const missing = countLayers(entry.cityId, 'unavailable')}
+            {@const missingNames = missingLayerNames(entry.cityId)}
+            <span class="group relative inline-flex items-center gap-1 rounded-full bg-earth-50 px-2 py-0.5 text-[0.65rem] text-text-secondary sm:text-xs cursor-default">
               <span class="inline-block h-1.5 w-1.5 rounded-full" style="background-color: {readinessDotColor(readinessEntry.total)}"></span>
               {Math.round(readinessEntry.total)}% data
+              <div class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 rounded-lg border border-border bg-surface-card p-3 opacity-0 shadow-lg transition-opacity group-hover:opacity-100 w-56">
+                <p class="text-xs font-semibold text-text-primary">
+                  <i class="fa-solid fa-database mr-1 text-text-secondary"></i>
+                  Data Readiness ({Math.round(readinessEntry.total)}%)
+                </p>
+                <div class="mt-1.5 flex items-center justify-between text-[0.65rem]">
+                  <span class="text-text-secondary">Available layers</span>
+                  <span class="font-medium text-text-primary">{avail}</span>
+                </div>
+                <div class="mt-1 flex items-center justify-between text-[0.65rem]">
+                  <span class="text-text-secondary">Partial layers</span>
+                  <span class="font-medium text-text-primary">{partial}</span>
+                </div>
+                <div class="mt-1 flex items-center justify-between text-[0.65rem]">
+                  <span class="text-text-secondary">Missing layers</span>
+                  <span class="font-medium text-text-primary">{missing}</span>
+                </div>
+                {#if missingNames.length > 0}
+                  <p class="mt-2 text-[0.6rem] text-text-secondary">
+                    <i class="fa-solid fa-circle-exclamation mr-0.5 text-tangerine-400"></i>
+                    Gaps: {missingNames.join(', ')}
+                  </p>
+                {/if}
+              </div>
             </span>
           {/if}
-          <span class="inline-flex items-center gap-1 rounded-full bg-earth-50 px-2 py-0.5 text-[0.65rem] text-text-secondary sm:text-xs">
+          <span class="group relative inline-flex items-center gap-1 rounded-full bg-earth-50 px-2 py-0.5 text-[0.65rem] text-text-secondary sm:text-xs cursor-default">
             <i class="fa-solid fa-certificate text-[0.55rem]" style="color: {confidenceColor(entry.confidence)}"></i>
-            {confidenceLabel(entry.confidence)}
+            {confidenceLabel(entry.confidence)}{#if entry.confidenceBreakdown}&nbsp;({entry.confidenceBreakdown.score}){/if}
+            {#if entry.confidenceBreakdown}
+              <div class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 rounded-lg border border-border bg-surface-card p-3 opacity-0 shadow-lg transition-opacity group-hover:opacity-100 w-56">
+                <p class="text-xs font-semibold text-text-primary">{confidenceLabel(entry.confidence)} Confidence ({entry.confidenceBreakdown.score}/100)</p>
+                {#each confidenceTooltipLines(entry.confidenceBreakdown) as f}
+                  <div class="mt-1.5 flex items-center justify-between text-[0.65rem]">
+                    <span class="text-text-secondary">{f.label}</span>
+                    <span class="font-medium text-text-primary">{f.score}%</span>
+                  </div>
+                  <div class="mt-0.5 h-1 w-full rounded-full bg-earth-100">
+                    <div class="h-1 rounded-full bg-primary" style="width: {f.score}%"></div>
+                  </div>
+                {/each}
+              </div>
+            {/if}
           </span>
         </div>
       </button>

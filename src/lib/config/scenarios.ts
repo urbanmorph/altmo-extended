@@ -92,6 +92,7 @@ export const CITY_PM25_COEFFICIENTS: Record<string, { transportShare: number; po
 	hyderabad: { transportShare: 0.40, powerShare: 0.04 }, // CPCB receptor + UE inventory
 	indore: { transportShare: 0.50, powerShare: 0.02 }, // UE inventory — no nearby coal plants
 	kochi: { transportShare: 0.37, powerShare: 0.03 }, // UE inventory — Kerala minimal coal
+	kolkata: { transportShare: 0.30, powerShare: 0.15 }, // WB coal-dominant grid, moderate transport share
 	mumbai: { transportShare: 0.30, powerShare: 0.08 }, // NEERI/MCGM source apportionment — Dahanu TPS + industrial
 	pune: { transportShare: 0.35, powerShare: 0.04 } // ARAI 2022 + NCAP convergence
 };
@@ -108,6 +109,7 @@ export const CITY_GRID_RENEWABLE_BASELINE: Record<string, number> = {
 	hyderabad: 21, // Telangana — coal dominant (~80%)
 	indore: 28, // Madhya Pradesh — solar + wind growing
 	kochi: 28, // Kerala — in-state hydro, but imports ~70% (mostly coal)
+	kolkata: 15, // West Bengal — coal dominant
 	mumbai: 20, // Maharashtra — coal dominant (~75-78%)
 	pune: 20 // Maharashtra — coal dominant (~75%)
 };
@@ -175,6 +177,12 @@ export const CITY_TRANSPORT_COEFFICIENTS: Record<string, {
 		busCongestionPer2x: -5, busModeSharePer2x: 5,
 		cycleCyclingSharePerKm: 0.03, cycleWalkingSharePerKm: 0.01,
 		cycleModeSharePerKm: 0.03, cycleCongestionPerKm: -0.01, cycleFatalitiesPerKm: -0.008
+	},
+	kolkata: {
+		metroCongestionPerKm: -0.025, metroModeSharePerKm: 0.03,
+		busCongestionPer2x: -3.5, busModeSharePer2x: 4,
+		cycleCyclingSharePerKm: 0.015, cycleWalkingSharePerKm: 0.008,
+		cycleModeSharePerKm: 0.015, cycleCongestionPerKm: -0.008, cycleFatalitiesPerKm: -0.004
 	},
 	mumbai: {
 		metroCongestionPerKm: -0.025, metroModeSharePerKm: 0.03,

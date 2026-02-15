@@ -7,9 +7,9 @@
   } from '$lib/config/city-qol-data';
 
   const confidenceTiers: { tier: ConfidenceTier; label: string; threshold: string; icon: string; color: string }[] = [
-    { tier: 'gold', label: 'Gold', threshold: '>80% indicators measured', icon: 'fa-solid fa-certificate', color: '#D4AF37' },
-    { tier: 'silver', label: 'Silver', threshold: '>60% indicators measured', icon: 'fa-solid fa-certificate', color: '#9CA3AF' },
-    { tier: 'bronze', label: 'Bronze', threshold: '<60% indicators measured', icon: 'fa-solid fa-circle-half-stroke', color: '#CD7F32' }
+    { tier: 'gold', label: 'Gold', threshold: 'Score \u2265 70 \u2014 rich live data + comprehensive coverage', icon: 'fa-solid fa-certificate', color: '#D4AF37' },
+    { tier: 'silver', label: 'Silver', threshold: 'Score \u2265 45 \u2014 moderate live data + partial coverage', icon: 'fa-solid fa-certificate', color: '#9CA3AF' },
+    { tier: 'bronze', label: 'Bronze', threshold: 'Score < 45 \u2014 mostly static data + gaps in coverage', icon: 'fa-solid fa-circle-half-stroke', color: '#CD7F32' }
   ];
 </script>
 
@@ -96,7 +96,7 @@
         <!-- Confidence tiers -->
         <p class="mt-3 text-sm font-medium text-text-primary">Data Confidence</p>
         <p class="mt-0.5 text-xs text-text-secondary">
-          Confidence reflects how many of the framework's indicators have measured data for a city.
+          Multi-factor score (0-100) combining indicator coverage, live data freshness, sensor coverage, transit data quality, data readiness, and Altmo trace availability.
         </p>
         <div class="mt-2 flex flex-wrap gap-2">
           {#each confidenceTiers as ct (ct.tier)}

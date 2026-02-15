@@ -2,10 +2,9 @@
   import {
     gradeColor,
     type CityQoLScore,
-    type QoLOverrides,
-    type ConfidenceTier
+    type QoLOverrides
   } from '$lib/config/city-qol-data';
-  import { cityName, barPercent, dimensionColor, gapToNextGrade } from '$lib/utils/qol-format';
+  import { cityName, barPercent, dimensionColor, gapToNextGrade, confidenceIcon, confidenceColor, confidenceLabel, confidenceTooltipLines } from '$lib/utils/qol-format';
 
   interface Props {
     scores: CityQoLScore[];
@@ -35,23 +34,6 @@
     onsort?.(key);
   }
 
-  function confidenceIcon(tier: ConfidenceTier): string {
-    if (tier === 'gold') return 'fa-solid fa-certificate';
-    if (tier === 'silver') return 'fa-solid fa-certificate';
-    return 'fa-solid fa-circle-half-stroke';
-  }
-
-  function confidenceColor(tier: ConfidenceTier): string {
-    if (tier === 'gold') return '#D4AF37';
-    if (tier === 'silver') return '#9CA3AF';
-    return '#CD7F32';
-  }
-
-  function confidenceLabel(tier: ConfidenceTier): string {
-    if (tier === 'gold') return 'Gold';
-    if (tier === 'silver') return 'Silver';
-    return 'Bronze';
-  }
 
   function liveCount(cityId: string): number {
     return overrides?.[cityId] ? Object.keys(overrides[cityId]).length : 0;
@@ -172,11 +154,26 @@
 
           <!-- Confidence -->
           <td class="py-3 pr-3 text-center">
-            <i
-              class="{confidenceIcon(entry.confidence)} text-sm"
-              style="color: {confidenceColor(entry.confidence)}"
-              title="{confidenceLabel(entry.confidence)} ({entry.indicatorsAvailable}/{entry.indicatorsTotal})"
-            ></i>
+            <span class="group relative inline-block">
+              <i
+                class="{confidenceIcon(entry.confidence)} text-sm cursor-default"
+                style="color: {confidenceColor(entry.confidence)}"
+              ></i>
+              {#if entry.confidenceBreakdown}
+                <div class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 rounded-lg border border-border bg-surface-card p-3 opacity-0 shadow-lg transition-opacity group-hover:opacity-100 w-56">
+                  <p class="text-xs font-semibold text-text-primary">{confidenceLabel(entry.confidence)} ({entry.confidenceBreakdown.score}/100)</p>
+                  {#each confidenceTooltipLines(entry.confidenceBreakdown) as f}
+                    <div class="mt-1.5 flex items-center justify-between text-[0.65rem]">
+                      <span class="text-text-secondary">{f.label}</span>
+                      <span class="font-medium text-text-primary">{f.score}%</span>
+                    </div>
+                    <div class="mt-0.5 h-1 w-full rounded-full bg-earth-100">
+                      <div class="h-1 rounded-full bg-primary" style="width: {f.score}%"></div>
+                    </div>
+                  {/each}
+                </div>
+              {/if}
+            </span>
           </td>
 
           <!-- Gap to next grade -->

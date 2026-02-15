@@ -27,6 +27,7 @@ const CITY_BBOX: Record<string, [number, number, number, number]> = {
 	hyderabad: [17.25, 78.30, 17.55, 78.60],
 	indore: [22.60, 75.75, 22.85, 75.95],
 	kochi: [9.85, 76.20, 10.10, 76.40],
+	kolkata: [22.45, 88.25, 22.70, 88.50],
 	mumbai: [18.85, 72.75, 19.30, 73.00],
 	pune: [18.40, 73.70, 18.65, 74.00]
 };

@@ -2,6 +2,7 @@
   import type { CityQoLScore } from '$lib/config/city-qol-data';
   import { gradeLabel } from '$lib/config/city-qol-data';
   import type { CityGapAnalysis } from '$lib/config/city-qol-gaps';
+  import { confidenceIcon, confidenceColor, confidenceLabel, confidenceTooltipLines } from '$lib/utils/qol-format';
 
   interface Props {
     cityId: string;
@@ -47,35 +48,11 @@
   const compositePercent = $derived(qolScore ? Math.round(qolScore.composite * 100) : 0);
   const gradeColor = $derived(qolScore ? GRADE_COLORS[qolScore.grade] ?? '#999999' : '#999999');
 
-  const confidenceLabel = $derived.by(() => {
-    if (!qolScore) return '—';
-    const labels: Record<string, string> = {
-      gold: 'Gold (>80% indicators)',
-      silver: 'Silver (>60% indicators)',
-      bronze: 'Bronze (<60% indicators)'
-    };
-    return labels[qolScore.confidence] ?? qolScore.confidence;
-  });
-
-  const confidenceIcon = $derived.by(() => {
-    if (!qolScore) return 'fa-solid fa-circle-question';
-    const icons: Record<string, string> = {
-      gold: 'fa-solid fa-medal',
-      silver: 'fa-solid fa-medal',
-      bronze: 'fa-solid fa-medal'
-    };
-    return icons[qolScore.confidence] ?? 'fa-solid fa-circle-question';
-  });
-
-  const confidenceColor = $derived.by(() => {
-    if (!qolScore) return '#999999';
-    const colors: Record<string, string> = {
-      gold: '#eab308',
-      silver: '#9ca3af',
-      bronze: '#b45309'
-    };
-    return colors[qolScore.confidence] ?? '#999999';
-  });
+  const confIcon = $derived(qolScore ? confidenceIcon(qolScore.confidence) : 'fa-solid fa-circle-question');
+  const confColor = $derived(qolScore ? confidenceColor(qolScore.confidence) : '#999999');
+  const confLabel = $derived(qolScore ? confidenceLabel(qolScore.confidence) : '—');
+  const confScore = $derived(qolScore?.confidenceBreakdown?.score ?? 0);
+  const tooltipLines = $derived(qolScore?.confidenceBreakdown ? confidenceTooltipLines(qolScore.confidenceBreakdown) : []);
 </script>
 
 <section id="score" class="scroll-mt-16">
@@ -102,11 +79,23 @@
             style="width: {compositePercent}%; background-color: {gradeColor};"
           ></div>
         </div>
-        <!-- Confidence badge -->
-        <div class="mt-4 flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium" style="background-color: {confidenceColor}20; color: {confidenceColor};">
-          <i class="{confidenceIcon}"></i>
-          {confidenceLabel}
-        </div>
+        <!-- Confidence badge with hover tooltip -->
+        <span class="group relative mt-4 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium cursor-default" style="background-color: {confColor}20; color: {confColor};">
+          <i class="{confIcon}"></i>
+          {confLabel} ({confScore}/100)
+          <div class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 rounded-lg border border-border bg-surface-card p-3 opacity-0 shadow-lg transition-opacity group-hover:opacity-100 w-56">
+            <p class="text-xs font-semibold text-text-primary">{confLabel} Confidence ({confScore}/100)</p>
+            {#each tooltipLines as f}
+              <div class="mt-1.5 flex items-center justify-between text-[0.65rem]">
+                <span class="text-text-secondary">{f.label}</span>
+                <span class="font-medium text-text-primary">{f.score}%</span>
+              </div>
+              <div class="mt-0.5 h-1 w-full rounded-full bg-earth-100">
+                <div class="h-1 rounded-full bg-primary" style="width: {f.score}%"></div>
+              </div>
+            {/each}
+          </div>
+        </span>
         {#if readinessScore !== null}
           <p class="mt-2 text-xs text-text-secondary">
             Data readiness: {Math.round(readinessScore)}%

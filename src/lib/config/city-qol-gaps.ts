@@ -216,7 +216,7 @@ function generateUpgradeSentence(
 		return 'Already at the highest grade — maintaining these standards requires continued investment';
 	}
 	const nextGrade = GRADE_BOUNDARIES[currentBoundaryIndex - 1];
-	const pointsNeeded = Math.round((nextGrade.min - composite) * 100);
+	const pointsNeeded = Math.max(1, Math.ceil((nextGrade.min - composite) * 100));
 
 	// Collect all measurable indicators across all dimensions
 	const improvements: IndicatorImprovement[] = [];
@@ -298,6 +298,7 @@ const DATA_UNLOCK: Record<string, string> = {
 	hyderabad: 'Publishing walking/cycling infrastructure data would enable complete active mobility assessment',
 	indore: 'Publishing bus frequency and walking infrastructure data enables transit coverage gap analysis',
 	kochi: 'Publishing safety and NMT infrastructure data unlocks health dimension scoring',
+	kolkata: 'Publishing WBTC GTFS feeds, lifting cycling ban data, and mapping walking infrastructure enables corridor-level NMT analysis',
 	mumbai: 'Publishing BEST GTFS feeds and walking infrastructure data enables corridor-level gap analysis',
 	pune: 'Publishing ridership, safety, and NMT infrastructure data enables full multi-modal analysis'
 };

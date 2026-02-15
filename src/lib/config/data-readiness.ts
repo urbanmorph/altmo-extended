@@ -145,6 +145,22 @@ export const CITY_READINESS: CityDataReadiness[] = [
 		}
 	},
 	{
+		cityId: 'kolkata',
+		layers: {
+			altmo_traces: 'partial',
+			bus_stops: 'available',
+			metro_stations: 'available',
+			metro_frequency: 'partial',
+			metro_ridership: 'unavailable',
+			bus_frequency: 'partial',
+			suburban_rail: 'available',
+			walking_infra: 'unavailable',
+			cycling_infra: 'partial',
+			safety_data: 'partial',
+			air_quality: 'available'
+		}
+	},
+	{
 		cityId: 'mumbai',
 		layers: {
 			altmo_traces: 'partial',

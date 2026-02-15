@@ -95,6 +95,17 @@ export const CITY_TRAFFIC_POINTS: Record<string, CityTrafficConfig> = {
 			{ lat: 10.1004, lng: 76.3570, label: 'Aluva' }
 		]
 	},
+	kolkata: {
+		name: 'Kolkata Metropolitan Region',
+		samplePoints: [
+			{ lat: 22.5645, lng: 88.3510, label: 'Esplanade / BBD Bagh' },
+			{ lat: 22.5851, lng: 88.3468, label: 'Howrah Bridge' },
+			{ lat: 22.5090, lng: 88.3635, label: 'Rashbehari / Gariahat' },
+			{ lat: 22.6020, lng: 88.3720, label: 'Shyambazar' },
+			{ lat: 22.4918, lng: 88.3497, label: 'Tollygunge / Jadavpur' },
+			{ lat: 22.5810, lng: 88.4625, label: 'New Town Rajarhat' }
+		]
+	},
 	mumbai: {
 		name: 'Mumbai Metropolitan Region',
 		samplePoints: [

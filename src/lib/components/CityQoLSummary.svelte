@@ -4,11 +4,11 @@
     gradeColor,
     gradeLabel,
     type CityQoLScore,
-    type ConfidenceTier,
     type QoLOverrides
   } from '$lib/config/city-qol-data';
   import { computeReadinessScore } from '$lib/config/data-readiness';
   import { CITIES } from '$lib/config/cities';
+  import { confidenceIcon, confidenceColor, confidenceLabel, confidenceTooltipLines } from '$lib/utils/qol-format';
 
   interface Props {
     cityId: string;
@@ -40,23 +40,6 @@
     return 'var(--color-tangerine-500)';
   }
 
-  function confidenceIcon(tier: ConfidenceTier): string {
-    if (tier === 'gold') return 'fa-solid fa-certificate';
-    if (tier === 'silver') return 'fa-solid fa-certificate';
-    return 'fa-solid fa-circle-half-stroke';
-  }
-
-  function confidenceColor(tier: ConfidenceTier): string {
-    if (tier === 'gold') return '#D4AF37';
-    if (tier === 'silver') return '#9CA3AF';
-    return '#CD7F32';
-  }
-
-  function confidenceLabel(tier: ConfidenceTier): string {
-    if (tier === 'gold') return 'Gold';
-    if (tier === 'silver') return 'Silver';
-    return 'Bronze';
-  }
 
   const LIVE_SOURCE_LABELS: Record<string, string> = {
     traffic_fatalities: 'Supabase',
@@ -89,11 +72,26 @@
         <div class="flex items-center justify-end gap-2">
           <div class="flex items-center gap-1.5">
             <span class="text-3xl font-bold" style="color: {gradeColor(qol.grade)}">{qol.grade}</span>
-            <i
-              class="{confidenceIcon(qol.confidence)} text-xs"
-              style="color: {confidenceColor(qol.confidence)}"
-              title="{confidenceLabel(qol.confidence)} confidence ({qol.indicatorsAvailable} of {qol.indicatorsTotal} indicators)"
-            ></i>
+            <span class="group relative">
+              <i
+                class="{confidenceIcon(qol.confidence)} text-xs cursor-default"
+                style="color: {confidenceColor(qol.confidence)}"
+              ></i>
+              {#if qol.confidenceBreakdown}
+                <div class="pointer-events-none absolute bottom-full right-0 z-50 mb-2 rounded-lg border border-border bg-surface-card p-3 opacity-0 shadow-lg transition-opacity group-hover:opacity-100 w-56">
+                  <p class="text-xs font-semibold text-text-primary">{confidenceLabel(qol.confidence)} ({qol.confidenceBreakdown.score}/100)</p>
+                  {#each confidenceTooltipLines(qol.confidenceBreakdown) as f}
+                    <div class="mt-1.5 flex items-center justify-between text-[0.65rem]">
+                      <span class="text-text-secondary">{f.label}</span>
+                      <span class="font-medium text-text-primary">{f.score}%</span>
+                    </div>
+                    <div class="mt-0.5 h-1 w-full rounded-full bg-earth-100">
+                      <div class="h-1 rounded-full bg-primary" style="width: {f.score}%"></div>
+                    </div>
+                  {/each}
+                </div>
+              {/if}
+            </span>
           </div>
           <span class="text-sm text-text-secondary">{(qol.composite * 100).toFixed(0)}/100</span>
         </div>

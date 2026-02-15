@@ -116,6 +116,42 @@ const AHMEDABAD_TRANSIT: TransitDataSources = {
 	}
 };
 
+const KOLKATA_TRANSIT: TransitDataSources = {
+	busStopsOverpass: { city: 'Kolkata' },
+	metroOverpass: {
+		network: 'Kolkata Metro',
+		lines: {
+			'Blue Line (North-South)': '#2563eb',
+			'Green Line (East-West)': '#16a34a',
+			'Orange Line (Joka-Esplanade)': '#f97316',
+			'Purple Line (Baranagar-Barrackpore)': '#9333ea',
+			'Yellow Line (Noapara-Jai Hind)': '#eab308'
+		}
+	},
+	operationalLines: [
+		'Blue Line (North-South)', 'Green Line (East-West)',
+		'Orange Line (Joka-Esplanade)', 'Purple Line (Baranagar-Barrackpore)',
+		'Yellow Line (Noapara-Jai Hind)'
+	],
+	suburbanRailOverpass: {
+		queries: [
+			{
+				network: 'Eastern Railway',
+				operator: 'Kolkata Suburban Railway',
+				lines: {
+					'Eastern Railway Suburban': '#2563eb'
+				}
+			},
+			{
+				network: 'South Eastern Railway',
+				lines: {
+					'South Eastern Railway Suburban': '#dc2626'
+				}
+			}
+		]
+	}
+};
+
 const MUMBAI_TRANSIT: TransitDataSources = {
 	// TransitRouter does NOT have Mumbai — bus data from ChaloBEST/OpenCity
 	metroOverpass: {
@@ -232,6 +268,16 @@ export const CITIES: CityConfig[] = [
 			metroGTFS: 'https://kochimetro.org/opendata/KMRLOpenData.zip'
 		},
 		railsCityIds: [18363]
+	},
+	{
+		id: 'kolkata',
+		name: 'Kolkata Metropolitan Region',
+		regionCities: 'Kolkata, New Town Kolkata',
+		lat: 22.5726,
+		lng: 88.3639,
+		zoom: 12,
+		railsCityIds: [18765, 18769],
+		transitSources: KOLKATA_TRANSIT
 	},
 	{
 		id: 'mumbai',

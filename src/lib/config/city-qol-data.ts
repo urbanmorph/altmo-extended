@@ -19,6 +19,10 @@
  *   - TransitRouter + metro station data (PT accessibility estimates)
  */
 
+import { CITY_OPENAQ_SENSORS, CITY_OPENAQ_NO2_SENSORS } from './air-quality';
+import { getCityById } from './cities';
+import { computeReadinessScore, getReadiness } from './data-readiness';
+
 // ---- Types ----
 
 export type EffectDirection = 'positive' | 'negative';
@@ -80,16 +84,21 @@ export type ConfidenceTier = 'gold' | 'silver' | 'bronze';
 
 /**
  * Full TQOLI paper defines ~18 indicators across 4 dimensions.
- * We currently implement 8. Confidence reflects coverage against
- * the full framework, not just what we've coded.
+ * We currently implement 15. Confidence is now a multi-factor weighted score.
  */
 export const TQOLI_FULL_INDICATOR_COUNT = 18;
 
-export function getConfidenceTier(availableCount: number, _totalImplemented: number): ConfidenceTier {
-	const pct = availableCount / TQOLI_FULL_INDICATOR_COUNT;
-	if (pct > 0.8) return 'gold';
-	if (pct > 0.6) return 'silver';
-	return 'bronze';
+export interface ConfidenceBreakdown {
+	tier: ConfidenceTier;
+	score: number; // 0-100
+	factors: {
+		indicatorCoverage: number;   // 0-100
+		liveDataFreshness: number;   // 0-100
+		sensorCoverage: number;      // 0-100
+		transitDataQuality: number;  // 0-100
+		dataReadiness: number;       // 0-100
+		altmoTraces: number;         // 0-100
+	};
 }
 
 export interface DimensionScore {
@@ -115,6 +124,7 @@ export interface CityQoLScore {
 	grade: string; // A-E
 	dimensions: DimensionScore[];
 	confidence: ConfidenceTier;
+	confidenceBreakdown: ConfidenceBreakdown;
 	indicatorsAvailable: number;
 	indicatorsTotal: number;
 }
@@ -428,6 +438,30 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 		}
 	},
 	{
+		cityId: 'kolkata',
+		values: {
+			// Health
+			traffic_fatalities: 3.1, // NCRB 2022: ~185 deaths / 60 lakh KMC pop
+			vru_fatality_share: 45, // NCRB 2022 WB state pattern
+			walking_share: 39, // Census 2011 — highest among metros
+			cycling_share: 10, // Census 2011 — despite 62-road ban
+			footpath_coverage: 20, // 80% pavements encroached
+			// Accessibility
+			rail_transit_km: 423, // Metro 73 + suburban ~350 (KMA)
+			bus_fleet_per_lakh: 22, // WBTC ~1,337 + private; pop ~60 lakh
+			transit_stop_density: 12, // Dense bus+metro+suburban / 206 km²
+			cycle_infra_km: 35, // New Town Rajarhat corridors
+			pt_accessibility: 70, // Dense suburban rail + bus; compact city
+			// Environmental
+			pm25_annual: 60, // IQAir/CPCB 2023
+			no2_annual: 28, // CPCB 2023 estimate
+			congestion_level: 32, // TomTom 2024
+			// Mobility
+			sustainable_mode_share: 80, // Census: walk 39 + cycle 10 + PT 31
+			road_density: 9.0 // 1,850 km / 206 km² KMC
+		}
+	},
+	{
 		cityId: 'mumbai',
 		values: {
 			// Health
@@ -535,6 +569,91 @@ function normalizeIndicator(
 }
 
 /**
+ * Compute multi-factor data confidence score (0-100).
+ * 5 weighted factors: indicator coverage (20%), live data freshness (25%),
+ * sensor coverage (15%), transit data quality (20%), data readiness (20%).
+ */
+function computeConfidence(
+	cityId: string,
+	indicatorsAvailable: number,
+	overrides?: QoLOverrides
+): ConfidenceBreakdown {
+	// Factor 1: Indicator coverage (20%)
+	const indicatorCoverage = Math.round((indicatorsAvailable / 15) * 100);
+
+	// Factor 2: Live data freshness (25%)
+	const liveCount = overrides?.[cityId] ? Object.keys(overrides[cityId]).length : 0;
+	const liveDataFreshness = indicatorsAvailable > 0
+		? Math.round((liveCount / indicatorsAvailable) * 100)
+		: 0;
+
+	// Factor 3: Sensor coverage (15%) — PM2.5 + NO2 sensors, cap at 10
+	const pm25Sensors = CITY_OPENAQ_SENSORS[cityId]?.sensorIds?.length ?? 0;
+	const no2Sensors = CITY_OPENAQ_NO2_SENSORS[cityId]?.sensorIds?.length ?? 0;
+	const sensorCoverage = Math.round((Math.min(pm25Sensors + no2Sensors, 10) / 10) * 100);
+
+	// Factor 4: Transit data quality (20%) — checklist out of 20 points
+	const city = getCityById(cityId);
+	const ts = city?.transitSources;
+
+	let transitPoints = 0;
+	// Bus: TransitRouter=6, Overpass=3, none=0
+	if (ts?.busStops) transitPoints += 6;
+	else if (ts?.busStopsOverpass) transitPoints += 3;
+	// Metro: GeoJSON/GTFS=5, Overpass=3, none=0
+	if (ts?.metroStations || ts?.metroGTFS) transitPoints += 5;
+	else if (ts?.metroOverpass) transitPoints += 3;
+	// Suburban rail: configured=3, none=0
+	if (ts?.suburbanRailOverpass) transitPoints += 3;
+	// Has operationalLines whitelist: 3
+	if (ts?.operationalLines && ts.operationalLines.length > 0) transitPoints += 3;
+	// Metro ridership available (from data-readiness): 3
+	const cityReadiness = getReadiness(cityId);
+	if (cityReadiness?.layers?.metro_ridership === 'available') transitPoints += 3;
+
+	const transitDataQuality = Math.round((transitPoints / 20) * 100);
+
+	// Factor 5: Data readiness (20%)
+	const readinessData = computeReadinessScore(cityId);
+	const dataReadiness = readinessData
+		? Math.round((readinessData.total / readinessData.maxScore) * 100)
+		: 0;
+
+	// Factor 6: Altmo traces (10%) — available=100, partial=50, unavailable=0
+	const altmoStatus = cityReadiness?.layers?.altmo_traces;
+	const altmoTraces = altmoStatus === 'available' ? 100 : altmoStatus === 'partial' ? 50 : 0;
+
+	// Weighted composite (6 factors, weights sum to 1.0)
+	const score = Math.round(
+		indicatorCoverage * 0.15 +
+		liveDataFreshness * 0.25 +
+		sensorCoverage * 0.10 +
+		transitDataQuality * 0.20 +
+		dataReadiness * 0.20 +
+		altmoTraces * 0.10
+	);
+
+	// Thresholds: Gold >= 70, Silver >= 45, Bronze < 45
+	let tier: ConfidenceTier;
+	if (score >= 70) tier = 'gold';
+	else if (score >= 45) tier = 'silver';
+	else tier = 'bronze';
+
+	return {
+		tier,
+		score,
+		factors: {
+			indicatorCoverage,
+			liveDataFreshness,
+			sensorCoverage,
+			transitDataQuality,
+			dataReadiness,
+			altmoTraces
+		}
+	};
+}
+
+/**
  * Compute QoL score for a single city.
  * Optional overrides replace hardcoded values for live data integration.
  */
@@ -586,14 +705,15 @@ export function computeCityQoL(cityId: string, overrides?: QoLOverrides): CityQo
 
 	const composite = dimensions.reduce((sum, d) => sum + d.weighted, 0);
 	const grade = gradeFromScore(composite);
-	const confidence = getConfidenceTier(totalAvailable, totalDefined);
+	const confidenceBreakdown = computeConfidence(cityId, totalAvailable, overrides);
 
 	return {
 		cityId,
 		composite,
 		grade,
 		dimensions,
-		confidence,
+		confidence: confidenceBreakdown.tier,
+		confidenceBreakdown,
 		indicatorsAvailable: totalAvailable,
 		indicatorsTotal: TQOLI_FULL_INDICATOR_COUNT
 	};

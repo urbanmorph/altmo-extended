@@ -67,6 +67,10 @@ export const CITY_OPENAQ_SENSORS: Record<string, { name: string; sensorIds: numb
 		name: 'Kochi',
 		sensorIds: [12235842]
 	},
+	kolkata: {
+		name: 'Kolkata Metropolitan Region',
+		sensorIds: [] // Discover via: /v3/locations?coordinates=22.573,88.364&radius=25000&parameters_id=2
+	},
 	mumbai: {
 		name: 'Mumbai Metropolitan Region',
 		// TODO: Add Mumbai-proper sensors (discover via coordinates 19.076,72.878)
@@ -100,6 +104,7 @@ export const CITY_OPENAQ_NO2_SENSORS: Record<string, { name: string; sensorIds: 
 	hyderabad: { name: 'Hyderabad', sensorIds: [] },
 	indore: { name: 'Indore', sensorIds: [] },
 	kochi: { name: 'Kochi', sensorIds: [] },
+	kolkata: { name: 'Kolkata', sensorIds: [] },
 	mumbai: { name: 'Mumbai', sensorIds: [] },
 	pune: { name: 'Pune', sensorIds: [] }
 };
@@ -174,6 +179,7 @@ export const PM25_FALLBACK: Record<string, CityPM25> = {
 	hyderabad: { pm25Avg: 37, pm25Max: 68, stationsReporting: 0, readings: 0, isFallback: true },
 	indore:    { pm25Avg: 56, pm25Max: 94, stationsReporting: 0, readings: 0, isFallback: true },
 	kochi:     { pm25Avg: 27, pm25Max: 48, stationsReporting: 0, readings: 0, isFallback: true },
+	kolkata:   { pm25Avg: 60, pm25Max: 105, stationsReporting: 0, readings: 0, isFallback: true },
 	mumbai:    { pm25Avg: 38, pm25Max: 72, stationsReporting: 0, readings: 0, isFallback: true },
 	pune:      { pm25Avg: 36, pm25Max: 65, stationsReporting: 0, readings: 0, isFallback: true }
 };

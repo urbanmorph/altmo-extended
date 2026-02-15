@@ -40,6 +40,7 @@ export const PBS_URLS: Record<string, { name: string; url: string } | null> = {
 	hyderabad: null,
 	indore: { name: 'MYBYK', url: 'https://mybyk.in' },
 	kochi: { name: 'MYBYK', url: 'https://mybyk.in' },
+	kolkata: null,
 	mumbai: null,
 	pune: null
 };
@@ -53,6 +54,7 @@ export const EMICRO_URLS: Record<string, { name: string; url: string } | null> =
 	hyderabad: { name: 'Yulu', url: 'https://www.yulu.bike' },
 	indore: null,
 	kochi: null,
+	kolkata: null,
 	mumbai: { name: 'Yulu', url: 'https://www.yulu.bike' },
 	pune: { name: 'Yulu', url: 'https://www.yulu.bike' }
 };
