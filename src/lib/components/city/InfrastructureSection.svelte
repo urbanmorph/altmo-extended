@@ -228,8 +228,8 @@
       { id: 'bus-stops', template: (p: Record<string, unknown>) => `<strong>${p.name}</strong><br/>${p.routeCount} routes` },
       { id: 'metro-stations', template: (p: Record<string, unknown>) => `<strong>${p.name}</strong><br/>${p.line} line` },
       { id: 'rail-stations', template: (p: Record<string, unknown>) => `<strong>${p.name}</strong><br/>${p.line} line` },
-      { id: 'companies', template: (p: Record<string, unknown>) => `<strong>${p.name}</strong><br/>${p.marker_type}` },
-      { id: 'activity-heatmap', template: (p: Record<string, unknown>) => `<strong>${p.total} trips</strong><br/>Rides: ${p.rides}, Walks: ${p.walks}` }
+      { id: 'companies', template: (p: Record<string, unknown>) => `<strong>${p.name}</strong><br/>${p.marker_type}<br/><em style="font-size:0.75em;color:#999">Altmo active commute destination</em>` },
+      { id: 'activity-heatmap', template: (p: Record<string, unknown>) => `<strong>${p.total} Altmo trips</strong><br/>Rides: ${p.rides}, Walks: ${p.walks}` }
     ];
 
     for (const layer of popupLayers) {
@@ -332,7 +332,7 @@
                   <MapLayerToggle label="Rail Stations" color={TRANSIT_COLORS.rail} count={railStationCount} bind:checked={showRailStations} />
                 {/if}
                 {#if companyCount > 0}
-                  <MapLayerToggle label="Commuter Destinations" color="#FF7B27" count={companyCount} bind:checked={showCompanies} />
+                  <MapLayerToggle label="Active Commute Destinations" color="#FF7B27" count={companyCount} bind:checked={showCompanies} />
                 {/if}
                 {#if metroStationCount > 0 || railStationCount > 0}
                   <div class="mt-1.5 border-t border-border pt-1.5">
@@ -346,10 +346,10 @@
               <!-- Dynamic layers -->
               {#if densityCount > 0}
                 <p class="mt-3 mb-2 text-[0.65rem] font-semibold text-text-secondary uppercase tracking-wider">
-                  <i class="fa-solid fa-bolt mr-1"></i> Activity
+                  <i class="fa-solid fa-bolt mr-1"></i> Altmo Activity
                 </p>
                 <div class="space-y-1">
-                  <MapLayerToggle label="Trip Heatmap" color="#2171b5" count={densityCount} bind:checked={showActivityHeatmap} />
+                  <MapLayerToggle label="Active Mobility Trips" color="#2171b5" count={densityCount} bind:checked={showActivityHeatmap} />
                 </div>
               {/if}
             </div>

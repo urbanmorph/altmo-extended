@@ -117,6 +117,40 @@ interface OverpassResponse {
 }
 
 /**
+ * Fetch bus stops from the Overpass API for a city that lacks TransitRouter data.
+ * Returns all highway=bus_stop nodes, with operator info to distinguish BRTS/AMTS etc.
+ */
+async function fetchBusStopsFromOverpass(
+	config: { city: string }
+): Promise<BusStop[]> {
+	const query = `[out:json][timeout:25];
+area["name"="${config.city}"]->.a;
+node(area.a)["highway"="bus_stop"];
+out body;`;
+
+	const res = await overpassFetch(query);
+	const data: OverpassResponse = await res.json();
+
+	const stops: BusStop[] = [];
+	for (const el of data.elements) {
+		if (el.type !== 'node') continue;
+		const tags = el.tags ?? {};
+		const name = tags['name'] ?? tags['ref'] ?? '';
+		if (!name) continue;
+		stops.push({
+			id: String(el.id),
+			name,
+			lat: el.lat,
+			lng: el.lon,
+			routeCount: 0
+		});
+	}
+
+	console.log(`[transit] Overpass bus stops for ${config.city}: ${stops.length}`);
+	return stops;
+}
+
+/**
  * Fetch metro station and line data from the Overpass API for a given network.
  * Constructs an Overpass QL query to retrieve all route relations for the network,
  * then recursively resolves member ways and nodes to build line geometries.
@@ -680,6 +714,13 @@ async function fetchTransitDataImpl(cityId: string, cacheKey: string): Promise<T
 					...s,
 					routeCount: routeCounts.get(s.id) ?? 0
 				}));
+			}
+			// Fallback: fetch bus stops from Overpass if TransitRouter has no data
+			if (busStops.length === 0 && sources.busStopsOverpass) {
+				busStops = await fetchBusStopsFromOverpass(sources.busStopsOverpass).catch((e) => {
+					console.error('[transit] Failed to fetch Overpass bus stops:', e.message);
+					return [] as BusStop[];
+				});
 			}
 			return busStops;
 		})(),

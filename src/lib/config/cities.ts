@@ -29,6 +29,8 @@ export interface TransitDataSources {
 	metroLines?: string;
 	metroGTFS?: string;
 	cycleways?: string;
+	/** Fetch bus stops from Overpass when TransitRouter data is unavailable */
+	busStopsOverpass?: { city: string };
 	metroOverpass?: { network: string; lines: Record<string, string> };
 	suburbanRailOverpass?: { queries: SuburbanRailQuery[] };
 	/**
@@ -89,7 +91,7 @@ const HYDERABAD_TRANSIT: TransitDataSources = {
 };
 
 const AHMEDABAD_TRANSIT: TransitDataSources = {
-	...transitRouterSources('ahmedabad'),
+	busStopsOverpass: { city: 'Ahmedabad' },
 	metroOverpass: {
 		network: 'Ahmedabad Metro',
 		lines: {
