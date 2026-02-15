@@ -48,11 +48,11 @@
 
   // ── Layer visibility toggles ──
 
-  // Static layers
-  let showBusStops = $state(true);
-  let showMetroStations = $state(true);
+  // Static layers — only lines on by default (stations/stops are heavy to render)
+  let showBusStops = $state(false);
+  let showMetroStations = $state(false);
   let showMetroLines = $state(true);
-  let showRailStations = $state(true);
+  let showRailStations = $state(false);
   let showRailLines = $state(true);
   let showCompanies = $state(false);
   let showCatchmentWalk400 = $state(false);
@@ -60,7 +60,7 @@
   let showCatchmentCycle = $state(false);
 
   // Dynamic layers
-  let showActivityHeatmap = $state(false);
+  let showActivityHeatmap = $state(true);
 
   // Track map instance
   let mapInstance: maplibregl.Map | undefined = $state();
@@ -162,7 +162,8 @@
           'circle-color': TRANSIT_COLORS.bus,
           'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 1.5, 14, 4],
           'circle-opacity': 0.6, 'circle-stroke-width': 0.5, 'circle-stroke-color': '#ffffff'
-        }
+        },
+        layout: { visibility: 'none' }
       });
     }
 
@@ -171,7 +172,8 @@
       map.addSource('metro-stations', { type: 'geojson', data: metroStationsToGeoJSON(transitGeo.metroStations) });
       map.addLayer({
         id: 'metro-stations', type: 'circle', source: 'metro-stations',
-        paint: { 'circle-color': TRANSIT_COLORS.metro, 'circle-radius': 6, 'circle-stroke-width': 2, 'circle-stroke-color': '#ffffff' }
+        paint: { 'circle-color': TRANSIT_COLORS.metro, 'circle-radius': 6, 'circle-stroke-width': 2, 'circle-stroke-color': '#ffffff' },
+        layout: { visibility: 'none' }
       });
     }
 
@@ -180,7 +182,8 @@
       map.addSource('rail-stations', { type: 'geojson', data: railStationsToGeoJSON(transitGeo.railStations) });
       map.addLayer({
         id: 'rail-stations', type: 'circle', source: 'rail-stations',
-        paint: { 'circle-color': TRANSIT_COLORS.rail, 'circle-radius': 5, 'circle-stroke-width': 1.5, 'circle-stroke-color': '#ffffff' }
+        paint: { 'circle-color': TRANSIT_COLORS.rail, 'circle-radius': 5, 'circle-stroke-width': 1.5, 'circle-stroke-color': '#ffffff' },
+        layout: { visibility: 'none' }
       });
     }
 
@@ -213,12 +216,10 @@
           ],
           'fill-opacity': 0.5
         },
-        layout: { visibility: 'none' }
       });
       map.addLayer({
         id: 'activity-heatmap-border', type: 'line', source: 'activity-heatmap',
-        paint: { 'line-color': '#2171b5', 'line-width': 0.5, 'line-opacity': 0.3 },
-        layout: { visibility: 'none' }
+        paint: { 'line-color': '#2171b5', 'line-width': 0.5, 'line-opacity': 0.3 }
       });
     }
 
