@@ -4,8 +4,9 @@
   let mobileMenuOpen = $state(false);
 
   const navItems = [
-    { href: '/benchmark', label: 'Compare' },
-    { href: '/data-sources', label: 'Provenance' }
+    { href: '/', label: 'Home', exact: true },
+    { href: '/benchmark', label: 'Compare', exact: false },
+    { href: '/data-sources', label: 'Provenance', exact: false }
   ];
 </script>
 
@@ -22,7 +23,7 @@
             <a
               href={item.href}
               class="rounded-md px-3 py-2 text-sm font-medium transition-colors
-                {page.url.pathname.startsWith(item.href)
+                {(item.exact ? page.url.pathname === item.href : page.url.pathname.startsWith(item.href))
                   ? 'bg-white/20 text-white'
                   : 'text-white/80 hover:bg-white/10 hover:text-white'}"
             >
@@ -59,7 +60,7 @@
           <a
             href={item.href}
             class="block rounded-md px-3 py-2 text-sm font-medium transition-colors
-              {page.url.pathname.startsWith(item.href)
+              {(item.exact ? page.url.pathname === item.href : page.url.pathname.startsWith(item.href))
                 ? 'bg-white/20 text-white'
                 : 'text-white/80 hover:bg-white/10 hover:text-white'}"
             onclick={() => mobileMenuOpen = false}
