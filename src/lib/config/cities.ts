@@ -31,6 +31,17 @@ export interface TransitDataSources {
 	cycleways?: string;
 	metroOverpass?: { network: string; lines: Record<string, string> };
 	suburbanRailOverpass?: { queries: SuburbanRailQuery[] };
+	/**
+	 * Whitelist of operational metro/rail line names for scoring.
+	 * When set, only stations on these lines are used for transit proximity
+	 * scoring and QoL rail_transit_km computation. Stations on unlisted lines
+	 * (planned/under construction) are excluded from scoring but still shown
+	 * on the transit map for reference.
+	 *
+	 * Line names must match the `line` field on parsed station objects.
+	 * When not set, all lines are included (assumed operational).
+	 */
+	operationalLines?: string[];
 }
 
 /**
@@ -52,7 +63,9 @@ function transitRouterSources(code: string): Pick<TransitDataSources, 'busStops'
 
 const BENGALURU_TRANSIT: TransitDataSources = {
 	...transitRouterSources('blr'),
-	metroStations: 'https://raw.githubusercontent.com/geohacker/namma-metro/master/metro-lines-stations.geojson'
+	metroStations: 'https://raw.githubusercontent.com/geohacker/namma-metro/master/metro-lines-stations.geojson',
+	// Blue (ORR) and Pink (RV Road-Bommasandra extension) are under construction
+	operationalLines: ['green', 'purple', 'yellow']
 };
 
 const DELHI_TRANSIT: TransitDataSources = {

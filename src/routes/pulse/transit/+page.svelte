@@ -460,12 +460,12 @@
 					<div class="rounded-lg bg-earth-50 p-4 text-center">
 						<p class="text-2xl font-bold text-text-primary">{tp.avgFirstMileM < 1000 ? `${tp.avgFirstMileM}m` : `${(tp.avgFirstMileM / 1000).toFixed(1)}km`}</p>
 						<p class="text-xs text-text-secondary">Avg First Mile</p>
-						<p class="text-sm text-text-secondary mt-1">{(tp.firstMile + tp.both).toLocaleString()} trips</p>
+						<p class="text-sm text-text-secondary mt-1">{tp.firstMile.toLocaleString()} trips</p>
 					</div>
 					<div class="rounded-lg bg-earth-50 p-4 text-center">
 						<p class="text-2xl font-bold text-text-primary">{tp.avgLastMileM < 1000 ? `${tp.avgLastMileM}m` : `${(tp.avgLastMileM / 1000).toFixed(1)}km`}</p>
 						<p class="text-xs text-text-secondary">Avg Last Mile</p>
-						<p class="text-sm text-text-secondary mt-1">{(tp.lastMile + tp.both).toLocaleString()} trips</p>
+						<p class="text-sm text-text-secondary mt-1">{tp.lastMile.toLocaleString()} trips</p>
 					</div>
 				</div>
 

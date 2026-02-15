@@ -6,6 +6,7 @@ import { env as publicEnv } from '$env/dynamic/public';
 import { env } from '$env/dynamic/private';
 import { getGeoMarkers } from '$lib/server/altmo-core';
 import { getStaticTransitData } from '$lib/server/transit-static';
+import { getCityById } from '$lib/config/cities';
 import { latLngToCell } from 'h3-js';
 
 /**
@@ -380,6 +381,10 @@ interface CityStations {
  * Build station arrays from static transit data for proximity scoring.
  * metroRail = metro + rail stations (used for Ride mode)
  * all = metro + rail + bus stops (used for Walk mode)
+ *
+ * When a city has `operationalLines` configured, only stations on those
+ * lines are included. This excludes planned/under-construction stations
+ * that inflate proximity coverage.
  */
 function buildCityStations(): Map<number, CityStations> {
 	const result = new Map<number, CityStations>();
@@ -392,10 +397,15 @@ function buildCityStations(): Map<number, CityStations> {
 			continue;
 		}
 
+		const cityConfig = getCityById(slug);
+		const opLines = cityConfig?.transitSources?.operationalLines;
+
 		const metroRail: StationRef[] = [];
 		const all: StationRef[] = [];
 
 		for (const s of transit.metroStations) {
+			// Skip stations on non-operational lines when whitelist is configured
+			if (opLines && !opLines.includes(s.line)) continue;
 			const ref: StationRef = { name: s.name, lat: s.lat, lng: s.lng, type: 'metro', line: s.line };
 			metroRail.push(ref);
 			all.push(ref);
@@ -411,6 +421,7 @@ function buildCityStations(): Map<number, CityStations> {
 			all.push({ name: s.name, lat: s.lat, lng: s.lng, type: 'bus', line: 'bus' });
 		}
 
+		console.log(`[sync-routes] ${slug}: ${metroRail.length} metro+rail stations${opLines ? ` (filtered to ${opLines.join(', ')})` : ''}, ${all.length - metroRail.length} bus stops`);
 		result.set(cityId, { metroRail, all });
 	}
 
@@ -540,7 +551,7 @@ interface TransitConnection {
 	stationType: 'metro' | 'rail' | 'bus';
 	stationLine: string;
 	distM: number;
-	connectionEnd: 'first_mile' | 'last_mile' | 'both';
+	connectionEnd: 'first_mile' | 'last_mile';
 	mode: string;
 	score: number;
 }
@@ -574,7 +585,7 @@ function scoreRoute(
 	const startDist = nearStart?.distM ?? Infinity;
 	const endDist = nearEnd?.distM ?? Infinity;
 
-	let connectionEnd: 'first_mile' | 'last_mile' | 'both';
+	let connectionEnd: 'first_mile' | 'last_mile';
 	let primaryStation: StationRef;
 	let primaryDist: number;
 
@@ -584,15 +595,10 @@ function scoreRoute(
 	const endWithin = endDist <= endThreshold;
 
 	if (startWithin && endWithin) {
-		connectionEnd = 'both';
-		// Use the closer one for scoring
-		if (startDist <= endDist) {
-			primaryStation = nearStart!.station;
-			primaryDist = startDist;
-		} else {
-			primaryStation = nearEnd!.station;
-			primaryDist = endDist;
-		}
+		// Both endpoints near a station — this is likely just travelling between
+		// two metro-adjacent areas, not a true first/last mile transit connection.
+		// True first/last mile is asymmetric: one end at a station, the other not.
+		return null;
 	} else if (startWithin) {
 		connectionEnd = 'first_mile';
 		primaryStation = nearStart!.station;
@@ -636,7 +642,6 @@ interface TransitProximityAgg {
 	connected: number;
 	firstMile: number;
 	lastMile: number;
-	both: number;
 	totalFirstMileDistM: number;
 	totalLastMileDistM: number;
 	byMode: Map<string, number>;
@@ -650,7 +655,6 @@ function newTransitProximityAgg(): TransitProximityAgg {
 		connected: 0,
 		firstMile: 0,
 		lastMile: 0,
-		both: 0,
 		totalFirstMileDistM: 0,
 		totalLastMileDistM: 0,
 		byMode: new Map(),
@@ -666,12 +670,8 @@ function addTransitConnection(agg: TransitProximityAgg, conn: TransitConnection)
 	if (conn.connectionEnd === 'first_mile') {
 		agg.firstMile++;
 		agg.totalFirstMileDistM += conn.distM;
-	} else if (conn.connectionEnd === 'last_mile') {
-		agg.lastMile++;
-		agg.totalLastMileDistM += conn.distM;
 	} else {
-		agg.both++;
-		agg.totalFirstMileDistM += conn.distM;
+		agg.lastMile++;
 		agg.totalLastMileDistM += conn.distM;
 	}
 
@@ -697,9 +697,6 @@ function addTransitConnection(agg: TransitProximityAgg, conn: TransitConnection)
 function transitProximityToJson(agg: TransitProximityAgg, totalTrips: number): Record<string, unknown> {
 	if (agg.connected === 0) return {};
 
-	const firstMileCount = agg.firstMile + agg.both;
-	const lastMileCount = agg.lastMile + agg.both;
-
 	const topStations = [...agg.stationCounts.values()]
 		.sort((a, b) => b.count - a.count)
 		.slice(0, 15)
@@ -715,11 +712,10 @@ function transitProximityToJson(agg: TransitProximityAgg, totalTrips: number): R
 		connected: agg.connected,
 		first_mile: agg.firstMile,
 		last_mile: agg.lastMile,
-		both: agg.both,
 		total_trips: totalTrips,
 		pct_connected: Math.round((agg.connected / totalTrips) * 1000) / 10,
-		avg_first_mile_m: firstMileCount > 0 ? Math.round(agg.totalFirstMileDistM / firstMileCount) : 0,
-		avg_last_mile_m: lastMileCount > 0 ? Math.round(agg.totalLastMileDistM / lastMileCount) : 0,
+		avg_first_mile_m: agg.firstMile > 0 ? Math.round(agg.totalFirstMileDistM / agg.firstMile) : 0,
+		avg_last_mile_m: agg.lastMile > 0 ? Math.round(agg.totalLastMileDistM / agg.lastMile) : 0,
 		by_mode: Object.fromEntries(agg.byMode),
 		by_transit_type: Object.fromEntries(agg.byTransitType),
 		by_line: Object.fromEntries(agg.byLine),

@@ -451,7 +451,6 @@ export interface TransitProximityData {
 	connected: number;
 	firstMile: number;
 	lastMile: number;
-	both: number;
 	totalTrips: number;
 	pctConnected: number;
 	avgFirstMileM: number;
@@ -478,12 +477,9 @@ export async function getTransitProximity(citySlug: string): Promise<TransitProx
 	let connected = 0;
 	let firstMile = 0;
 	let lastMile = 0;
-	let both = 0;
 	let totalTrips = 0;
 	let totalFirstMileDistWeighted = 0;
 	let totalLastMileDistWeighted = 0;
-	let firstMileCount = 0;
-	let lastMileCount = 0;
 	const byMode = new Map<string, number>();
 	const byTransitType = new Map<string, number>();
 	const byLine = new Map<string, number>();
@@ -499,12 +495,9 @@ export async function getTransitProximity(citySlug: string): Promise<TransitProx
 		connected += tp.connected as number;
 		firstMile += (tp.first_mile as number) ?? 0;
 		lastMile += (tp.last_mile as number) ?? 0;
-		both += (tp.both as number) ?? 0;
 
-		const fm = ((tp.first_mile as number) ?? 0) + ((tp.both as number) ?? 0);
-		const lm = ((tp.last_mile as number) ?? 0) + ((tp.both as number) ?? 0);
-		firstMileCount += fm;
-		lastMileCount += lm;
+		const fm = (tp.first_mile as number) ?? 0;
+		const lm = (tp.last_mile as number) ?? 0;
 		totalFirstMileDistWeighted += ((tp.avg_first_mile_m as number) ?? 0) * fm;
 		totalLastMileDistWeighted += ((tp.avg_last_mile_m as number) ?? 0) * lm;
 
@@ -566,11 +559,10 @@ export async function getTransitProximity(citySlug: string): Promise<TransitProx
 		connected,
 		firstMile,
 		lastMile,
-		both,
 		totalTrips,
 		pctConnected: Math.round((connected / totalTrips) * 1000) / 10,
-		avgFirstMileM: firstMileCount > 0 ? Math.round(totalFirstMileDistWeighted / firstMileCount) : 0,
-		avgLastMileM: lastMileCount > 0 ? Math.round(totalLastMileDistWeighted / lastMileCount) : 0,
+		avgFirstMileM: firstMile > 0 ? Math.round(totalFirstMileDistWeighted / firstMile) : 0,
+		avgLastMileM: lastMile > 0 ? Math.round(totalLastMileDistWeighted / lastMile) : 0,
 		byMode: Object.fromEntries(byMode),
 		byTransitType: Object.fromEntries(byTransitType),
 		byLine: Object.fromEntries(byLine),
