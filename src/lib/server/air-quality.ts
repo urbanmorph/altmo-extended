@@ -5,7 +5,7 @@
  */
 
 import { env } from '$env/dynamic/private';
-import { CITY_OPENAQ_SENSORS, CITY_OPENAQ_NO2_SENSORS, type CityPM25, type CityNO2 } from '$lib/config/air-quality';
+import { CITY_OPENAQ_SENSORS, CITY_OPENAQ_NO2_SENSORS, PM25_FALLBACK, type CityPM25, type CityNO2 } from '$lib/config/air-quality';
 
 const OPENAQ_BASE_URL = 'https://api.openaq.org/v3';
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
@@ -63,6 +63,7 @@ async function fetchSensorPM25(sensorId: number): Promise<number[]> {
 
 /**
  * Fetch latest PM2.5 for a city (recent readings), with 24h in-memory cache.
+ * Falls back to CPCB 2023 annual averages if OpenAQ is unavailable.
  */
 export async function getCityPM25(cityId: string): Promise<CityPM25 | null> {
 	const cached = cache.get(cityId);
@@ -71,33 +72,48 @@ export async function getCityPM25(cityId: string): Promise<CityPM25 | null> {
 	}
 
 	const cityConfig = CITY_OPENAQ_SENSORS[cityId];
-	if (!cityConfig) return null;
+	const fallback = PM25_FALLBACK[cityId] ?? null;
 
-	const results = await Promise.all(
-		cityConfig.sensorIds.map((id) => fetchSensorPM25(id))
-	);
-
-	const allValues: number[] = [];
-	let stationsReporting = 0;
-	for (const values of results) {
-		if (values.length > 0) {
-			allValues.push(...values);
-			stationsReporting++;
-		}
+	if (!cityConfig || cityConfig.sensorIds.length === 0) {
+		// No sensors configured — use fallback
+		cache.set(cityId, { data: fallback, timestamp: Date.now() });
+		return fallback;
 	}
 
-	const data =
-		allValues.length > 0
-			? {
-					pm25Avg: Math.round((allValues.reduce((s, v) => s + v, 0) / allValues.length) * 100) / 100,
-					pm25Max: Math.round(Math.max(...allValues) * 100) / 100,
-					stationsReporting,
-					readings: allValues.length
-				}
-			: null;
+	try {
+		const results = await Promise.all(
+			cityConfig.sensorIds.map((id) => fetchSensorPM25(id))
+		);
 
-	cache.set(cityId, { data, timestamp: Date.now() });
-	return data;
+		const allValues: number[] = [];
+		let stationsReporting = 0;
+		for (const values of results) {
+			if (values.length > 0) {
+				allValues.push(...values);
+				stationsReporting++;
+			}
+		}
+
+		if (allValues.length > 0) {
+			const data: CityPM25 = {
+				pm25Avg: Math.round((allValues.reduce((s, v) => s + v, 0) / allValues.length) * 100) / 100,
+				pm25Max: Math.round(Math.max(...allValues) * 100) / 100,
+				stationsReporting,
+				readings: allValues.length
+			};
+			cache.set(cityId, { data, timestamp: Date.now() });
+			return data;
+		}
+	} catch {
+		// API error (auth, network, etc.) — fall through to fallback
+	}
+
+	// All sensors returned empty or API failed — use fallback
+	if (fallback) {
+		console.warn(`[air-quality] OpenAQ unavailable for ${cityId}, using CPCB 2023 fallback`);
+	}
+	cache.set(cityId, { data: fallback, timestamp: Date.now() });
+	return fallback;
 }
 
 /**

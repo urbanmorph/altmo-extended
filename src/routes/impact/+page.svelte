@@ -52,6 +52,8 @@
       .sort((a, b) => (b.data?.congestionPct ?? 0) - (a.data?.congestionPct ?? 0))
   );
 
+  const hasPM25Fallback = $derived(pm25Rows.some((r) => r.data?.isFallback));
+
   function congestionColor(pct: number): string {
     if (pct > 50) return '#dc2626';
     if (pct > 30) return '#FF7B27';
@@ -82,7 +84,11 @@
       <i class="fa-solid fa-wind mr-2 text-text-secondary"></i>Air Quality
     </h2>
     <p class="mt-1 text-sm text-text-secondary">
-      Real-time PM2.5 from CPCB monitoring stations via OpenAQ. Sorted worst-first.
+      {#if hasPM25Fallback}
+        PM2.5 from CPCB annual reports (2023 averages). Sorted worst-first.
+      {:else}
+        Real-time PM2.5 from CPCB monitoring stations via OpenAQ. Sorted worst-first.
+      {/if}
     </p>
     <div class="mt-4 overflow-x-auto">
       <table class="w-full text-left text-sm">
@@ -91,7 +97,7 @@
             <th class="pb-3 pr-4 font-medium">City</th>
             <th class="pb-3 pr-4 font-medium">PM2.5 Avg</th>
             <th class="pb-3 pr-4 font-medium">PM2.5 Max</th>
-            <th class="pb-3 pr-4 font-medium">Stations</th>
+            <th class="pb-3 pr-4 font-medium">{hasPM25Fallback ? 'Source' : 'Stations'}</th>
             <th class="pb-3 font-medium">AQI Category</th>
           </tr>
         </thead>
@@ -103,14 +109,20 @@
                 {@const cat = getPM25Category(row.data.pm25Avg)}
                 <td class="py-3 pr-4 text-text-primary">{row.data.pm25Avg.toFixed(1)} &#181;g/m&#179;</td>
                 <td class="py-3 pr-4 text-text-secondary">{row.data.pm25Max.toFixed(1)}</td>
-                <td class="py-3 pr-4 text-text-secondary">{row.data.stationsReporting}</td>
+                <td class="py-3 pr-4 text-text-secondary">
+                  {#if row.data.isFallback}
+                    <span class="text-xs text-text-secondary" title="CPCB 2023 annual average — OpenAQ live data unavailable">CPCB 2023</span>
+                  {:else}
+                    {row.data.stationsReporting}
+                  {/if}
+                </td>
                 <td class="py-3">
                   <span class="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium" style="background-color: {cat.color}20; color: {cat.color}">
                     {cat.label}
                   </span>
                 </td>
               {:else}
-                <td class="py-3 pr-4 text-text-secondary" colspan="4">No sensor data</td>
+                <td class="py-3 pr-4 text-text-secondary" colspan="4">No data available</td>
               {/if}
             </tr>
           {/each}
@@ -119,6 +131,9 @@
     </div>
     <p class="mt-2 text-xs text-text-secondary">
       WHO guideline: 5 &#181;g/m&#179; annual mean. India NAAQS: 40 &#181;g/m&#179; annual mean.
+      {#if hasPM25Fallback}
+        <br>Values shown are CPCB 2023 annual averages. Live data from OpenAQ is temporarily unavailable.
+      {/if}
     </p>
   </div>
 

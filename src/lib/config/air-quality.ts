@@ -122,4 +122,24 @@ export interface CityPM25 {
 	pm25Max: number;
 	stationsReporting: number;
 	readings: number;
+	/** True when using CPCB 2023 annual averages instead of live OpenAQ data. */
+	isFallback?: boolean;
 }
+
+/**
+ * CPCB 2023 annual average PM2.5 fallback values (µg/m³).
+ * Used when OpenAQ API is unavailable (key expired, account suspended, etc.).
+ * Sources: CPCB Annual Reports 2023, IQAir World Air Quality Report 2023,
+ * UrbanEmissions city-level estimates.
+ */
+export const PM25_FALLBACK: Record<string, CityPM25> = {
+	ahmedabad: { pm25Avg: 55, pm25Max: 89, stationsReporting: 0, readings: 0, isFallback: true },
+	bengaluru: { pm25Avg: 34, pm25Max: 62, stationsReporting: 0, readings: 0, isFallback: true },
+	chennai:   { pm25Avg: 31, pm25Max: 55, stationsReporting: 0, readings: 0, isFallback: true },
+	delhi:     { pm25Avg: 99, pm25Max: 312, stationsReporting: 0, readings: 0, isFallback: true },
+	hyderabad: { pm25Avg: 37, pm25Max: 68, stationsReporting: 0, readings: 0, isFallback: true },
+	indore:    { pm25Avg: 56, pm25Max: 94, stationsReporting: 0, readings: 0, isFallback: true },
+	kochi:     { pm25Avg: 27, pm25Max: 48, stationsReporting: 0, readings: 0, isFallback: true },
+	mumbai:    { pm25Avg: 38, pm25Max: 72, stationsReporting: 0, readings: 0, isFallback: true },
+	pune:      { pm25Avg: 36, pm25Max: 65, stationsReporting: 0, readings: 0, isFallback: true }
+};
