@@ -9,9 +9,13 @@
 export interface CityConfig {
 	id: string;
 	name: string;
+	/** Subtitle listing member cities in a region, e.g. "Delhi, Noida, Gurugram, Ghaziabad" */
+	regionCities?: string;
 	lat: number;
 	lng: number;
 	zoom: number;
+	/** Rails API city_ids for activity/geo-marker aggregation (primary + satellite cities) */
+	railsCityIds: number[];
 	transitSources?: TransitDataSources;
 }
 
@@ -134,6 +138,7 @@ export const CITIES: CityConfig[] = [
 		lat: 23.0225,
 		lng: 72.5714,
 		zoom: 12,
+		railsCityIds: [18220],
 		transitSources: AHMEDABAD_TRANSIT
 	},
 	{
@@ -142,6 +147,7 @@ export const CITIES: CityConfig[] = [
 		lat: 12.9716,
 		lng: 77.5946,
 		zoom: 12,
+		railsCityIds: [18326],
 		transitSources: BENGALURU_TRANSIT
 	},
 	{
@@ -173,14 +179,17 @@ export const CITIES: CityConfig[] = [
 					}
 				]
 			}
-		}
+		},
+		railsCityIds: [18586]
 	},
 	{
 		id: 'delhi',
-		name: 'Delhi',
+		name: 'National Capital Region',
+		regionCities: 'Delhi, Noida, Gurugram, Ghaziabad',
 		lat: 28.6139,
 		lng: 77.209,
 		zoom: 11,
+		railsCityIds: [18215, 18714, 18258, 18685],
 		transitSources: DELHI_TRANSIT
 	},
 	{
@@ -189,6 +198,7 @@ export const CITIES: CityConfig[] = [
 		lat: 17.385,
 		lng: 78.4867,
 		zoom: 12,
+		railsCityIds: [18629],
 		transitSources: HYDERABAD_TRANSIT
 	},
 	{
@@ -197,6 +207,7 @@ export const CITIES: CityConfig[] = [
 		lat: 22.7196,
 		lng: 75.8577,
 		zoom: 12,
+		railsCityIds: [18396],
 		transitSources: transitRouterSources('indore')
 	},
 	{
@@ -208,19 +219,23 @@ export const CITIES: CityConfig[] = [
 		transitSources: {
 			...transitRouterSources('kochi'),
 			metroGTFS: 'https://kochimetro.org/opendata/KMRLOpenData.zip'
-		}
+		},
+		railsCityIds: [18363]
 	},
 	{
 		id: 'mumbai',
-		name: 'Mumbai',
+		name: 'Mumbai Metropolitan Region',
+		regionCities: 'Mumbai, Thane, Kalyan-Dombivli, Navi Mumbai',
 		lat: 19.076,
 		lng: 72.8777,
 		zoom: 11,
+		railsCityIds: [18445, 18460, 18442],
 		transitSources: MUMBAI_TRANSIT
 	},
 	{
 		id: 'pune',
-		name: 'Pune',
+		name: 'Pune Metropolitan Region',
+		regionCities: 'Pune, Pimpri-Chinchwad',
 		lat: 18.5204,
 		lng: 73.8567,
 		zoom: 12,
@@ -238,7 +253,8 @@ export const CITIES: CityConfig[] = [
 					}
 				}]
 			}
-		}
+		},
+		railsCityIds: [18455, 18454]
 	}
 ];
 
@@ -246,4 +262,9 @@ export const DEFAULT_CITY = CITIES[0]; // Bengaluru
 
 export function getCityById(id: string): CityConfig | undefined {
 	return CITIES.find((c) => c.id === id);
+}
+
+/** Get Rails API city_ids for a city slug — includes satellite cities for regions. */
+export function getRailsCityIds(cityId: string): number[] {
+	return getCityById(cityId)?.railsCityIds ?? [];
 }

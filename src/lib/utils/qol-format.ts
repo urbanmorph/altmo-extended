@@ -10,6 +10,11 @@ export function cityName(cityId: string): string {
 	return CITIES.find((c) => c.id === cityId)?.name ?? cityId;
 }
 
+/** Returns the member cities subtitle for a region, or null for standalone cities. */
+export function cityRegionSubtitle(cityId: string): string | null {
+	return CITIES.find((c) => c.id === cityId)?.regionCities ?? null;
+}
+
 export function fmtIndicatorValue(value: number | null, unit: string): string {
 	if (value === null) return '—';
 	if (Number.isInteger(value)) return `${value} ${unit}`;

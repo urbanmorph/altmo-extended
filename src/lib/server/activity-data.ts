@@ -13,20 +13,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { env as publicEnv } from '$env/dynamic/public';
 import { env } from '$env/dynamic/private';
-
-// ── Rails city_id mapping ──
-
-const CITY_SLUG_TO_RAILS_ID: Record<string, number> = {
-	ahmedabad: 18220,
-	bengaluru: 18326,
-	chennai: 18586,
-	delhi: 18215,
-	hyderabad: 18629,
-	indore: 18396,
-	kochi: 18363,
-	mumbai: 18445,
-	pune: 18455
-};
+import { getRailsCityIds } from '$lib/config/cities';
 
 // ── Cache (1h TTL) ──
 
@@ -141,14 +128,14 @@ async function getCityMonthlyData(citySlug: string): Promise<MonthlyRow[]> {
 	const supabase = getSupabase();
 	if (!supabase) return [];
 
-	const railsCityId = CITY_SLUG_TO_RAILS_ID[citySlug];
-	if (!railsCityId) return [];
+	const railsCityIds = getRailsCityIds(citySlug);
+	if (railsCityIds.length === 0) return [];
 
 	try {
 		const { data, error } = await supabase
 			.from('city_activity_monthly')
 			.select('*')
-			.eq('city_id', railsCityId)
+			.in('city_id', railsCityIds)
 			.order('month', { ascending: true });
 
 		if (error || !data) {
@@ -583,8 +570,8 @@ export async function getRouteDensity(citySlug: string): Promise<DensityCell[]> 
 	const supabase = getSupabase();
 	if (!supabase) return [];
 
-	const railsCityId = CITY_SLUG_TO_RAILS_ID[citySlug];
-	if (!railsCityId) return [];
+	const railsCityIds = getRailsCityIds(citySlug);
+	if (railsCityIds.length === 0) return [];
 
 	try {
 		// Fetch density cells with total >= 3 (filters out noise, keeps 98% of trips)
@@ -596,7 +583,7 @@ export async function getRouteDensity(citySlug: string): Promise<DensityCell[]> 
 			const { data: batch, error: err } = await supabase
 				.from('route_density')
 				.select('h3_index, total, rides, walks')
-				.eq('city_id', railsCityId)
+				.in('city_id', railsCityIds)
 				.gte('total', 3)
 				.range(from, from + pageSize - 1);
 			if (err) {

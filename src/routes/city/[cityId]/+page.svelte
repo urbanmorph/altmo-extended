@@ -137,7 +137,12 @@
   <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
     <div class="flex items-center gap-4">
       <div class="flex items-center gap-3 border-r border-border py-3 pr-4">
-        <h1 class="text-lg font-bold text-text-primary">{data.cityName}</h1>
+        <div class="min-w-0">
+          <h1 class="text-lg font-bold text-text-primary">{data.cityName}</h1>
+          {#if data.regionCities}
+            <p class="text-[0.65rem] leading-tight text-text-secondary">{data.regionCities}</p>
+          {/if}
+        </div>
         <select
           class="rounded-md border border-border bg-surface px-2 py-1 text-sm text-text-primary focus:ring-2 focus:ring-altmo-500 focus:outline-none"
           value={data.cityId}

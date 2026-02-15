@@ -2,7 +2,7 @@
   import { computeAllQoL, gradeColor, gradeLabel, type ConfidenceTier, type QoLOverrides } from '$lib/config/city-qol-data';
   import { computeAllGaps } from '$lib/config/city-qol-gaps';
   import { CITY_READINESS, type ReadinessScore, type DataStatus } from '$lib/config/data-readiness';
-  import { cityName, fmtIndicatorValue, barPercent, dimensionColor, readinessScoreColor } from '$lib/utils/qol-format';
+  import { cityName, cityRegionSubtitle, fmtIndicatorValue, barPercent, dimensionColor, readinessScoreColor } from '$lib/utils/qol-format';
 
   interface Props {
     overrides?: QoLOverrides;
@@ -119,6 +119,9 @@
           <!-- City name -->
           <div class="min-w-0 flex-1">
             <h3 class="text-base font-semibold text-text-primary sm:text-lg">{cityName(entry.cityId)}</h3>
+            {#if cityRegionSubtitle(entry.cityId)}
+              <p class="text-xs text-text-secondary">{cityRegionSubtitle(entry.cityId)}</p>
+            {/if}
             {#if gap}
               <p class="truncate text-xs text-text-secondary sm:text-sm">
                 <i class="fa-solid fa-arrow-up-right-dots mr-0.5 text-[0.6rem]" style="color: {color}"></i>

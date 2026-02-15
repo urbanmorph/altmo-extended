@@ -220,21 +220,9 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	// ── Phase 8: Geo markers filtered by city ──
 
-	// Rails city_id mapping (same as activity-data.ts)
-	const CITY_SLUG_TO_RAILS_ID: Record<string, number> = {
-		ahmedabad: 18220,
-		bengaluru: 18326,
-		chennai: 18586,
-		delhi: 18215,
-		hyderabad: 18629,
-		indore: 18396,
-		kochi: 18363,
-		mumbai: 18445,
-		pune: 18455
-	};
-	const railsCityId = CITY_SLUG_TO_RAILS_ID[cityId];
+	const railsCityIds = city.railsCityIds;
 	const cityGeoMarkers = geoMarkers
-		? geoMarkers.filter((m) => m.cityId === railsCityId)
+		? geoMarkers.filter((m) => m.cityId !== null && railsCityIds.includes(m.cityId))
 		: [];
 
 	// ── Phase 9: Company presence from geo markers ──
@@ -258,6 +246,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		// City identity
 		cityId,
 		cityName: city.name,
+		regionCities: city.regionCities ?? null,
 		cityCenter: [city.lng, city.lat] as [number, number],
 		cityZoom: city.zoom,
 
