@@ -16,7 +16,7 @@
       <div class="flex items-center gap-8">
         <a href="/" class="flex flex-col items-center">
           <img src="/altmo-logo-white.png" alt="Altmo" class="h-6" />
-          <span class="w-full text-center text-[0.55rem] font-light tracking-[0.25em] uppercase text-white/70">Intelligence</span>
+          <span class="w-full text-center text-[0.55rem] font-light tracking-[0.35em] uppercase text-white/70">Intelligence</span>
         </a>
         <div class="hidden md:flex items-center gap-1">
           {#each navItems as item}
