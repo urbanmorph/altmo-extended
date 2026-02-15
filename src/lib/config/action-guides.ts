@@ -32,13 +32,13 @@ export interface ActionGuide {
 // ---------------------------------------------------------------------------
 
 export const BIKE_SHARE_URLS: Record<string, string | null> = {
-	ahmedabad: null,
+	ahmedabad: 'https://mybyk.in',
 	bengaluru: 'https://www.yulu.bike',
-	chennai: null,
+	chennai: 'https://smartbikemobility.com',
 	delhi: 'https://www.yulu.bike',
-	hyderabad: 'https://www.bounceshare.com',
-	indore: null,
-	kochi: null,
+	hyderabad: 'https://www.yulu.bike',
+	indore: 'https://mybyk.in',
+	kochi: 'https://mybyk.in',
 	mumbai: 'https://www.yulu.bike',
 	pune: 'https://www.yulu.bike'
 };
