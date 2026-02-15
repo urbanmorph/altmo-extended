@@ -28,18 +28,18 @@ const GAP_DATA: Record<string, Omit<CityGapAnalysis, 'cityId' | 'worstDimension'
 		dataUnlockSentence: 'Publishing walking/cycling infrastructure data enables corridor-level air quality impact analysis'
 	},
 	bengaluru: {
-		gapSentence: 'Only 15 km of cycle tracks and 37% footpath coverage \u2014 active mobility infrastructure lags behind transit investment',
-		recommendation: 'Dedicating 5% of arterial road width to protected cycle lanes would triple cycle infra and lift accessibility from D to C',
+		gapSentence: 'Only 30 km of cycle tracks and 37% footpath coverage \u2014 active mobility infrastructure lags behind transit investment',
+		recommendation: 'Dedicating 5% of arterial road width to protected cycle lanes would double cycle infra and lift accessibility from D to C',
 		dataUnlockSentence: 'Publishing walking/cycling infrastructure GIS data enables corridor-level gap analysis'
 	},
 	pune: {
-		gapSentence: 'Bus fleet of 25 per lakh \u2014 less than half of Bengaluru\u2019s 53',
-		recommendation: 'Doubling PMPML fleet with electric buses would lift accessibility from D to B',
+		gapSentence: 'Bus fleet of 25 per lakh and only 10 km of cycle infrastructure \u2014 less than half of Bengaluru\u2019s 53 buses per lakh',
+		recommendation: 'Doubling PMPML fleet with electric buses + building 50 km of protected cycle lanes would lift accessibility from D to B',
 		dataUnlockSentence: 'Publishing ridership, safety, and NMT infrastructure data enables full multi-modal analysis'
 	},
 	kochi: {
-		gapSentence: 'Only 5 km of cycle infrastructure and metro at 29 km \u2014 compact city held back by NMT infrastructure gaps',
-		recommendation: 'Building 50 km of protected cycle lanes + metro Phase 2 to 40 km would lift accessibility from D to C',
+		gapSentence: '27 km of cycle infrastructure but metro at only 29 km \u2014 compact city held back by limited rail transit coverage',
+		recommendation: 'Metro Phase 2 to 40 km + extending cycle network to 60 km would lift accessibility from D to C',
 		dataUnlockSentence: 'Publishing safety and NMT infrastructure data unlocks health dimension scoring'
 	},
 	chennai: {
@@ -48,18 +48,18 @@ const GAP_DATA: Record<string, Omit<CityGapAnalysis, 'cityId' | 'worstDimension'
 		dataUnlockSentence: 'Publishing walking/cycling infrastructure data enables corridor-level safety analysis'
 	},
 	hyderabad: {
-		gapSentence: 'Only 8 km of cycle infrastructure and bus fleet of 30 per lakh \u2014 strong rail transit (159 km) undermined by last-mile access gaps',
-		recommendation: 'Building 100 km of protected cycle lanes + expanding TSRTC city fleet to 50 per lakh would lift accessibility from D to C',
+		gapSentence: '31 km of cycle infrastructure but bus fleet of only 30 per lakh \u2014 strong rail transit (159 km) undermined by last-mile bus access gaps',
+		recommendation: 'Expanding TSRTC city fleet to 50 per lakh + building 100 km of protected cycle lanes would lift accessibility from D to C',
 		dataUnlockSentence: 'Publishing walking/cycling infrastructure data would enable complete active mobility assessment'
 	},
 	mumbai: {
-		gapSentence: 'Bus fleet at just 22 per lakh and only 5 km of cycle infrastructure \u2014 accessibility undermined despite world-class suburban rail',
+		gapSentence: 'Bus fleet at just 22 per lakh and 23 km of cycle infrastructure \u2014 accessibility undermined despite world-class suburban rail',
 		recommendation: 'Expanding BEST fleet to 40 per lakh with electric buses and building 100 km of protected cycle lanes would lift accessibility from E to C',
 		dataUnlockSentence: 'Publishing BEST GTFS feeds and walking infrastructure data enables corridor-level gap analysis'
 	},
 	indore: {
-		gapSentence: 'Metro just 6 km and bus fleet of just 11 per lakh \u2014 lowest transit coverage',
-		recommendation: 'Scaling AICTSL fleet to 30 per lakh and completing metro Phase 1 would triple transit accessibility',
+		gapSentence: 'Metro just 6 km, bus fleet of just 11 per lakh, and only 3 km of cycle infrastructure \u2014 lowest transit and NMT coverage',
+		recommendation: 'Scaling AICTSL fleet to 30 per lakh, completing metro Phase 1, and building 30 km of cycle lanes would triple transit accessibility',
 		dataUnlockSentence: 'Publishing bus frequency and walking infrastructure data enables transit coverage gap analysis'
 	}
 };
