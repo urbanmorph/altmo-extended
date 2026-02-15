@@ -97,14 +97,14 @@
             </li>
             <li>
               <a href="https://cbs-two.vercel.app" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm text-white/60 hover:text-altmo-200 transition-colors">
-                <i class="fa-solid fa-bicycle w-4 text-center text-xs"></i> Rentals
+                <i class="fa-solid fa-bicycle w-4 text-center text-xs"></i> Altmo Rentals
                 <span class="text-[0.6rem] text-white/40">Owners marketplace</span>
               </a>
             </li>
             <li>
               <a href="https://altmo.app/corporates" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm text-white/60 hover:text-altmo-200 transition-colors">
-                <i class="fa-solid fa-building w-4 text-center text-xs"></i> Corporates
-                <span class="text-[0.6rem] text-white/40">Enterprise programmes</span>
+                <i class="fa-solid fa-building w-4 text-center text-xs"></i> Altmo Enterprise
+                <span class="text-[0.6rem] text-white/40">Corporate programmes</span>
               </a>
             </li>
             <li>
