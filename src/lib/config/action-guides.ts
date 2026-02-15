@@ -28,20 +28,43 @@ export interface ActionGuide {
 }
 
 // ---------------------------------------------------------------------------
-// Per-city bike-share URLs
+// Per-city shared mobility URLs
 // ---------------------------------------------------------------------------
 
-export const BIKE_SHARE_URLS: Record<string, string | null> = {
-	ahmedabad: 'https://mybyk.in',
-	bengaluru: 'https://www.yulu.bike',
-	chennai: 'https://smartbikemobility.com',
-	delhi: 'https://www.yulu.bike',
-	hyderabad: 'https://www.yulu.bike',
-	indore: 'https://mybyk.in',
-	kochi: 'https://mybyk.in',
-	mumbai: 'https://www.yulu.bike',
-	pune: 'https://www.yulu.bike'
+/** Pedal bicycle sharing (PBS) — dock-based or dockless bicycle rentals */
+export const PBS_URLS: Record<string, { name: string; url: string } | null> = {
+	ahmedabad: { name: 'MYBYK', url: 'https://mybyk.in' },
+	bengaluru: { name: 'MYBYK', url: 'https://mybyk.in' },
+	chennai: { name: 'SmartBike', url: 'https://smartbikemobility.com' },
+	delhi: { name: 'SmartBike', url: 'https://smartbikemobility.com' },
+	hyderabad: null,
+	indore: { name: 'MYBYK', url: 'https://mybyk.in' },
+	kochi: { name: 'MYBYK', url: 'https://mybyk.in' },
+	mumbai: null,
+	pune: null
 };
+
+/** Electric micromobility — e-scooters and e-bikes (Yulu etc.) */
+export const EMICRO_URLS: Record<string, { name: string; url: string } | null> = {
+	ahmedabad: null,
+	bengaluru: { name: 'Yulu', url: 'https://www.yulu.bike' },
+	chennai: null,
+	delhi: { name: 'Yulu', url: 'https://www.yulu.bike' },
+	hyderabad: { name: 'Yulu', url: 'https://www.yulu.bike' },
+	indore: null,
+	kochi: null,
+	mumbai: { name: 'Yulu', url: 'https://www.yulu.bike' },
+	pune: { name: 'Yulu', url: 'https://www.yulu.bike' }
+};
+
+/** Legacy compat — returns the first available shared mobility URL for a city */
+export const BIKE_SHARE_URLS: Record<string, string | null> = Object.fromEntries(
+	Object.keys(PBS_URLS).map((cityId) => {
+		const pbs = PBS_URLS[cityId];
+		const emicro = EMICRO_URLS[cityId];
+		return [cityId, pbs?.url ?? emicro?.url ?? null];
+	})
+);
 
 // ---------------------------------------------------------------------------
 // OSM editor URL helper
@@ -75,12 +98,22 @@ const ACTION_GUIDES: ActionGuide[] = [
 	},
 	{
 		id: 'use-bike-share',
-		label: 'Rent a bike',
+		label: 'Rent a bicycle',
 		description:
-			'Use bike-share for short trips. Services like Yulu and Bounce make cycling accessible — log your ride on Altmo to count it toward your city\'s active mobility stats.',
+			'Use public bicycle sharing for short trips. Services like MYBYK and SmartBike offer pedal bicycles — log your ride on Altmo to count it toward your city\'s active mobility stats.',
 		icon: 'fa-solid fa-bicycle',
 		roles: ['everyone'],
-		url: null, // resolved per-city via BIKE_SHARE_URLS
+		url: null, // resolved per-city via PBS_URLS
+		cityScoped: true
+	},
+	{
+		id: 'use-emicro',
+		label: 'Try electric micromobility',
+		description:
+			'Use electric scooters and e-bikes from services like Yulu for first/last mile trips. A quick, zero-emission way to connect to transit.',
+		icon: 'fa-solid fa-bolt',
+		roles: ['everyone'],
+		url: null, // resolved per-city via EMICRO_URLS
 		cityScoped: true
 	},
 	{
@@ -246,7 +279,13 @@ export function getActionsForCity(cityId: string): ActionGuide[] {
 		const resolved = { ...action };
 
 		if (action.id === 'use-bike-share') {
-			resolved.url = BIKE_SHARE_URLS[cityId] ?? null;
+			const pbs = PBS_URLS[cityId];
+			resolved.url = pbs?.url ?? null;
+			if (pbs) resolved.description = resolved.description.replace('MYBYK and SmartBike', pbs.name);
+		} else if (action.id === 'use-emicro') {
+			const emicro = EMICRO_URLS[cityId];
+			resolved.url = emicro?.url ?? null;
+			if (emicro) resolved.description = resolved.description.replace('Yulu', emicro.name);
 		} else if (action.id === 'map-on-osm') {
 			resolved.url = getOsmEditorUrl(cityId);
 		} else if (resolved.url && resolved.url.includes('{cityId}')) {
