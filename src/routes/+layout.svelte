@@ -78,7 +78,7 @@
         <div>
           <a href="/" class="inline-flex flex-col items-start">
             <img src="/altmo-logo-white.png" alt="Altmo" class="h-7" />
-            <span class="mt-0.5 text-[0.55rem] font-light tracking-[0.25em] uppercase text-white/50">Intelligence</span>
+            <span class="mt-0.5 w-full text-center text-[0.55rem] font-light tracking-[0.25em] uppercase text-white/50">Intelligence</span>
           </a>
           <p class="mt-3 text-sm text-white/60 leading-relaxed">
             Open data and public accountability for active mobility in Indian cities.
