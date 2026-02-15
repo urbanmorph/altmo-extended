@@ -109,7 +109,8 @@
             </li>
             <li>
               <a href="https://rewards.altmo.app" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm text-white/60 hover:text-altmo-200 transition-colors">
-                <i class="fa-solid fa-gift w-4 text-center text-xs"></i> Rewards
+                <i class="fa-solid fa-gift w-4 text-center text-xs"></i> Altmo Rewards
+                <span class="text-[0.6rem] text-white/40">Coming soon</span>
               </a>
             </li>
           </ul>
