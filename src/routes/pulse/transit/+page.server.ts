@@ -1,5 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { fetchTransitMetrics, fetchMetroRidership } from '$lib/server/transit-data';
+import { getTransitProximity } from '$lib/server/activity-data';
 import { getCityById } from '$lib/config/cities';
 import { buildQoLOverrides } from '$lib/server/qol-overrides';
 
@@ -15,6 +16,7 @@ export const load: PageServerLoad = async ({ url, cookies }) => {
 	const qolOverrides = await buildQoLOverrides();
 
 	if (!hasTransitSources) {
+		const transitProximity = await getTransitProximity(resolvedCityId);
 		return {
 			cityId: resolvedCityId,
 			cityName: resolvedCity.name,
@@ -28,13 +30,15 @@ export const load: PageServerLoad = async ({ url, cookies }) => {
 			topHubs: [],
 			metroByLine: {},
 			ridership: null,
+			transitProximity,
 			qolOverrides
 		};
 	}
 
-	const [{ data, metrics }, ridership] = await Promise.all([
+	const [{ data, metrics }, ridership, transitProximity] = await Promise.all([
 		fetchTransitMetrics(resolvedCityId),
-		fetchMetroRidership(resolvedCityId)
+		fetchMetroRidership(resolvedCityId),
+		getTransitProximity(resolvedCityId)
 	]);
 
 	// rail_transit_km override is handled centrally by buildQoLOverrides()
@@ -67,6 +71,7 @@ export const load: PageServerLoad = async ({ url, cookies }) => {
 			])
 		),
 		ridership,
+		transitProximity,
 		qolOverrides
 	};
 };

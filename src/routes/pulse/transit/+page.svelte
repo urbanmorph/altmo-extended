@@ -152,6 +152,90 @@
 		{ key: 'name', label: 'Bus Stop' },
 		{ key: 'routeCount', label: 'Routes', align: 'right' as const }
 	];
+
+	// --- Transit Proximity (First/Last Mile) ---
+	const hasTransitProximity = $derived(!!data.transitProximity && data.transitProximity.connected > 0);
+
+	// Transit type badges
+	const transitTypeBadgeColor: Record<string, string> = {
+		metro: '#9333ea',
+		rail: '#dc2626',
+		bus: '#2563eb'
+	};
+
+	// Top stations table for first/last mile
+	const proximityStationRows = $derived(
+		(data.transitProximity?.topStations ?? []).map(
+			(s: { name: string; type: string; line: string; count: number; avgDistM: number }, i: number) => ({
+				rank: i + 1,
+				name: s.name,
+				type: s.type,
+				line: s.line,
+				count: s.count,
+				avgDist: s.avgDistM < 1000 ? `${s.avgDistM}m` : `${(s.avgDistM / 1000).toFixed(1)}km`
+			})
+		)
+	);
+
+	const proximityStationColumns = [
+		{ key: 'rank', label: '#', align: 'center' as const },
+		{ key: 'name', label: 'Station' },
+		{ key: 'type', label: 'Type', align: 'center' as const },
+		{ key: 'count', label: 'Connections', align: 'right' as const },
+		{ key: 'avgDist', label: 'Avg Distance', align: 'right' as const }
+	];
+
+	// Mode split doughnut for transit-connected trips
+	const transitModeSplitData = $derived(
+		data.transitProximity?.byMode
+			? (() => {
+					const entries = Object.entries(data.transitProximity.byMode as Record<string, number>)
+						.sort((a, b) => b[1] - a[1]);
+					if (entries.length === 0) return null;
+					const modeColors: Record<string, string> = {
+						Ride: '#000080',
+						Walk: '#df7e37',
+						Run: '#1d531f'
+					};
+					return {
+						labels: entries.map(([mode]) => mode),
+						datasets: [{
+							data: entries.map(([, count]) => count),
+							backgroundColor: entries.map(([mode]) => modeColors[mode] ?? '#94a3b8')
+						}]
+					};
+				})()
+			: null
+	);
+
+	// Transit type bar chart
+	const transitTypeBarData = $derived(
+		data.transitProximity?.byTransitType
+			? (() => {
+					const entries = Object.entries(data.transitProximity.byTransitType as Record<string, number>)
+						.sort((a, b) => b[1] - a[1]);
+					if (entries.length === 0) return null;
+					return {
+						labels: entries.map(([type]) => type.charAt(0).toUpperCase() + type.slice(1)),
+						datasets: [{
+							label: 'Connections',
+							data: entries.map(([, count]) => count),
+							backgroundColor: entries.map(([type]) => transitTypeBadgeColor[type] ?? '#94a3b8'),
+							borderRadius: 4
+						}]
+					};
+				})()
+			: null
+	);
+
+	const transitTypeBarOptions = {
+		indexAxis: 'y' as const,
+		plugins: { legend: { display: false } },
+		scales: {
+			x: { beginAtZero: true },
+			y: { ticks: { font: { size: 13 } } }
+		}
+	};
 </script>
 
 <div class="space-y-6">
@@ -360,61 +444,110 @@
 			</div>
 		</div>
 
-		<!-- First/Last Mile Context -->
+		<!-- First/Last Mile Access — data-driven -->
 		<div class="rounded-xl border border-border bg-surface-card p-6">
-			<h3 class="text-lg font-semibold text-text-primary mb-4">First/Last Mile Access</h3>
-			<div class="space-y-3 text-sm">
-				<div class="rounded-lg bg-earth-50 p-4">
-					<div class="flex items-center gap-2 mb-2">
-						<i class="fa-solid fa-person-walking text-mode-walk"></i>
-						<h4 class="font-semibold text-text-primary">Walking Catchment</h4>
+			<h3 class="text-lg font-semibold text-text-primary mb-4">First & Last Mile Access</h3>
+
+			{#if hasTransitProximity}
+				{@const tp = data.transitProximity!}
+				<!-- Headline metrics -->
+				<div class="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-6">
+					<div class="rounded-lg bg-earth-50 p-4 text-center">
+						<p class="text-2xl font-bold text-text-primary">{tp.connected.toLocaleString()}</p>
+						<p class="text-xs text-text-secondary">Transit-Connected Trips</p>
+						<p class="text-sm font-semibold text-primary mt-1">{tp.pctConnected}%</p>
 					</div>
-					<div class="grid grid-cols-2 gap-2 text-text-secondary">
-						<div>
-							<span class="text-lg font-bold text-text-primary">400m</span>
-							<p class="text-xs">Comfortable walk</p>
-						</div>
-						<div>
-							<span class="text-lg font-bold text-text-primary">800m</span>
-							<p class="text-xs">Maximum walk</p>
-						</div>
+					<div class="rounded-lg bg-earth-50 p-4 text-center">
+						<p class="text-2xl font-bold text-text-primary">{tp.avgFirstMileM < 1000 ? `${tp.avgFirstMileM}m` : `${(tp.avgFirstMileM / 1000).toFixed(1)}km`}</p>
+						<p class="text-xs text-text-secondary">Avg First Mile</p>
+						<p class="text-sm text-text-secondary mt-1">{(tp.firstMile + tp.both).toLocaleString()} trips</p>
+					</div>
+					<div class="rounded-lg bg-earth-50 p-4 text-center">
+						<p class="text-2xl font-bold text-text-primary">{tp.avgLastMileM < 1000 ? `${tp.avgLastMileM}m` : `${(tp.avgLastMileM / 1000).toFixed(1)}km`}</p>
+						<p class="text-xs text-text-secondary">Avg Last Mile</p>
+						<p class="text-sm text-text-secondary mt-1">{(tp.lastMile + tp.both).toLocaleString()} trips</p>
 					</div>
 				</div>
 
-				<div class="rounded-lg bg-earth-50 p-4">
-					<div class="flex items-center gap-2 mb-2">
-						<i class="fa-solid fa-bicycle text-mode-ride"></i>
-						<h4 class="font-semibold text-text-primary">Cycling Catchment</h4>
-					</div>
-					<div class="text-text-secondary">
-						<span class="text-lg font-bold text-text-primary">2 km</span>
-						<p class="text-xs">Effective cycling radius to transit</p>
-					</div>
+				<!-- Charts row: Mode split + Transit type -->
+				<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-6">
+					{#if transitModeSplitData}
+						<div>
+							<h4 class="text-sm font-medium text-text-secondary mb-2">Mode Split</h4>
+							<Chart
+								type="doughnut"
+								data={transitModeSplitData}
+								options={{ plugins: { legend: { position: 'bottom' as const } } }}
+								class="h-48"
+							/>
+						</div>
+					{/if}
+					{#if transitTypeBarData}
+						<div>
+							<h4 class="text-sm font-medium text-text-secondary mb-2">Transit Type</h4>
+							<Chart
+								type="bar"
+								data={transitTypeBarData}
+								options={transitTypeBarOptions}
+								class="h-48"
+							/>
+						</div>
+					{/if}
 				</div>
 
-				{#if data.cityId === 'bengaluru'}
-				<div class="rounded-lg border border-clay-200 bg-clay-50 p-4">
-					<div class="flex items-center gap-2 mb-2">
-						<i class="fa-solid fa-triangle-exclamation text-clay-600"></i>
-						<h4 class="font-semibold text-text-primary">Bengaluru Infrastructure</h4>
+				<!-- Top stations table -->
+				{#if proximityStationRows.length > 0}
+					<h4 class="text-sm font-medium text-text-secondary mb-2">Top Transit Stations by First/Last Mile Activity</h4>
+					<div class="max-h-80 overflow-y-auto">
+						<DataTable columns={proximityStationColumns} rows={proximityStationRows} />
 					</div>
-					<div class="grid grid-cols-2 gap-2 text-text-secondary text-xs mb-2">
-						<div><span class="text-sm font-bold text-text-primary">100 km</span> walkable footpath</div>
-						<div><span class="text-sm font-bold text-text-primary">8 km</span> cycle lanes</div>
-						<div><span class="text-sm font-bold text-text-primary">45</span> cycle stands</div>
-						<div><span class="text-sm font-bold text-text-primary">83</span> metro stations</div>
-					</div>
-					<ul class="space-y-1 text-text-secondary text-xs">
-						<li>65% of metro users walk to stations</li>
-						<li>292 pedestrian deaths in 2023 — highest in 13 years</li>
-					</ul>
-					<p class="mt-2 text-xs text-text-secondary">
-						Source: <a href="https://hejjegala.in" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">Hejje Gala</a>
-						— GBA active mobility challenge using Altmo
-					</p>
-				</div>
 				{/if}
-			</div>
+
+				<p class="text-xs text-text-secondary mt-4">
+					Transit connections detected using weighted proximity scoring (threshold: 0.60). Factors: proximity to station, trip distance, time of day, commute direction, path convergence, and speed validation.
+				</p>
+			{:else}
+				<!-- Empty state: no ETL data yet -->
+				<div class="space-y-3 text-sm">
+					<div class="rounded-lg bg-earth-50 p-4">
+						<div class="flex items-center gap-2 mb-2">
+							<i class="fa-solid fa-person-walking text-mode-walk"></i>
+							<h4 class="font-semibold text-text-primary">Walking Catchment</h4>
+						</div>
+						<div class="grid grid-cols-2 gap-2 text-text-secondary">
+							<div>
+								<span class="text-lg font-bold text-text-primary">400m</span>
+								<p class="text-xs">Comfortable walk</p>
+							</div>
+							<div>
+								<span class="text-lg font-bold text-text-primary">800m</span>
+								<p class="text-xs">Maximum walk</p>
+							</div>
+						</div>
+					</div>
+
+					<div class="rounded-lg bg-earth-50 p-4">
+						<div class="flex items-center gap-2 mb-2">
+							<i class="fa-solid fa-bicycle text-mode-ride"></i>
+							<h4 class="font-semibold text-text-primary">Cycling Catchment</h4>
+						</div>
+						<div class="text-text-secondary">
+							<span class="text-lg font-bold text-text-primary">2 km</span>
+							<p class="text-xs">Effective cycling radius to transit</p>
+						</div>
+					</div>
+
+					<div class="rounded-lg border border-neutral-300 bg-neutral-100 p-4">
+						<div class="flex items-center gap-2 mb-1">
+							<i class="fa-solid fa-circle-info text-text-secondary"></i>
+							<h4 class="font-semibold text-text-primary">No activity data yet</h4>
+						</div>
+						<p class="text-xs text-text-secondary">
+							Run the ETL sync to compute first/last mile transit connections from Altmo activity data.
+						</p>
+					</div>
+				</div>
+			{/if}
 		</div>
 	</div>
 
