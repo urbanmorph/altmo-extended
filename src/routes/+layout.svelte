@@ -1,7 +1,6 @@
 <script lang="ts">
   import '../app.css';
   import Nav from '$lib/components/Nav.svelte';
-  import ExternalAppLink from '$lib/components/ExternalAppLink.svelte';
   import { navigating } from '$app/stores';
   import { CITIES } from '$lib/config/cities';
 
@@ -72,14 +71,78 @@
     {@render children()}
   </main>
 
-  <footer class="border-t border-border bg-surface-card">
-    <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-      <p class="text-sm text-text-secondary">&copy; {new Date().getFullYear()} Altmo Intelligence</p>
-      <div class="flex items-center gap-2">
-        <span class="text-xs text-text-secondary">External:</span>
-        <ExternalAppLink href="https://rentals.altmo.app" label="Rentals" description="CBS" />
-        <ExternalAppLink href="https://tracker.altmo.app" label="Tracker" />
-        <ExternalAppLink href="https://rewards.altmo.app" label="Rewards" />
+  <footer class="bg-altmo-900 text-white/80">
+    <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 gap-8 sm:grid-cols-3">
+        <!-- Brand column -->
+        <div>
+          <a href="/" class="inline-flex flex-col items-start">
+            <img src="/altmo-logo-white.png" alt="Altmo" class="h-7" />
+            <span class="mt-0.5 text-[0.55rem] font-light tracking-[0.25em] uppercase text-white/50">Intelligence</span>
+          </a>
+          <p class="mt-3 text-sm text-white/60 leading-relaxed">
+            Open data and public accountability for active mobility in Indian cities.
+          </p>
+        </div>
+
+        <!-- Altmo ecosystem -->
+        <div>
+          <h4 class="text-xs font-semibold uppercase tracking-wider text-altmo-200">Altmo Ecosystem</h4>
+          <ul class="mt-3 space-y-2">
+            <li>
+              <a href="https://altmo.app" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm text-white/60 hover:text-altmo-200 transition-colors">
+                <i class="fa-solid fa-mobile-screen-button w-4 text-center text-xs"></i> Altmo App
+              </a>
+            </li>
+            <li>
+              <a href="https://rentals.altmo.app" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm text-white/60 hover:text-altmo-200 transition-colors">
+                <i class="fa-solid fa-bicycle w-4 text-center text-xs"></i> Rentals
+              </a>
+            </li>
+            <li>
+              <a href="https://tracker.altmo.app" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm text-white/60 hover:text-altmo-200 transition-colors">
+                <i class="fa-solid fa-route w-4 text-center text-xs"></i> Tracker
+              </a>
+            </li>
+            <li>
+              <a href="https://rewards.altmo.app" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm text-white/60 hover:text-altmo-200 transition-colors">
+                <i class="fa-solid fa-gift w-4 text-center text-xs"></i> Rewards
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Social -->
+        <div>
+          <h4 class="text-xs font-semibold uppercase tracking-wider text-altmo-200">Follow Altmo</h4>
+          <div class="mt-3 flex items-center gap-3">
+            <a href="https://instagram.com/altmo.app" target="_blank" rel="noopener noreferrer" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/70 hover:bg-altmo-700 hover:text-white transition-colors" aria-label="Instagram">
+              <i class="fa-brands fa-instagram text-lg"></i>
+            </a>
+            <a href="https://x.com/AltMoApp" target="_blank" rel="noopener noreferrer" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/70 hover:bg-altmo-700 hover:text-white transition-colors" aria-label="X (Twitter)">
+              <i class="fa-brands fa-x-twitter text-lg"></i>
+            </a>
+            <a href="https://linkedin.com/company/altmo" target="_blank" rel="noopener noreferrer" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/70 hover:bg-altmo-700 hover:text-white transition-colors" aria-label="LinkedIn">
+              <i class="fa-brands fa-linkedin-in text-lg"></i>
+            </a>
+            <a href="https://www.facebook.com/profile.php?id=61563989945238" target="_blank" rel="noopener noreferrer" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/70 hover:bg-altmo-700 hover:text-white transition-colors" aria-label="Facebook">
+              <i class="fa-brands fa-facebook-f text-lg"></i>
+            </a>
+          </div>
+          <div class="mt-4">
+            <a href="https://play.google.com/store/apps/details?id=app.altmo.altmo" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-xs font-medium text-white/70 hover:bg-altmo-700 hover:text-white transition-colors">
+              <i class="fa-brands fa-google-play"></i> Get on Google Play
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom bar -->
+      <div class="mt-8 border-t border-white/10 pt-6 flex flex-col items-center gap-2 sm:flex-row sm:justify-between">
+        <p class="text-xs text-white/40">&copy; {new Date().getFullYear()} Altmo. All rights reserved.</p>
+        <p class="text-xs text-white/40">
+          Built with open data from OSM, OpenAQ, CPCB, TomTom, TransitRouter & more.
+        </p>
       </div>
     </div>
   </footer>
