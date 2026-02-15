@@ -78,10 +78,17 @@
     return overrides?.[cityId] ? Object.keys(overrides[cityId]).length : 0;
   }
 
+  import { goto } from '$app/navigation';
+
   let expandedIndex = $state(-1);
 
   function toggle(index: number) {
     expandedIndex = expandedIndex === index ? -1 : index;
+  }
+
+  function handleCardClick(cityId: string, index: number) {
+    // Single click: navigate to city page. Toggle via chevron only.
+    goto(`/city/${cityId}`);
   }
 </script>
 
@@ -94,10 +101,10 @@
     {@const readinessEntry = getReadiness(entry.cityId)}
 
     <div class="rounded-xl border border-border bg-surface-card transition-shadow" class:shadow-md={expanded}>
-      <!-- Collapsed header -->
+      <!-- Collapsed header — click navigates to city, chevron expands details -->
       <button
-        class="flex w-full items-center gap-4 p-4 text-left"
-        onclick={() => toggle(i)}
+        class="flex w-full items-center gap-4 p-4 text-left cursor-pointer hover:bg-earth-50 transition-colors rounded-xl"
+        onclick={() => handleCardClick(entry.cityId, i)}
       >
         <!-- Rank badge -->
         <span
@@ -116,13 +123,6 @@
               {gap.upgradeSentence}
             </p>
           {/if}
-          <a
-            href="/city/{entry.cityId}"
-            class="mt-1 inline-flex items-center gap-1 text-[0.7rem] font-medium text-primary hover:text-primary-dark hover:underline"
-            onclick={(e) => e.stopPropagation()}
-          >
-            View scorecard <i class="fa-solid fa-arrow-right text-[0.55rem]"></i>
-          </a>
         </div>
 
         <!-- Grade + score + confidence -->
@@ -150,11 +150,21 @@
           {/if}
         </div>
 
-        <!-- Chevron -->
-        <i
-          class="fa-solid fa-chevron-down shrink-0 text-text-secondary transition-transform duration-200"
-          class:rotate-180={expanded}
-        ></i>
+        <!-- Chevron (expand/collapse details) -->
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <span
+          role="button"
+          tabindex="0"
+          class="shrink-0 rounded-md p-1.5 text-text-secondary hover:bg-earth-100 hover:text-text-primary transition-colors cursor-pointer"
+          onclick={(e) => { e.stopPropagation(); toggle(i); }}
+          onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); e.preventDefault(); toggle(i); } }}
+          aria-label={expanded ? 'Collapse details' : 'Expand details'}
+        >
+          <i
+            class="fa-solid fa-chevron-down transition-transform duration-200"
+            class:rotate-180={expanded}
+          ></i>
+        </span>
       </button>
 
       <!-- Expanded detail -->
