@@ -154,7 +154,7 @@ const ACTION_GUIDES: ActionGuide[] = [
 			'Onboard your company onto Altmo to track employee walks, rides, and transit trips. Measure CO2 offsets, generate ESG-reportable metrics, and see your company on this portal.',
 		icon: 'fa-solid fa-building',
 		roles: ['corporate'],
-		url: 'https://www.altmo.app',
+		url: 'https://altmo.app/corporates',
 		cityScoped: false
 	},
 	{
