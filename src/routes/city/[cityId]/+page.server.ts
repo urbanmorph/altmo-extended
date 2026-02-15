@@ -21,7 +21,7 @@ import { computeCityQoL, computeAllQoL } from '$lib/config/city-qol-data';
 import { computeCityGap } from '$lib/config/city-qol-gaps';
 import { buildQoLOverrides } from '$lib/server/qol-overrides';
 import { getStaticTransitData } from '$lib/server/transit-static';
-import { fetchTransitData, fetchTransitMetrics, fetchMetroRidership } from '$lib/server/transit-data';
+import { fetchTransitData, fetchMetroRidership } from '$lib/server/transit-data';
 import {
 	getActivitySummary,
 	getActivityByHour,
@@ -35,7 +35,7 @@ import {
 import { getCityPM25, getCityNO2 } from '$lib/server/air-quality';
 import { getLatestSafetyData, getSafetyTrends } from '$lib/server/safety-data';
 import { getCityCongestion } from '$lib/server/traffic-flow';
-import { getGlobalStats, getGeoMarkers } from '$lib/server/altmo-core';
+import { getGeoMarkers } from '$lib/server/altmo-core';
 import {
 	SCENARIO_PRESETS,
 	INTERVENTIONS,
@@ -63,12 +63,19 @@ export const load: PageServerLoad = async ({ params }) => {
 	}
 
 	// ── Phase 1: Kick off independent fetches in parallel ──
+	//
+	// Optimization notes:
+	// - buildQoLOverrides() fetches safety/PM25/NO2/congestion for ALL cities (needed for ranking).
+	//   Those calls populate per-city caches, so getCityPM25(cityId) etc. hit warm cache.
+	// - Activity functions share a single Supabase query (getCityMonthlyData) with 1h cache.
+	//   Only the first call hits Supabase; the rest (14 calls) read from cache.
+	// - getRouteDensity is a separate paginated Supabase query.
+	// - getGeoMarkers reads from static JSON (instant).
 
 	const [
 		qolOverrides,
-		globalStats,
 		geoMarkers,
-		// Activity data (all use internal 1h cache)
+		// Activity: first call fetches from Supabase, rest hit cache
 		activitySummary,
 		commuteSummary,
 		leisureSummary,
@@ -84,18 +91,12 @@ export const load: PageServerLoad = async ({ params }) => {
 		distanceDistribution,
 		transitProximity,
 		densityCells,
-		// Per-city environmental/safety display data
-		cityPM25,
-		cityNO2,
-		cityCongestion,
-		// Safety (all cities — needed for latest data point)
-		safetyData,
+		// Safety trends (separate Supabase query)
 		safetyTrends,
-		// Metro ridership (Bengaluru only)
+		// Metro ridership (Bengaluru only, GitHub fetch)
 		ridership
 	] = await Promise.all([
 		buildQoLOverrides(),
-		getGlobalStats(),
 		getGeoMarkers(),
 		// Activity
 		getActivitySummary(cityId),
@@ -113,15 +114,19 @@ export const load: PageServerLoad = async ({ params }) => {
 		getDistanceDistribution(cityId),
 		getTransitProximity(cityId),
 		getRouteDensity(cityId),
-		// Environmental
-		getCityPM25(cityId),
-		getCityNO2(cityId),
-		getCityCongestion(cityId),
-		// Safety
-		getLatestSafetyData(),
+		// Safety trends
 		getSafetyTrends(),
 		// Ridership
 		fetchMetroRidership(cityId)
+	]);
+
+	// ── Phase 1b: Per-city environmental data (hits warm cache from buildQoLOverrides) ──
+
+	const [cityPM25, cityNO2, cityCongestion, safetyData] = await Promise.all([
+		getCityPM25(cityId),
+		getCityNO2(cityId),
+		getCityCongestion(cityId),
+		getLatestSafetyData()
 	]);
 
 	// ── Phase 2: Transit data (static preferred, live fallback) ──
@@ -295,9 +300,6 @@ export const load: PageServerLoad = async ({ params }) => {
 			safety: citySafety,
 			safetyTrend: citySafetyTrend
 		},
-
-		// Global stats (trust bar)
-		globalStats,
 
 		// Geo markers (for map)
 		geoMarkers: cityGeoMarkers,

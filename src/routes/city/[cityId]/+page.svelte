@@ -193,7 +193,6 @@
       pm25={data.environmental?.pm25}
       safety={data.environmental?.safety}
       congestion={data.environmental?.congestion}
-      globalStats={data.globalStats}
       companies={data.companies ?? null}
       cityName={data.cityName}
     />

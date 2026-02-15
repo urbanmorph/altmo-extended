@@ -30,13 +30,6 @@
     avgFreeFlowSpeed: number;
   }
 
-  interface GlobalStatsData {
-    co2Offset: number;
-    fuelSaved: number;
-    moneySaved: number;
-    distanceKm: number;
-  }
-
   interface CompanyData {
     count: number;
     names: string[];
@@ -47,12 +40,11 @@
     pm25: PM25Data | null;
     safety: SafetyData | null;
     congestion: CongestionData | null;
-    globalStats: GlobalStatsData | null;
     companies: CompanyData | null;
     cityName: string;
   }
 
-  let { activity, pm25, safety, congestion, globalStats, companies, cityName }: Props = $props();
+  let { activity, pm25, safety, congestion, companies, cityName }: Props = $props();
 
   // PM2.5 category
   const pm25Category = $derived(pm25 ? getPM25Category(pm25.pm25Avg) : null);
