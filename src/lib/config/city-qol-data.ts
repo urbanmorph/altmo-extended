@@ -288,7 +288,7 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			rail_transit_km: 40, // Ahmedabad Metro Phase 1 (Blue + Red lines)
 			bus_fleet_per_lakh: 23, // AMTS ~1,200 + Janmarg BRT ~200; pop ~55 lakh
 			transit_stop_density: 9.8, // (3000 bus + 32 metro + BRT) / 464 km² (AMC area)
-			cycle_infra_km: 20, // Sabarmati Riverfront + BRTS corridor cycle tracks
+			cycle_infra_km: 29, // OSM 2026: BRTS-adjacent corridors + Sabarmati Riverfront path
 			pt_accessibility: 60, // BRT spine gives good corridor coverage, gaps in eastern wards
 			// Environmental
 			pm25_annual: 55, // CPCB/GPCB 2023 — industrial + vehicular
@@ -312,7 +312,7 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			rail_transit_km: 73.8, // Namma Metro Phase 1 + 2A (as of 2024)
 			bus_fleet_per_lakh: 53, // BMTC ~6,500 buses, pop ~1.23 cr
 			transit_stop_density: 11.2, // (8500 bus + 62 metro) / 764 km²
-			cycle_infra_km: 15, // TenderSURE + cycle tracks
+			cycle_infra_km: 30, // OSM 2026: TenderSURE + ORR pop-up lanes (Cycles4Change) + cycle tracks
 			pt_accessibility: 65, // 8,562 stops / 764 km² — gaps in periphery
 			// Environmental
 			pm25_annual: 34, // CPCB 2023 annual average
@@ -334,7 +334,7 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			rail_transit_km: 584, // Metro 54.6 + Southern Railway suburban ~510 + MRTS 19.3
 			bus_fleet_per_lakh: 40, // MTC ~3,500 buses, pop ~87 lakh
 			transit_stop_density: 30.6, // (5200 bus + 40 metro + 148 suburban/MRTS) / 176 km²
-			cycle_infra_km: 10, // Smart City corridors
+			cycle_infra_km: 20, // OSM 2026: Smart City corridors + scattered cycle tracks
 			pt_accessibility: 87, // 5,388 stops / 176 km² — suburban rail adds peripheral coverage
 			pm25_annual: 31, // CPCB 2023
 			no2_annual: 25, // CPCB 2023 annual average
@@ -354,7 +354,7 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			rail_transit_km: 448, // DMRC 393 + RRTS/Namo Bharat 55 (operational)
 			bus_fleet_per_lakh: 32, // DTC ~3,700 + cluster ~3,500; pop ~2.1 cr
 			transit_stop_density: 4.8, // (6800 bus + 288 metro + 14 RRTS) / 1483 km²
-			cycle_infra_km: 25, // DDA painted cycle tracks
+			cycle_infra_km: 101, // OSM 2026: UTTIPEC road redesigns + DDA tracks + NDMC cycle tracks
 			pt_accessibility: 56, // 7,102 stops / 1,483 km² — RRTS adds outskirt coverage
 			pm25_annual: 99, // CPCB 2023 — worst in India
 			no2_annual: 60, // CPCB 2023 — worst in India
@@ -374,7 +374,7 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			rail_transit_km: 159, // HMR 69.2 + MMTS 90
 			bus_fleet_per_lakh: 30, // TSRTC city services ~3,000, pop ~1 cr
 			transit_stop_density: 7.1, // (4500 bus + 57 metro + 36 MMTS) / 650 km²
-			cycle_infra_km: 8, // Limited cycle infra
+			cycle_infra_km: 31, // OSM 2026: 23 km solar-roof ORR track + ISB Gachibowli + HMDA paths
 			pt_accessibility: 52, // 4,593 stops / 650 km² — MMTS adds peripheral coverage
 			pm25_annual: 37, // CPCB 2023
 			no2_annual: 28, // CPCB 2023 annual average
@@ -396,7 +396,7 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			rail_transit_km: 6, // Priority corridor opened June 2025 (6 km)
 			bus_fleet_per_lakh: 11, // AICTSL ~387 buses, metro pop ~35 lakh
 			transit_stop_density: 4.5, // (1200 bus + 0 metro) / 269 km²
-			cycle_infra_km: 12, // BRTS corridor cycle tracks
+			cycle_infra_km: 3, // OSM 2026: single mapped way — minimal cycling infra
 			pt_accessibility: 35, // 1,200 stops / 269 km² — limited network
 			// Environmental
 			pm25_annual: 56, // UrbanEmissions model + IQAir estimates
@@ -418,7 +418,7 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			rail_transit_km: 28.8, // KMRL extended to Thripunithura (2025)
 			bus_fleet_per_lakh: 20, // KSRTC city ~400 + private; pop ~21 lakh
 			transit_stop_density: 19.2, // (1800 bus + 22 metro) / 95 km²
-			cycle_infra_km: 5, // Minimal dedicated cycle infra
+			cycle_infra_km: 27, // OSM 2026: moderate mapped infra for compact city
 			pt_accessibility: 70, // 1,822 stops / 95 km² — compact city
 			pm25_annual: 27, // CPCB 2023 — cleanest of the 6
 			no2_annual: 18, // CPCB 2023 — lowest
@@ -440,7 +440,7 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			rail_transit_km: 545, // Metro 80 + suburban railway 465
 			bus_fleet_per_lakh: 22, // BEST ~2,900 buses, pop ~1.3 cr
 			transit_stop_density: 7.8, // (4500 bus + 69 metro + 125 suburban) / 603 km²
-			cycle_infra_km: 5, // Virtually none — BKC track defunct
+			cycle_infra_km: 23, // OSM 2026: scattered tracks including coastal road segments
 			pt_accessibility: 75, // Suburban rail spine + BEST bus coverage; gaps in eastern suburbs
 			// Environmental
 			pm25_annual: 38, // CPCB/IQAir estimates — industrial + port activity
@@ -462,7 +462,7 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			rail_transit_km: 97, // Metro 33.3 + suburban rail ~64 (Pune-Lonavala)
 			bus_fleet_per_lakh: 25, // PMPML ~2,000 buses, pop ~78 lakh
 			transit_stop_density: 10.8, // (3500 bus + 30 metro + 17 suburban) / 330 km²
-			cycle_infra_km: 50, // PMC cycle tracks + BRT (strongest cycle culture)
+			cycle_infra_km: 10, // OSM 2026: JM Road + Satara Road + University Road tracks — 300 km planned, mostly unbuilt
 			pt_accessibility: 57, // 3,547 stops / 330 km² — suburban rail corridor adds coverage
 			pm25_annual: 36, // CPCB 2023
 			no2_annual: 32, // CPCB 2023 annual average

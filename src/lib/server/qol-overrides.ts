@@ -13,12 +13,13 @@
  *   - Air quality: pm25_annual, no2_annual            (OpenAQ v3)
  *   - Congestion: congestion_level                    (TomTom Traffic Flow)
  *   - Rail transit: rail_transit_km                   (static JSON, refreshed via script; falls back to Overpass API)
+ *   - Cycle infra: cycle_infra_km                     (static JSON, refreshed via script)
  */
 
 import { getLatestSafetyData } from './safety-data';
 import { getAllCityPM25, getAllCityNO2 } from './air-quality';
 import { getAllCityCongestion } from './traffic-flow';
-import { getStaticRailTransitKm, hasStaticTransitData } from './transit-static';
+import { getStaticRailTransitKm, getStaticCyclewayKm, hasStaticTransitData } from './transit-static';
 import { fetchTransitData } from './transit-data';
 import { CITIES } from '$lib/config/cities';
 import { computeMetroNetworkKm, computeRailNetworkKm } from '$lib/utils/transit';
@@ -128,6 +129,14 @@ export async function buildQoLOverrides(): Promise<QoLOverrides> {
 			metro_km: breakdown.metroKm,
 			suburban_rail_km: breakdown.suburbanRailKm
 		};
+	}
+
+	// Cycle infrastructure: cycle_infra_km (from static JSON, refreshed via script)
+	for (const city of CITIES) {
+		const cyclewayKm = getStaticCyclewayKm(city.id);
+		if (cyclewayKm !== null && cyclewayKm > 0) {
+			overrides[city.id] = { ...overrides[city.id], cycle_infra_km: cyclewayKm };
+		}
 	}
 
 	return overrides;

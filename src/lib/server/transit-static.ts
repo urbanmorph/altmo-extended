@@ -27,6 +27,7 @@ interface StaticTransitData extends TransitData {
 		metroKm: number;
 		suburbanRailKm: number;
 		totalRailKm: number;
+		cyclewayKm?: number;
 	};
 }
 
@@ -58,6 +59,16 @@ export function getStaticRailTransitKm(cityId: string): {
 	if (totalRailKm === 0 && metroKm === 0 && suburbanRailKm === 0) return null;
 
 	return { totalKm: totalRailKm, metroKm, suburbanRailKm };
+}
+
+/**
+ * Get pre-computed cycleway km from static data.
+ * Returns the OSM-measured cycleway length or null if not available.
+ */
+export function getStaticCyclewayKm(cityId: string): number | null {
+	const data = STATIC_DATA[cityId];
+	if (!data?._metrics?.cyclewayKm) return null;
+	return data._metrics.cyclewayKm;
 }
 
 /**
