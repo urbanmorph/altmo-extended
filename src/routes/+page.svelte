@@ -14,6 +14,7 @@
     data: {
       qolOverrides: QoLOverrides;
       globalStats: GlobalStats | null;
+      activitySummary: { totalTrips: number; totalDistanceKm: number; avgDistanceKm: string; modeBreakdown: { mode: string; count: number; pct: number }[]; directionBreakdown: { direction: string; count: number; pct: number }[] };
     };
   }
 
@@ -93,7 +94,13 @@
   <div class="mb-8">
     <h2 class="mb-1 text-xl font-semibold text-text-primary">Explore the Data</h2>
     <p class="mb-4 text-sm text-text-secondary">Dive into transit, activity analytics, impact, and scenario modelling.</p>
-    <IntelligenceModules />
+    <IntelligenceModules
+      globalActivities={data.globalStats?.activitiesCount ?? 0}
+      globalUsers={data.globalStats?.people ?? 0}
+      globalDistanceKm={data.globalStats?.distanceKm ?? 0}
+      globalCo2Kg={data.globalStats?.co2Offset ?? 0}
+      routesAnalyzed={data.activitySummary.totalTrips}
+    />
   </div>
 
   <!-- Section 5: Methodology Trust Bar -->
