@@ -65,9 +65,9 @@ const ACTION_GUIDES: ActionGuide[] = [
 	// ── For Everyone ──────────────────────────────────────────────────────
 	{
 		id: 'download-altmo',
-		label: 'Download the Altmo app',
+		label: 'Get the Altmo app',
 		description:
-			'Track your walks and rides. Every trip you log strengthens your city\'s mobility data and contributes to better infrastructure decisions.',
+			'Track every ride, walk, and first/last mile trip. Your data directly improves your city\'s score on this portal. Available on Android and iOS.',
 		icon: 'fa-solid fa-mobile-screen',
 		roles: ['everyone'],
 		url: 'https://www.altmo.app',
@@ -75,9 +75,9 @@ const ACTION_GUIDES: ActionGuide[] = [
 	},
 	{
 		id: 'use-bike-share',
-		label: 'Use bike-share',
+		label: 'Rent a bike',
 		description:
-			'Rent a bike for short trips. Bike-share services like Yulu and Bounce make cycling accessible without owning a bicycle.',
+			'Use bike-share for short trips. Services like Yulu and Bounce make cycling accessible — log your ride on Altmo to count it toward your city\'s active mobility stats.',
 		icon: 'fa-solid fa-bicycle',
 		roles: ['everyone'],
 		url: null, // resolved per-city via BIKE_SHARE_URLS
@@ -87,10 +87,20 @@ const ACTION_GUIDES: ActionGuide[] = [
 		id: 'first-last-mile',
 		label: 'Walk or cycle to the metro',
 		description:
-			'First and last mile trips matter. Walking or cycling to transit stops reduces car dependency and is tracked by Altmo as a transit-connected trip.',
+			'First and last mile trips matter. Altmo detects when you connect to transit — every trip logged strengthens the case for better pedestrian and cycling infrastructure around stations.',
 		icon: 'fa-solid fa-person-walking-arrow-right',
 		roles: ['everyone'],
 		url: null,
+		cityScoped: false
+	},
+	{
+		id: 'rent-out-bicycle',
+		label: 'List your bicycle on Altmo Rentals',
+		description:
+			'Own a bicycle you\'re not using every day? List it on the Altmo Rentals marketplace and help someone in your neighbourhood start cycling.',
+		icon: 'fa-solid fa-shop',
+		roles: ['everyone'],
+		url: 'https://cbs-two.vercel.app',
 		cityScoped: false
 	},
 
@@ -141,7 +151,7 @@ const ACTION_GUIDES: ActionGuide[] = [
 		id: 'start-altmo-programme',
 		label: 'Start an Altmo programme',
 		description:
-			'Onboard your company onto Altmo to track employee active mobility, measure CO2 offsets, and build ESG-reportable sustainability metrics.',
+			'Onboard your company onto Altmo to track employee walks, rides, and transit trips. Measure CO2 offsets, generate ESG-reportable metrics, and see your company on this portal.',
 		icon: 'fa-solid fa-building',
 		roles: ['corporate'],
 		url: 'https://www.altmo.app',
@@ -151,7 +161,7 @@ const ACTION_GUIDES: ActionGuide[] = [
 		id: 'cycling-challenge',
 		label: 'Run an employee cycling challenge',
 		description:
-			'Launch a 30-day cycling challenge for employees. Companies that run challenges see 3x engagement spikes in active commuting.',
+			'Launch a 30-day cycling challenge on Altmo. Companies that run challenges see 3x engagement spikes in active commuting — and it shows up on your city\'s scorecard.',
 		icon: 'fa-solid fa-trophy',
 		roles: ['corporate'],
 		url: null,
@@ -161,10 +171,20 @@ const ACTION_GUIDES: ActionGuide[] = [
 		id: 'incentivize-flm',
 		label: 'Incentivize first/last mile',
 		description:
-			'Encourage employees to walk or cycle to transit stops. Provide secure bike parking at office campuses and subsidize bike-share memberships.',
+			'Encourage employees to walk or cycle to transit stops. Provide secure bike parking, subsidize bike-share memberships, and track the impact on Altmo.',
 		icon: 'fa-solid fa-route',
 		roles: ['corporate'],
 		url: null,
+		cityScoped: false
+	},
+	{
+		id: 'corporate-rentals',
+		label: 'Set up a campus bike fleet',
+		description:
+			'List company bicycles on Altmo Rentals for employees to borrow. A shared campus fleet makes first/last mile cycling effortless.',
+		icon: 'fa-solid fa-bicycle',
+		roles: ['corporate'],
+		url: 'https://cbs-two.vercel.app',
 		cityScoped: false
 	},
 

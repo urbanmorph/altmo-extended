@@ -92,16 +92,13 @@
             <li>
               <a href="https://altmo.app" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm text-white/60 hover:text-altmo-200 transition-colors">
                 <i class="fa-solid fa-mobile-screen-button w-4 text-center text-xs"></i> Altmo App
+                <span class="text-[0.6rem] text-white/40">Track rides & walks</span>
               </a>
             </li>
             <li>
-              <a href="https://rentals.altmo.app" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm text-white/60 hover:text-altmo-200 transition-colors">
+              <a href="https://cbs-two.vercel.app" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm text-white/60 hover:text-altmo-200 transition-colors">
                 <i class="fa-solid fa-bicycle w-4 text-center text-xs"></i> Rentals
-              </a>
-            </li>
-            <li>
-              <a href="https://tracker.altmo.app" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm text-white/60 hover:text-altmo-200 transition-colors">
-                <i class="fa-solid fa-route w-4 text-center text-xs"></i> Tracker
+                <span class="text-[0.6rem] text-white/40">Owners marketplace</span>
               </a>
             </li>
             <li>
@@ -129,9 +126,12 @@
               <i class="fa-brands fa-facebook-f text-lg"></i>
             </a>
           </div>
-          <div class="mt-4">
+          <div class="mt-4 flex flex-wrap gap-2">
             <a href="https://play.google.com/store/apps/details?id=app.altmo.altmo" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-xs font-medium text-white/70 hover:bg-altmo-700 hover:text-white transition-colors">
-              <i class="fa-brands fa-google-play"></i> Get on Google Play
+              <i class="fa-brands fa-google-play"></i> Google Play
+            </a>
+            <a href="https://apps.apple.com/app/altmo/id1588575321" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-xs font-medium text-white/70 hover:bg-altmo-700 hover:text-white transition-colors">
+              <i class="fa-brands fa-apple"></i> App Store
             </a>
           </div>
         </div>
