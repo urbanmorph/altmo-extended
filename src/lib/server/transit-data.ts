@@ -358,16 +358,18 @@ const CORRIDOR_STRIP_RE = /\s*\(?(Fast|Slow|Up|Down|Local|Express|Stopping|Semi-
 
 /**
  * Fetch suburban/commuter rail data from the Overpass API for a single query.
- * Uses route=train (not subway/light_rail which is metro).
+ * Defaults to route=train; override with query.routeType for systems tagged
+ * differently in OSM (e.g. Delhi RRTS uses route=subway).
  * Stations: railway=station or railway=halt (exclude station=subway).
  */
 async function fetchSuburbanRailSingleQuery(
 	query: SuburbanRailQuery
 ): Promise<{ stations: RailStation[]; lines: RailLine[] }> {
-	// Build the Overpass QL — include optional operator filter
+	// Build the Overpass QL — include optional operator/routeType filters
 	const operatorFilter = query.operator ? `["operator"="${query.operator}"]` : '';
+	const routeType = query.routeType ?? 'train';
 	const overpassQL = `[out:json][timeout:25];
-relation["network"="${query.network}"]["route"="train"]${operatorFilter};
+relation["network"="${query.network}"]["route"="${routeType}"]${operatorFilter};
 out body;
 >;
 out body qt;`;

@@ -9,6 +9,30 @@
  * v3 uses sensor-based endpoints: /sensors/{id}/measurements
  * Discovered via: /v3/locations?coordinates={lat},{lng}&radius=25000&parameters_id=2
  * then /v3/locations/{id}/sensors to find active PM2.5 sensor IDs (last reported 2025+).
+ *
+ * Satellite city coverage:
+ * - Delhi includes NCR satellites: Noida, Gurugram, Ghaziabad
+ * - Mumbai includes MMR satellites: Thane, Navi Mumbai
+ * - Pune includes PCMC: Pimpri-Chinchwad
+ *
+ * TODO: Populate satellite city sensor IDs once OpenAQ API key is renewed.
+ * The OPENAQ_API_KEY expired/became invalid as of 2026-02-15.
+ * Renew at https://explore.openaq.org/account, then run these discovery queries:
+ *
+ * Noida:            /v3/locations?coordinates=28.5355,77.3910&radius=25000&parameters_id=2
+ * Gurugram:         /v3/locations?coordinates=28.4595,77.0266&radius=25000&parameters_id=2
+ * Ghaziabad:        /v3/locations?coordinates=28.6692,77.4538&radius=25000&parameters_id=2
+ * Mumbai (primary): /v3/locations?coordinates=19.076,72.878&radius=25000&parameters_id=2
+ * Thane:            /v3/locations?coordinates=19.2183,72.9780&radius=25000&parameters_id=2
+ * Navi Mumbai:      /v3/locations?coordinates=19.0330,73.0297&radius=25000&parameters_id=2
+ * Pimpri-Chinchwad: /v3/locations?coordinates=18.6298,73.8000&radius=25000&parameters_id=2
+ *
+ * For each location returned, get sensor IDs via: /v3/locations/{locationId}/sensors
+ * Pick sensors where parameter.name === "pm25" and lastUpdated is recent (2025+).
+ *
+ * Known OpenAQ location counts (from search, unverified):
+ * - Noida: 1 location, Ghaziabad: 2 locations, Thane: 3 locations, Navi Mumbai: 1 location
+ * - Mumbai (IITM stations): location IDs 12024 (Chakala-Andheri East), 3409329 (Deonar)
  */
 export const CITY_OPENAQ_SENSORS: Record<string, { name: string; sensorIds: number[] }> = {
 	ahmedabad: {
@@ -24,7 +48,11 @@ export const CITY_OPENAQ_SENSORS: Record<string, { name: string; sensorIds: numb
 		sensorIds: [12235653, 12235531, 12235796, 12236299, 12236308, 12236274, 12236290]
 	},
 	delhi: {
-		name: 'Delhi',
+		name: 'National Capital Region',
+		// Delhi-proper (10 sensors)
+		// TODO: Add Noida sensors (discover via coordinates 28.5355,77.3910)
+		// TODO: Add Gurugram sensors (discover via coordinates 28.4595,77.0266)
+		// TODO: Add Ghaziabad sensors (discover via coordinates 28.6692,77.4538)
 		sensorIds: [12234787, 12234796, 12235610, 12234702, 12234684, 12234708, 12234769, 12235187, 12234690, 12234753]
 	},
 	hyderabad: {
@@ -40,11 +68,17 @@ export const CITY_OPENAQ_SENSORS: Record<string, { name: string; sensorIds: numb
 		sensorIds: [12235842]
 	},
 	mumbai: {
-		name: 'Mumbai',
-		sensorIds: [] // Discover via: /v3/locations?coordinates=19.076,72.878&radius=25000&parameters_id=2
+		name: 'Mumbai Metropolitan Region',
+		// TODO: Add Mumbai-proper sensors (discover via coordinates 19.076,72.878)
+		//   Known locations: 12024 (Chakala-Andheri East, IITM), 3409329 (Deonar, IITM)
+		// TODO: Add Thane sensors (discover via coordinates 19.2183,72.9780)
+		// TODO: Add Navi Mumbai sensors (discover via coordinates 19.0330,73.0297)
+		sensorIds: []
 	},
 	pune: {
 		name: 'Pune',
+		// Pune-proper (7 sensors)
+		// TODO: Add Pimpri-Chinchwad sensors (discover via coordinates 18.6298,73.8000)
 		sensorIds: [12235540, 12236443, 12236457, 12236463, 12236449, 12304615, 12237987]
 	}
 };

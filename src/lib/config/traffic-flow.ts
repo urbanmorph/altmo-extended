@@ -50,14 +50,18 @@ export const CITY_TRAFFIC_POINTS: Record<string, CityTrafficConfig> = {
 		]
 	},
 	delhi: {
-		name: 'Delhi',
+		name: 'National Capital Region',
 		samplePoints: [
 			{ lat: 28.6289, lng: 77.2413, label: 'ITO' },
 			{ lat: 28.5672, lng: 77.2100, label: 'AIIMS' },
 			{ lat: 28.5921, lng: 77.1663, label: 'Dhaula Kuan' },
 			{ lat: 28.6679, lng: 77.2273, label: 'Kashmere Gate' },
 			{ lat: 28.5800, lng: 77.2688, label: 'Ashram Chowk' },
-			{ lat: 28.6328, lng: 77.2197, label: 'Rajiv Chowk' }
+			{ lat: 28.6328, lng: 77.2197, label: 'Rajiv Chowk' },
+			{ lat: 28.5706, lng: 77.3217, label: 'Noida Sector 18' },
+			{ lat: 28.4595, lng: 77.0266, label: 'Gurugram MG Road / Cyber City' },
+			{ lat: 28.4725, lng: 77.0377, label: 'Gurugram IFFCO Chowk' },
+			{ lat: 28.6692, lng: 77.4538, label: 'Ghaziabad Raj Nagar Extension' }
 		]
 	},
 	hyderabad: {
@@ -92,7 +96,7 @@ export const CITY_TRAFFIC_POINTS: Record<string, CityTrafficConfig> = {
 		]
 	},
 	mumbai: {
-		name: 'Mumbai',
+		name: 'Mumbai Metropolitan Region',
 		samplePoints: [
 			{ lat: 19.076, lng: 72.8777, label: 'CST / Fort (City Centre)' },
 			{ lat: 19.1136, lng: 72.8697, label: 'Dadar (Central Junction)' },
@@ -101,18 +105,24 @@ export const CITY_TRAFFIC_POINTS: Record<string, CityTrafficConfig> = {
 			{ lat: 19.1368, lng: 72.837, label: 'Andheri (Western Express Highway)' },
 			{ lat: 19.2183, lng: 72.8459, label: 'Borivali (Western Suburb)' },
 			{ lat: 19.0427, lng: 73.0286, label: 'Vashi / Sion-Panvel Highway' },
-			{ lat: 19.1867, lng: 72.9511, label: 'Mulund (Eastern Express Highway)' }
+			{ lat: 19.1867, lng: 72.9511, label: 'Mulund (Eastern Express Highway)' },
+			{ lat: 19.2403, lng: 72.9638, label: 'Thane Ghodbunder Road' },
+			{ lat: 19.1860, lng: 72.9750, label: 'Thane Station / Kopri' },
+			{ lat: 19.2350, lng: 73.1305, label: 'Kalyan-Dombivli Junction' }
 		]
 	},
 	pune: {
-		name: 'Pune',
+		name: 'Pune Metropolitan Region',
 		samplePoints: [
 			{ lat: 18.5018, lng: 73.8636, label: 'Swargate' },
 			{ lat: 18.5912, lng: 73.7390, label: 'Hinjewadi' },
 			{ lat: 18.5308, lng: 73.8475, label: 'Shivajinagar' },
 			{ lat: 18.5074, lng: 73.8077, label: 'Kothrud' },
 			{ lat: 18.5089, lng: 73.9260, label: 'Hadapsar' },
-			{ lat: 18.5989, lng: 73.7604, label: 'Wakad' }
+			{ lat: 18.5989, lng: 73.7604, label: 'Wakad' },
+			{ lat: 18.6298, lng: 73.7997, label: 'Pimpri Chowk' },
+			{ lat: 18.6492, lng: 73.7863, label: 'Chinchwad Station' },
+			{ lat: 18.6614, lng: 73.7709, label: 'Nigdi / Pradhikaran' }
 		]
 	}
 };

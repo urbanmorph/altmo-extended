@@ -22,6 +22,8 @@ export interface CityConfig {
 export interface SuburbanRailQuery {
 	network: string;
 	operator?: string;
+	/** Overpass route type — defaults to 'train'. Use 'subway' for systems tagged as subway in OSM (e.g. Delhi RRTS / RapidX). */
+	routeType?: 'train' | 'subway' | 'light_rail';
 	lines: Record<string, string>; // display name -> hex color
 }
 
@@ -77,7 +79,16 @@ const BENGALURU_TRANSIT: TransitDataSources = {
 const DELHI_TRANSIT: TransitDataSources = {
 	...transitRouterSources('delhi'),
 	metroStations: 'https://raw.githubusercontent.com/dhirajt/delhi-metro-stations/master/metro.json',
-	metroLines: 'https://raw.githubusercontent.com/kavyajeetbora/metro_accessibility/master/data/delhi/Delhi_NCR_metro_lines.json'
+	metroLines: 'https://raw.githubusercontent.com/kavyajeetbora/metro_accessibility/master/data/delhi/Delhi_NCR_metro_lines.json',
+	suburbanRailOverpass: {
+		queries: [{
+			network: 'RapidX',
+			routeType: 'subway',
+			lines: {
+				'Delhi-Meerut RRTS': '#F0631E'
+			}
+		}]
+	}
 };
 
 const HYDERABAD_TRANSIT: TransitDataSources = {
