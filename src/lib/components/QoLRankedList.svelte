@@ -107,11 +107,14 @@
           {rank}
         </span>
 
-        <!-- City name + gap teaser -->
+        <!-- City name + upgrade path teaser -->
         <div class="min-w-0 flex-1">
           <h3 class="font-semibold text-text-primary">{cityName(entry.cityId)}</h3>
           {#if gap}
-            <p class="truncate text-xs text-text-secondary">{gap.gapSentence}</p>
+            <p class="truncate text-xs text-text-secondary">
+              <i class="fa-solid fa-arrow-up-right-dots mr-0.5 text-[0.6rem]" style="color: {color}"></i>
+              {gap.upgradeSentence}
+            </p>
           {/if}
         </div>
 
@@ -211,10 +214,20 @@
             </div>
           {/if}
 
-          <!-- Recommendation callout -->
+          <!-- Upgrade path + recommendation -->
           {#if gap}
-            <div class="mt-4 rounded-lg border border-tangerine-300/30 bg-tangerine-300/5 p-3">
+            <div class="mt-4 rounded-lg border p-3" style="border-color: {color}30; background-color: {color}08">
               <p class="text-xs font-medium text-text-primary">
+                <i class="fa-solid fa-arrow-up-right-dots mr-1" style="color: {color}"></i>
+                {gap.upgradeSentence}
+              </p>
+            </div>
+            <div class="mt-2 rounded-lg border border-border bg-earth-50 p-3">
+              <p class="text-xs text-text-secondary">
+                <i class="fa-solid fa-triangle-exclamation mr-1 text-tangerine-500"></i>
+                <span class="font-medium text-text-primary">Biggest gap:</span> {gap.gapSentence}
+              </p>
+              <p class="mt-1.5 text-xs text-text-secondary">
                 <i class="fa-solid fa-lightbulb mr-1 text-tangerine-500"></i>
                 {gap.recommendation}
               </p>
