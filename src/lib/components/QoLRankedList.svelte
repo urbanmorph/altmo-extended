@@ -107,7 +107,7 @@
           {rank}
         </span>
 
-        <!-- City name + upgrade path teaser -->
+        <!-- City name + upgrade path teaser + scorecard link -->
         <div class="min-w-0 flex-1">
           <h3 class="font-semibold text-text-primary">{cityName(entry.cityId)}</h3>
           {#if gap}
@@ -116,6 +116,13 @@
               {gap.upgradeSentence}
             </p>
           {/if}
+          <a
+            href="/city/{entry.cityId}"
+            class="mt-1 inline-flex items-center gap-1 text-[0.7rem] font-medium text-primary hover:text-primary-dark hover:underline"
+            onclick={(e) => e.stopPropagation()}
+          >
+            View scorecard <i class="fa-solid fa-arrow-right text-[0.55rem]"></i>
+          </a>
         </div>
 
         <!-- Grade + score + confidence -->
@@ -234,13 +241,13 @@
             </div>
           {/if}
 
-          <!-- Link to access page -->
-          <div class="mt-3">
+          <!-- Link to city deep-dive -->
+          <div class="mt-4">
             <a
-              href="/access?city={entry.cityId}"
-              class="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary-dark"
+              href="/city/{entry.cityId}"
+              class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-dark"
             >
-              Explore {cityName(entry.cityId)} data
+              View city scorecard
               <i class="fa-solid fa-arrow-right text-xs"></i>
             </a>
           </div>

@@ -1,11 +1,7 @@
+import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { buildQoLOverrides } from '$lib/server/qol-overrides';
 
-export const load: PageServerLoad = async ({ cookies, url }) => {
-	const qolOverrides = await buildQoLOverrides();
-
-	// Resolve city from URL param or cookie
-	const cityId = url.searchParams.get('city') ?? cookies.get('city') ?? 'bengaluru';
-
-	return { qolOverrides, cityId };
+export const load: PageServerLoad = ({ url }) => {
+	const city = url.searchParams.get('city') ?? 'bengaluru';
+	redirect(301, `/city/${city}#scenarios`);
 };

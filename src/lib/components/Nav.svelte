@@ -1,21 +1,11 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import type { Snippet } from 'svelte';
 
-  interface Props {
-    city_selector?: Snippet;
-  }
-
-  let { city_selector }: Props = $props();
+  let mobileMenuOpen = $state(false);
 
   const navItems = [
-    { href: '/access', label: 'Access' },
-    { href: '/pulse', label: 'Pulse' },
-    { href: '/impact', label: 'Impact' },
-    { href: '/routes', label: 'Routes' },
-    { href: '/forecast', label: 'Forecast' },
-    { href: '/benchmark', label: 'Benchmark' },
-    { href: '/data-sources', label: 'Data Provenance' }
+    { href: '/benchmark', label: 'Compare' },
+    { href: '/data-sources', label: 'Provenance' }
   ];
 </script>
 
@@ -42,10 +32,42 @@
         </div>
       </div>
       <div class="flex items-center gap-4">
-        {#if city_selector}
-          {@render city_selector()}
-        {/if}
+        <button
+          class="md:hidden rounded-md p-2 text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+          onclick={() => mobileMenuOpen = !mobileMenuOpen}
+          aria-label="Toggle navigation menu"
+          aria-expanded={mobileMenuOpen}
+        >
+          {#if mobileMenuOpen}
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          {:else}
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          {/if}
+        </button>
       </div>
     </div>
   </div>
+
+  {#if mobileMenuOpen}
+    <div class="md:hidden border-t border-white/10">
+      <div class="px-4 py-3 space-y-1">
+        {#each navItems as item}
+          <a
+            href={item.href}
+            class="block rounded-md px-3 py-2 text-sm font-medium transition-colors
+              {page.url.pathname.startsWith(item.href)
+                ? 'bg-white/20 text-white'
+                : 'text-white/80 hover:bg-white/10 hover:text-white'}"
+            onclick={() => mobileMenuOpen = false}
+          >
+            {item.label}
+          </a>
+        {/each}
+      </div>
+    </div>
+  {/if}
 </nav>

@@ -1,7 +1,6 @@
 <script lang="ts">
   import '../app.css';
   import Nav from '$lib/components/Nav.svelte';
-  import CitySelector from '$lib/components/CitySelector.svelte';
   import ExternalAppLink from '$lib/components/ExternalAppLink.svelte';
 
   import type { Snippet } from 'svelte';
@@ -10,11 +9,7 @@
 </script>
 
 <div class="flex min-h-screen flex-col">
-  <Nav>
-    {#snippet city_selector()}
-      <CitySelector />
-    {/snippet}
-  </Nav>
+  <Nav />
 
   <main class="flex-1">
     {@render children()}
