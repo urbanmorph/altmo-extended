@@ -182,10 +182,23 @@ out body qt;`;
 		}
 
 		// Second try: match by color word (e.g. "Blue" in "Metro Blue Line ...")
+		// Strip parenthetical suffixes like "(East-West)" and trailing "Line" to get the core color word
 		if (!matchedLineName) {
 			for (const [configName, color] of Object.entries(config.lines)) {
-				const colorWord = configName.replace(/\s+Line$/i, '').toLowerCase();
-				if (relName.toLowerCase().includes(colorWord)) {
+				const colorWord = configName.replace(/\s*\(.*?\)/g, '').replace(/\s+Line$/i, '').trim().toLowerCase();
+				if (colorWord && relName.toLowerCase().includes(colorWord)) {
+					matchedLineName = configName;
+					matchedColor = color;
+					break;
+				}
+			}
+		}
+
+		// Third try: match by OSM colour tag against config color names
+		if (!matchedLineName && tags.colour) {
+			for (const [configName, color] of Object.entries(config.lines)) {
+				const colorWord = configName.replace(/\s*\(.*?\)/g, '').replace(/\s+Line$/i, '').trim().toLowerCase();
+				if (colorWord && tags.colour.toLowerCase() === colorWord) {
 					matchedLineName = configName;
 					matchedColor = color;
 					break;
