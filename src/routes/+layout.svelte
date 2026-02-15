@@ -2,11 +2,21 @@
   import '../app.css';
   import Nav from '$lib/components/Nav.svelte';
   import ExternalAppLink from '$lib/components/ExternalAppLink.svelte';
+  import { navigating } from '$app/stores';
 
   import type { Snippet } from 'svelte';
 
   let { children }: { children: Snippet } = $props();
 </script>
+
+{#if $navigating}
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-surface/80 backdrop-blur-sm">
+    <div class="flex flex-col items-center gap-3">
+      <i class="fa-solid fa-spinner fa-spin text-3xl text-altmo-700"></i>
+      <p class="text-sm font-medium text-text-secondary">Loading...</p>
+    </div>
+  </div>
+{/if}
 
 <div class="flex min-h-screen flex-col">
   <Nav />
