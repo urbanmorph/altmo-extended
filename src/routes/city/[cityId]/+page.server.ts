@@ -254,16 +254,22 @@ export const load: PageServerLoad = async ({ params }) => {
 			});
 		}
 	}
-	// Sort by activity count (desc), then alphabetically for ties
-	const topCompanies = [...companyAgg.entries()]
-		.sort((a, b) => b[1].totalActivities - a[1].totalActivities || a[0].localeCompare(b[0]))
-		.slice(0, 15)
+	// Compute composite city benefit score per company:
+	// 70% distance-based impact (CO2 + health + fat burn all scale with km)
+	// 30% participation breadth (active users — wider adoption = more city impact)
+	const allEntries = [...companyAgg.entries()];
+	const maxKm = Math.max(...allEntries.map(([, s]) => s.totalKm), 1);
+	const maxUsers = Math.max(...allEntries.map(([, s]) => s.activeUsers), 1);
+	const topCompanies = allEntries
 		.map(([name, stats]) => ({
 			name,
 			totalActivities: stats.totalActivities,
 			activeUsers: stats.activeUsers,
-			totalKm: stats.totalKm
-		}));
+			totalKm: stats.totalKm,
+			benefitScore: 0.7 * (stats.totalKm / maxKm) + 0.3 * (stats.activeUsers / maxUsers)
+		}))
+		.sort((a, b) => b.benefitScore - a.benefitScore || a.name.localeCompare(b.name))
+		.slice(0, 15);
 
 	// ── Return consolidated data ──
 
