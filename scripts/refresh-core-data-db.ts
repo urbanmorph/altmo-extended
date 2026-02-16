@@ -13,6 +13,7 @@
  * Output files:
  *   src/lib/data/global-stats.json
  *   src/lib/data/geo-markers.json
+ *   src/lib/data/company-groups.json
  */
 
 import pg from 'pg';
@@ -137,6 +138,48 @@ async function main() {
 			return acc;
 		}, {});
 		console.log(`  By type: ${Object.entries(byType).map(([k, v]) => `${k}=${v}`).join(', ')}`);
+
+		// ── 3. Company Groups (for leaderboard — aggregated parent companies) ──
+		console.log('\nFetching company groups...');
+		const groupsResult = await pool.query(`
+			SELECT
+				g.id,
+				g.name,
+				g.updated_city_id AS city_id,
+				g.activities_count,
+				g.users_count,
+				ROUND(g.distance::numeric) AS total_km,
+				ROUND(g.co2::numeric, 1) AS co2,
+				COUNT(lb.company_id) AS facility_count
+			FROM groups g
+			JOIN leader_boards lb ON lb.group_id = g.id
+			JOIN companies c ON c.id = lb.company_id AND c.approved = true
+			WHERE g.activities_count > 0
+			GROUP BY g.id, g.name, g.updated_city_id, g.activities_count, g.users_count, g.distance, g.co2
+			ORDER BY g.activities_count DESC
+		`);
+
+		const companyGroups = groupsResult.rows.map((r: Record<string, unknown>) => ({
+			id: parseInt(r.id as string),
+			name: (r.name as string) || '',
+			cityId: r.city_id ? parseInt(r.city_id as string) : null,
+			activitiesCount: parseInt(r.activities_count as string) || 0,
+			usersCount: parseInt(r.users_count as string) || 0,
+			totalKm: parseInt(r.total_km as string) || 0,
+			facilityCount: parseInt(r.facility_count as string) || 0
+		}));
+
+		const groupsPath = resolve(DATA_DIR, 'company-groups.json');
+		writeFileSync(groupsPath, JSON.stringify(companyGroups));
+		console.log(`  Wrote ${groupsPath}`);
+		console.log(`  Groups: ${companyGroups.length}`);
+
+		const groupCities = companyGroups.reduce((acc: Record<string, number>, g: { cityId: number | null }) => {
+			const key = g.cityId ? String(g.cityId) : 'unknown';
+			acc[key] = (acc[key] || 0) + 1;
+			return acc;
+		}, {});
+		console.log(`  By city: ${Object.entries(groupCities).map(([k, v]) => `${k}=${v}`).join(', ')}`);
 
 		console.log('\nDone! Commit the updated JSON files to git.');
 	} finally {

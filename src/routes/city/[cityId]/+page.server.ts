@@ -36,7 +36,7 @@ import {
 import { getCityPM25, getCityNO2 } from '$lib/server/air-quality';
 import { getLatestSafetyData, getSafetyTrends } from '$lib/server/safety-data';
 import { getCityCongestion } from '$lib/server/traffic-flow';
-import { getGeoMarkers } from '$lib/server/altmo-core';
+import { getGeoMarkers, getCompanyGroups } from '$lib/server/altmo-core';
 import {
 	SCENARIO_PRESETS,
 	INTERVENTIONS,
@@ -229,44 +229,24 @@ export const load: PageServerLoad = async ({ params }) => {
 		? geoMarkers.filter((m) => m.cityId !== null && railsCityIds.includes(m.cityId))
 		: [];
 
-	// ── Phase 9: Company presence from geo markers (with activity stats) ──
+	// ── Phase 9: Company leaderboard from groups (parent orgs) ──
+	// Groups aggregate multiple facilities into a single org with pre-computed stats.
+	// Geo markers (individual facilities) are kept for the map layer separately.
 
-	// Aggregate per-company stats (a company may have multiple geo_markers / facilities)
-	const companyAgg = new Map<string, { totalActivities: number; activeUsers: number; totalKm: number; lat: number; lon: number; facilities: number }>();
-	for (const m of cityGeoMarkers) {
-		if (m.type !== 'Company') continue;
-		const name = m.name?.trim();
-		if (!name) continue;
-		const existing = companyAgg.get(name);
-		if (existing) {
-			existing.totalActivities = Math.max(existing.totalActivities, m.totalActivities ?? 0);
-			existing.activeUsers = Math.max(existing.activeUsers, m.activeUsers ?? 0);
-			existing.totalKm = Math.max(existing.totalKm, m.totalKm ?? 0);
-			existing.facilities += 1;
-		} else {
-			companyAgg.set(name, {
-				totalActivities: m.totalActivities ?? 0,
-				activeUsers: m.activeUsers ?? 0,
-				totalKm: m.totalKm ?? 0,
-				lat: m.lat,
-				lon: m.lon,
-				facilities: 1
-			});
-		}
-	}
-	// Compute composite city benefit score per company:
-	// 70% distance-based impact (CO2 + health + fat burn all scale with km)
-	// 30% participation breadth (active users — wider adoption = more city impact)
-	const allEntries = [...companyAgg.entries()];
-	const maxKm = Math.max(...allEntries.map(([, s]) => s.totalKm), 1);
-	const maxUsers = Math.max(...allEntries.map(([, s]) => s.activeUsers), 1);
-	const topCompanies = allEntries
-		.map(([name, stats]) => ({
-			name,
-			totalActivities: stats.totalActivities,
-			activeUsers: stats.activeUsers,
-			totalKm: stats.totalKm,
-			benefitScore: 0.7 * (stats.totalKm / maxKm) + 0.3 * (stats.activeUsers / maxUsers)
+	const allGroups = getCompanyGroups();
+	const cityGroups = allGroups.filter((g) => g.cityId !== null && railsCityIds.includes(g.cityId));
+
+	// Composite city benefit score: 70% distance impact + 30% participation breadth
+	const maxKm = Math.max(...cityGroups.map((g) => g.totalKm), 1);
+	const maxUsers = Math.max(...cityGroups.map((g) => g.usersCount), 1);
+	const topCompanies = cityGroups
+		.map((g) => ({
+			name: g.name,
+			totalActivities: g.activitiesCount,
+			activeUsers: g.usersCount,
+			totalKm: g.totalKm,
+			facilityCount: g.facilityCount,
+			benefitScore: 0.7 * (g.totalKm / maxKm) + 0.3 * (g.usersCount / maxUsers)
 		}))
 		.sort((a, b) => b.benefitScore - a.benefitScore || a.name.localeCompare(b.name))
 		.slice(0, 15);
@@ -331,9 +311,9 @@ export const load: PageServerLoad = async ({ params }) => {
 		// Geo markers (for map)
 		geoMarkers: cityGeoMarkers,
 
-		// Company presence
+		// Company presence (groups = parent orgs for leaderboard)
 		companies: {
-			count: companyAgg.size,
+			count: cityGroups.length,
 			top: topCompanies
 		},
 

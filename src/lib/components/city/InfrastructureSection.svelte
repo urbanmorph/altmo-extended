@@ -34,6 +34,8 @@
     type: string;
     totalActivities?: number;
     activeUsers?: number;
+    totalKm?: number;
+    empCount?: number;
   }
 
   interface Props {
@@ -99,7 +101,9 @@
         properties: {
           id: m.id, name: m.name, marker_type: m.type,
           totalActivities: m.totalActivities ?? 0,
-          activeUsers: m.activeUsers ?? 0
+          activeUsers: m.activeUsers ?? 0,
+          totalKm: m.totalKm ?? 0,
+          empCount: m.empCount ?? 0
         }
       }))
     };
@@ -252,8 +256,18 @@
       { id: 'companies', template: (p) => {
         const acts = Number(p.totalActivities || 0);
         const users = Number(p.activeUsers || 0);
-        const stats = acts > 0 ? `<br/>${acts.toLocaleString()} activities` + (users > 0 ? ` · ${users.toLocaleString()} users` : '') : '';
-        return `<strong>${p.name}</strong>${stats}<br/><em style="font-size:0.75em;color:#999">via Altmo</em>`;
+        const km = Number(p.totalKm || 0);
+        const emp = Number(p.empCount || 0);
+        let lines = [`<strong>${p.name}</strong>`];
+        if (acts > 0) {
+          const parts = [`${acts.toLocaleString()} activities`];
+          if (users > 0) parts.push(`${users.toLocaleString()} users`);
+          if (km > 0) parts.push(`${km.toLocaleString()} km`);
+          lines.push(parts.join(' · '));
+        }
+        if (emp > 0) lines.push(`${emp.toLocaleString()} employees`);
+        lines.push('<em style="font-size:0.75em;color:#999">via Altmo</em>');
+        return lines.join('<br/>');
       }},
       { id: 'bus-stops', template: (p) => `<strong>${p.name}</strong><br/>${p.routeCount} routes` },
       { id: 'metro-stations', template: (p) => `<strong>${p.name}</strong><br/>${p.line} line` },

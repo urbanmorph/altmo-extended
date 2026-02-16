@@ -43,7 +43,7 @@
 
   interface CompanyData {
     count: number;
-    top: Array<{ name: string; totalActivities: number; activeUsers: number; totalKm: number }>;
+    top: Array<{ name: string; totalActivities: number; activeUsers: number; totalKm: number; facilityCount: number }>;
   }
 
   interface Props {
@@ -242,9 +242,9 @@
         <i class="fa-solid fa-building text-lg text-altmo-700"></i>
         <div>
           <p class="text-sm font-semibold text-text-primary">
-            {formatNumber(companies.count)} {companies.count === 1 ? 'company' : 'companies'} tracking active mobility in {cityName}
+            {formatNumber(companies.count)} {companies.count === 1 ? 'organisation' : 'organisations'} tracking active mobility in {cityName}
           </p>
-          <p class="text-xs text-text-secondary">Organisations with employees logging rides and walks on Altmo</p>
+          <p class="text-xs text-text-secondary">Parent organisations with employees logging rides and walks on Altmo</p>
         </div>
       </div>
       {#if companies.top.some(c => c.totalActivities > 0)}

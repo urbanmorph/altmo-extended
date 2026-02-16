@@ -13,6 +13,7 @@
 import { railsApi } from '$lib/rails-api';
 import staticGlobalStats from '$lib/data/global-stats.json';
 import staticGeoMarkers from '$lib/data/geo-markers.json';
+import staticCompanyGroups from '$lib/data/company-groups.json';
 
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -39,6 +40,16 @@ export interface GeoMarker {
 	activeUsers?: number;
 	totalKm?: number;
 	empCount?: number;
+}
+
+export interface CompanyGroup {
+	id: number;
+	name: string;
+	cityId: number | null;
+	activitiesCount: number;
+	usersCount: number;
+	totalKm: number;
+	facilityCount: number;
 }
 
 // ── Cache ──
@@ -109,5 +120,13 @@ export async function getGeoMarkers(): Promise<GeoMarker[] | null> {
 	const markers = staticGeoMarkers as unknown as GeoMarker[];
 	if (markers.length > 0) return markers;
 	return null;
+}
+
+/**
+ * Company groups from static JSON (parent orgs that aggregate multiple facilities).
+ * Used for the leaderboard — groups have pre-aggregated stats from the Rails DB.
+ */
+export function getCompanyGroups(): CompanyGroup[] {
+	return staticCompanyGroups as unknown as CompanyGroup[];
 }
 
