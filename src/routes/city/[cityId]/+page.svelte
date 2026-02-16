@@ -85,7 +85,8 @@
       totalWalks: walks,
       totalDistance: summary.totalDistanceKm ?? 0,
       co2Offset: (summary.totalDistanceKm ?? 0) * 0.25,
-      transitProximityPct: data.activity?.transitProximity?.pctConnected ?? 0
+      transitProximityPct: data.activity?.transitProximity?.pctConnected ?? 0,
+      tripChaining: data.activity?.tripChaining ?? null
     };
   });
 

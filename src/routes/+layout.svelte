@@ -145,10 +145,14 @@
       </div>
 
       <!-- Bottom bar -->
-      <div class="mt-8 border-t border-white/10 pt-6 flex flex-col items-center gap-2 sm:flex-row sm:justify-between">
-        <p class="text-xs text-white/40">&copy; {new Date().getFullYear()} Altmo. All rights reserved.</p>
+      <div class="mt-8 border-t border-white/10 pt-6 flex flex-col items-center gap-3">
         <p class="text-xs text-white/40">
-          Built with open data from OSM, OpenAQ, CPCB, TomTom, TransitRouter & more.
+          &copy; {new Date().getFullYear()} Altmo. Platform, analytics engine, and data integrations are proprietary.
+        </p>
+        <p class="text-xs text-white/30 text-center leading-relaxed max-w-2xl">
+          ETQOLI scoring framework based on Allirani &amp; Verma (IISc, 2025).
+          Data sourced under open licenses: OpenStreetMap (ODbL), OpenAQ (CC BY 4.0), TransitRouter (MIT), CPCB/NCRB/Census (Government of India Open Data).
+          Source data retains its original license. <a href="/data-sources" class="underline hover:text-white/50">View all sources</a>.
         </p>
       </div>
     </div>

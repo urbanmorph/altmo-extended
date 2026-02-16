@@ -30,6 +30,7 @@ import {
 	getActivityTrends,
 	getDistanceDistribution,
 	getTransitProximity,
+	getTripChaining,
 	getRouteDensity
 } from '$lib/server/activity-data';
 import { getCityPM25, getCityNO2 } from '$lib/server/air-quality';
@@ -90,6 +91,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		activityTrends,
 		distanceDistribution,
 		transitProximity,
+		tripChaining,
 		densityCells,
 		// Safety trends (separate Supabase query)
 		safetyTrends,
@@ -113,6 +115,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		getActivityTrends(cityId),
 		getDistanceDistribution(cityId),
 		getTransitProximity(cityId),
+		getTripChaining(cityId),
 		getRouteDensity(cityId),
 		// Safety trends
 		getSafetyTrends(),
@@ -278,6 +281,7 @@ export const load: PageServerLoad = async ({ params }) => {
 			trends: activityTrends,
 			distanceDistribution,
 			transitProximity,
+			tripChaining,
 			densityCells,
 			// Derived metrics
 			momGrowth,

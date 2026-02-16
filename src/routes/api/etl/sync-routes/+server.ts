@@ -41,6 +41,7 @@ interface RawRoute {
 	direction: string | null;
 	company_id: number | null;
 	city_id: number | null;
+	user_id: number | null;
 	path: [number, number][] | null;
 }
 
@@ -723,6 +724,231 @@ function transitProximityToJson(agg: TransitProximityAgg, totalTrips: number): R
 	};
 }
 
+// ── Trip Chaining (Phase 2: User-Level Analysis) ──
+//
+// With user_id from the API (PR #59), we can detect:
+// 1. Multimodal journeys: User ends trip A near station X, starts trip B near
+//    station Y on the same transit line within plausible transit travel time
+// 2. Repeated commute patterns: Same user → same station → same time window
+//    on weekdays = very high confidence transit connection
+// 3. Weekend vs weekday: Same user near stations on weekends → recreational
+//
+// All processing is in-memory during ETL. Only aggregated results are stored
+// in the trip_chaining JSONB column on city_activity_monthly.
+
+interface UserTrip {
+	userId: number;
+	startDate: Date;
+	hour: number;
+	dayOfWeek: number; // 0=Sun, 1=Mon, ...
+	mode: string;
+	dir: 'to_work' | 'from_work' | 'leisure';
+	startLat: number;
+	startLng: number;
+	endLat: number;
+	endLng: number;
+	distM: number;
+	nearestStartStation: { name: string; type: string; line: string; distM: number } | null;
+	nearestEndStation: { name: string; type: string; line: string; distM: number } | null;
+}
+
+interface TripChainAgg {
+	/** Pairs of sequential trips by same user that form a multimodal journey */
+	chainedJourneys: number;
+	/** Users with 3+ weekday trips to the same station at similar times */
+	repeatedCommuteUsers: number;
+	/** Total repeated commute trips (across all repeat users) */
+	repeatedCommuteTrips: number;
+	/** Weekend transit-adjacent trips (lower confidence) */
+	weekendTransitTrips: number;
+	/** Station-level chaining data */
+	chainedStations: Map<string, { name: string; type: string; line: string; asOrigin: number; asDestination: number }>;
+	/** Top multimodal corridors: stationA → stationB via transit */
+	multimodalCorridors: Map<string, { fromStation: string; toStation: string; line: string; count: number }>;
+	/** Unique users with at least one chained journey */
+	uniqueChainedUsers: Set<number>;
+}
+
+function newTripChainAgg(): TripChainAgg {
+	return {
+		chainedJourneys: 0,
+		repeatedCommuteUsers: 0,
+		repeatedCommuteTrips: 0,
+		weekendTransitTrips: 0,
+		chainedStations: new Map(),
+		multimodalCorridors: new Map(),
+		uniqueChainedUsers: new Set()
+	};
+}
+
+/** Max time gap between two trips to consider them part of the same journey (minutes) */
+const MAX_CHAIN_GAP_MIN = 120;
+
+/** Min time gap — trips closer than this are likely GPS artifacts, not separate legs */
+const MIN_CHAIN_GAP_MIN = 5;
+
+/** Station proximity threshold for trip chaining (metres) */
+const CHAIN_STATION_RADIUS_M = 1500;
+
+/** Time window for "same time" repeated commute detection (hours) */
+const REPEAT_TIME_WINDOW_H = 2;
+
+/** Min weekday trips to same station at similar time to count as repeated commuter */
+const MIN_REPEAT_TRIPS = 3;
+
+/**
+ * Process all user trips for a city-month to detect trip chains and patterns.
+ */
+function processTripChaining(trips: UserTrip[]): TripChainAgg {
+	const agg = newTripChainAgg();
+	if (trips.length === 0) return agg;
+
+	// Group trips by user
+	const byUser = new Map<number, UserTrip[]>();
+	for (const t of trips) {
+		const existing = byUser.get(t.userId);
+		if (existing) existing.push(t);
+		else byUser.set(t.userId, [t]);
+	}
+
+	for (const [userId, userTrips] of byUser) {
+		// Sort by date/time
+		userTrips.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+
+		// ── 1. Sequential trip chaining (multimodal journey detection) ──
+		for (let i = 0; i < userTrips.length - 1; i++) {
+			const tripA = userTrips[i];
+			const tripB = userTrips[i + 1];
+
+			// Both trips must have station proximity data
+			if (!tripA.nearestEndStation || !tripB.nearestStartStation) continue;
+
+			// Trip A must end near a station, trip B must start near a station
+			if (tripA.nearestEndStation.distM > CHAIN_STATION_RADIUS_M) continue;
+			if (tripB.nearestStartStation.distM > CHAIN_STATION_RADIUS_M) continue;
+
+			// Time gap must be plausible for a transit leg
+			const gapMin = (tripB.startDate.getTime() - tripA.startDate.getTime()) / 60000;
+			if (gapMin < MIN_CHAIN_GAP_MIN || gapMin > MAX_CHAIN_GAP_MIN) continue;
+
+			// Must be on the same transit line or system (stations connected)
+			const stationA = tripA.nearestEndStation;
+			const stationB = tripB.nearestStartStation;
+			const sameLine = stationA.line === stationB.line;
+			const sameSystem = stationA.type === stationB.type;
+			if (!sameLine && !sameSystem) continue;
+
+			// This is a chained journey
+			agg.chainedJourneys++;
+			agg.uniqueChainedUsers.add(userId);
+
+			// Track stations
+			const existA = agg.chainedStations.get(stationA.name);
+			if (existA) existA.asOrigin++;
+			else agg.chainedStations.set(stationA.name, { name: stationA.name, type: stationA.type, line: stationA.line, asOrigin: 1, asDestination: 0 });
+
+			const existB = agg.chainedStations.get(stationB.name);
+			if (existB) existB.asDestination++;
+			else agg.chainedStations.set(stationB.name, { name: stationB.name, type: stationB.type, line: stationB.line, asOrigin: 0, asDestination: 1 });
+
+			// Track corridor
+			const corrKey = `${stationA.name}→${stationB.name}`;
+			const existCorr = agg.multimodalCorridors.get(corrKey);
+			if (existCorr) existCorr.count++;
+			else agg.multimodalCorridors.set(corrKey, { fromStation: stationA.name, toStation: stationB.name, line: sameLine ? stationA.line : `${stationA.type}→${stationB.type}`, count: 1 });
+		}
+
+		// ── 2. Repeated commute pattern detection ──
+		// Group weekday trips by nearest station (start or end)
+		const weekdayByStation = new Map<string, { hour: number; count: number }[]>();
+		for (const t of userTrips) {
+			// Weekdays only (Mon-Fri = 1-5)
+			if (t.dayOfWeek === 0 || t.dayOfWeek === 6) continue;
+			if (t.dir === 'leisure') continue;
+
+			// Check which end is near a station
+			const station = t.nearestStartStation?.distM !== undefined && t.nearestStartStation.distM <= CHAIN_STATION_RADIUS_M
+				? t.nearestStartStation
+				: t.nearestEndStation?.distM !== undefined && t.nearestEndStation.distM <= CHAIN_STATION_RADIUS_M
+					? t.nearestEndStation
+					: null;
+			if (!station) continue;
+
+			const existing = weekdayByStation.get(station.name);
+			if (existing) existing.push({ hour: t.hour, count: 1 });
+			else weekdayByStation.set(station.name, [{ hour: t.hour, count: 1 }]);
+		}
+
+		// Check each station for time clustering
+		for (const [, visits] of weekdayByStation) {
+			if (visits.length < MIN_REPEAT_TRIPS) continue;
+
+			// Group by time window
+			const timeGroups = new Map<number, number>();
+			for (const v of visits) {
+				// Round to 2-hour windows
+				const window = Math.floor(v.hour / REPEAT_TIME_WINDOW_H) * REPEAT_TIME_WINDOW_H;
+				timeGroups.set(window, (timeGroups.get(window) ?? 0) + 1);
+			}
+
+			for (const [, count] of timeGroups) {
+				if (count >= MIN_REPEAT_TRIPS) {
+					agg.repeatedCommuteUsers++;
+					agg.repeatedCommuteTrips += count;
+					break; // Count user once per station
+				}
+			}
+		}
+
+		// ── 3. Weekend transit-adjacent trips ──
+		for (const t of userTrips) {
+			if (t.dayOfWeek !== 0 && t.dayOfWeek !== 6) continue;
+
+			const nearStation =
+				(t.nearestStartStation?.distM !== undefined && t.nearestStartStation.distM <= CHAIN_STATION_RADIUS_M) ||
+				(t.nearestEndStation?.distM !== undefined && t.nearestEndStation.distM <= CHAIN_STATION_RADIUS_M);
+			if (nearStation) agg.weekendTransitTrips++;
+		}
+	}
+
+	return agg;
+}
+
+function tripChainingToJson(agg: TripChainAgg): Record<string, unknown> {
+	if (agg.chainedJourneys === 0 && agg.repeatedCommuteUsers === 0 && agg.weekendTransitTrips === 0) {
+		return {};
+	}
+
+	const topChainedStations = [...agg.chainedStations.values()]
+		.sort((a, b) => (b.asOrigin + b.asDestination) - (a.asOrigin + a.asDestination))
+		.slice(0, 15);
+
+	const topCorridors = [...agg.multimodalCorridors.values()]
+		.sort((a, b) => b.count - a.count)
+		.slice(0, 10);
+
+	return {
+		chained_journeys: agg.chainedJourneys,
+		unique_chained_users: agg.uniqueChainedUsers.size,
+		repeated_commute_users: agg.repeatedCommuteUsers,
+		repeated_commute_trips: agg.repeatedCommuteTrips,
+		weekend_transit_trips: agg.weekendTransitTrips,
+		top_chained_stations: topChainedStations.map(s => ({
+			name: s.name,
+			type: s.type,
+			line: s.line,
+			as_origin: s.asOrigin,
+			as_destination: s.asDestination
+		})),
+		top_multimodal_corridors: topCorridors.map(c => ({
+			from_station: c.fromStation,
+			to_station: c.toStation,
+			line: c.line,
+			count: c.count
+		}))
+	};
+}
+
 // ── Main handler ──
 
 export const GET: RequestHandler = async ({ request, url }) => {
@@ -772,11 +998,13 @@ export const GET: RequestHandler = async ({ request, url }) => {
 		const densityMap = new Map<string, { city_id: number; total: number; rides: number; walks: number }>();
 		const monthlyMap = new Map<string, { city_id: number; month: string; agg: MonthlyAgg }>();
 		const transitProxMap = new Map<string, TransitProximityAgg>();
+		const userTripsMap = new Map<string, UserTrip[]>();
 		let citiesMapped = 0;
 		let noCityCount = 0;
 		let totalRoutes = 0;
 		let totalPages = 0;
 		let transitConnected = 0;
+		let tripChainingCount = 0;
 
 		for (const window of dateWindows) {
 			let page = 1;
@@ -922,6 +1150,9 @@ export const GET: RequestHandler = async ({ request, url }) => {
 			}
 
 			// ── Transit proximity scoring ──
+			let nearestStartStation: UserTrip['nearestStartStation'] = null;
+			let nearestEndStation: UserTrip['nearestEndStation'] = null;
+
 			if (r.start_lat && r.start_lng && r.end_lat && r.end_lng && cityId) {
 				const cityStations = stationsByCity.get(cityId);
 				if (cityStations) {
@@ -945,7 +1176,40 @@ export const GET: RequestHandler = async ({ request, url }) => {
 						addTransitConnection(transitProxMap.get(mKey)!, conn);
 						transitConnected++;
 					}
+
+					// Compute nearest stations for trip chaining (regardless of transit score)
+					const nearStart = findNearestStation(r.start_lat, r.start_lng, stationsForMode);
+					const nearEnd = findNearestStation(r.end_lat, r.end_lng, stationsForMode);
+					if (nearStart && nearStart.distM <= 3000) {
+						nearestStartStation = { name: nearStart.station.name, type: nearStart.station.type, line: nearStart.station.line, distM: nearStart.distM };
+					}
+					if (nearEnd && nearEnd.distM <= 3000) {
+						nearestEndStation = { name: nearEnd.station.name, type: nearEnd.station.type, line: nearEnd.station.line, distM: nearEnd.distM };
+					}
 				}
+			}
+
+			// ── Collect user trips for trip chaining ──
+			if (r.user_id && r.start_lat && r.start_lng && r.end_lat && r.end_lng && r.start_date) {
+				const userTrip: UserTrip = {
+					userId: r.user_id,
+					startDate: new Date(r.start_date),
+					hour,
+					dayOfWeek,
+					mode,
+					dir,
+					startLat: r.start_lat,
+					startLng: r.start_lng,
+					endLat: r.end_lat,
+					endLng: r.end_lng,
+					distM: dist,
+					nearestStartStation,
+					nearestEndStation
+				};
+
+				const existing = userTripsMap.get(mKey);
+				if (existing) existing.push(userTrip);
+				else userTripsMap.set(mKey, [userTrip]);
 			}
 				} // end for (const r of routes)
 
@@ -999,7 +1263,20 @@ export const GET: RequestHandler = async ({ request, url }) => {
 		const nameCache = await batchReverseGeocode(allCoords, supabaseAdmin);
 		console.log(`[sync-routes] Geocoded ${nameCache.size} unique locations`);
 
-		// ── Step 5: Upsert city_activity_monthly ──
+		// ── Step 5: Process trip chaining per city-month ──
+		const tripChainResults = new Map<string, Record<string, unknown>>();
+		for (const [mKey, trips] of userTripsMap) {
+			const chainAgg = processTripChaining(trips);
+			const chainJson = tripChainingToJson(chainAgg);
+			tripChainResults.set(mKey, chainJson);
+			tripChainingCount += chainAgg.chainedJourneys;
+		}
+		console.log(`[sync-routes] Trip chaining: ${tripChainingCount} chained journeys across ${userTripsMap.size} city-months`);
+
+		// Free user trips memory now that chaining is done
+		userTripsMap.clear();
+
+		// ── Step 6: Upsert city_activity_monthly ──
 		const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 		const monthlyRows = [...monthlyMap.entries()].map(([mKey, { city_id, month, agg }]) => {
 			const tops = allTopCorridors.get(mKey)!;
@@ -1044,6 +1321,7 @@ export const GET: RequestHandler = async ({ request, url }) => {
 				transit_proximity: transitProxMap.has(mKey)
 					? transitProximityToJson(transitProxMap.get(mKey)!, agg.totalTrips)
 					: {},
+				trip_chaining: tripChainResults.get(mKey) ?? {},
 				synced_at: new Date().toISOString()
 			};
 		});
@@ -1064,6 +1342,7 @@ export const GET: RequestHandler = async ({ request, url }) => {
 			density_cells: densityRows.length,
 			monthly_rows: monthlyRows.length,
 			transit_connected: transitConnected,
+			trip_chaining_journeys: tripChainingCount,
 			pages_fetched: totalPages,
 			date_windows: dateWindows.length,
 			date_range: { start: dateWindows[0]?.start, end: dateWindows[dateWindows.length - 1]?.end }

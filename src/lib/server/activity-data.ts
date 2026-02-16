@@ -560,6 +560,93 @@ export async function getTransitProximity(citySlug: string): Promise<TransitProx
 	return result;
 }
 
+// ── Trip Chaining data (Phase 2: User-Level Analysis) ──
+
+export interface TripChainingData {
+	chainedJourneys: number;
+	uniqueChainedUsers: number;
+	repeatedCommuteUsers: number;
+	repeatedCommuteTrips: number;
+	weekendTransitTrips: number;
+	topChainedStations: { name: string; type: string; line: string; asOrigin: number; asDestination: number }[];
+	topMultimodalCorridors: { fromStation: string; toStation: string; line: string; count: number }[];
+}
+
+/**
+ * Read trip_chaining JSONB from all city_activity_monthly rows for a city.
+ * Aggregates across months: sums counts, merges stations and corridors.
+ */
+export async function getTripChaining(citySlug: string): Promise<TripChainingData | null> {
+	const cacheKey = `trip-chaining-${citySlug}`;
+	const cached = getCached<TripChainingData>(cacheKey);
+	if (cached) return cached;
+
+	const rows = await getCityMonthlyData(citySlug);
+	if (rows.length === 0) return null;
+
+	let chainedJourneys = 0;
+	let uniqueChainedUsers = 0;
+	let repeatedCommuteUsers = 0;
+	let repeatedCommuteTrips = 0;
+	let weekendTransitTrips = 0;
+	const stationMap = new Map<string, { name: string; type: string; line: string; asOrigin: number; asDestination: number }>();
+	const corridorMap = new Map<string, { fromStation: string; toStation: string; line: string; count: number }>();
+
+	for (const r of rows) {
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const tc = (r as any).trip_chaining as Record<string, unknown> | undefined;
+		if (!tc || !tc.chained_journeys) continue;
+
+		chainedJourneys += (tc.chained_journeys as number) ?? 0;
+		uniqueChainedUsers += (tc.unique_chained_users as number) ?? 0;
+		repeatedCommuteUsers += (tc.repeated_commute_users as number) ?? 0;
+		repeatedCommuteTrips += (tc.repeated_commute_trips as number) ?? 0;
+		weekendTransitTrips += (tc.weekend_transit_trips as number) ?? 0;
+
+		const stations = tc.top_chained_stations as { name: string; type: string; line: string; as_origin: number; as_destination: number }[] | undefined;
+		if (stations) {
+			for (const s of stations) {
+				const existing = stationMap.get(s.name);
+				if (existing) {
+					existing.asOrigin += s.as_origin;
+					existing.asDestination += s.as_destination;
+				} else {
+					stationMap.set(s.name, { name: s.name, type: s.type, line: s.line, asOrigin: s.as_origin, asDestination: s.as_destination });
+				}
+			}
+		}
+
+		const corridors = tc.top_multimodal_corridors as { from_station: string; to_station: string; line: string; count: number }[] | undefined;
+		if (corridors) {
+			for (const c of corridors) {
+				const key = `${c.from_station}→${c.to_station}`;
+				const existing = corridorMap.get(key);
+				if (existing) existing.count += c.count;
+				else corridorMap.set(key, { fromStation: c.from_station, toStation: c.to_station, line: c.line, count: c.count });
+			}
+		}
+	}
+
+	if (chainedJourneys === 0 && repeatedCommuteUsers === 0) return null;
+
+	const result: TripChainingData = {
+		chainedJourneys,
+		uniqueChainedUsers,
+		repeatedCommuteUsers,
+		repeatedCommuteTrips,
+		weekendTransitTrips,
+		topChainedStations: [...stationMap.values()]
+			.sort((a, b) => (b.asOrigin + b.asDestination) - (a.asOrigin + a.asDestination))
+			.slice(0, 15),
+		topMultimodalCorridors: [...corridorMap.values()]
+			.sort((a, b) => b.count - a.count)
+			.slice(0, 10)
+	};
+
+	setCache(cacheKey, result);
+	return result;
+}
+
 // ── NEW: Route density for heatmap ──
 
 export async function getRouteDensity(citySlug: string): Promise<DensityCell[]> {
