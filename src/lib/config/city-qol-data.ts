@@ -331,6 +331,13 @@ export const QOL_DIMENSIONS: QoLDimension[] = [
 ];
 
 // ---- Per-city reference data ----
+//
+// REGIONAL METHODOLOGY: For multi-city regions (Delhi NCR, Mumbai MMR,
+// Pune PMR, Kolkata KMR), per-capita indicators use the combined population
+// of all listed constituent cities, and per-area indicators use the combined
+// municipal area. This ensures satellite cities without services (e.g. Noida
+// with zero city buses) naturally penalize the region's score rather than
+// being hidden behind the primary city's numbers.
 
 export const CITY_QOL_DATA: CityQoLValues[] = [
 	{
@@ -414,27 +421,30 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 		}
 	},
 	{
+		// REGIONAL: Delhi NCT + Noida + Gurugram + Ghaziabad
+		// Regional pop: ~2.7 cr (NCT 2.23 + Noida 0.10 + Gurugram 0.13 + Ghaziabad 0.25)
+		// Regional area: ~2,128 km² (NCT 1,483 + Noida 203 + Gurugram 232 + Ghaziabad 210)
 		cityId: 'delhi',
 		values: {
-			traffic_fatalities: 11.3, // NCRB 2022: highest absolute numbers
-			walking_share: 16, // Census
-			cycling_share: 6, // Census
-			vru_fatality_share: 62, // NCRB 2022: (750+280)/1670 = 62% — worst
-			footpath_coverage: 25, // DIMTS pedestrian audit
-			rail_transit_km: 448, // DMRC 393 + RRTS/Namo Bharat 55 (operational)
-			bus_fleet_per_lakh: 32, // DTC ~3,700 + cluster ~3,500; pop ~2.1 cr
-			transit_stop_density: 4.8, // (6800 bus + 288 metro + 14 RRTS) / 1483 km²
-			cycle_infra_km: 101, // OSM 2026: UTTIPEC road redesigns + DDA tracks + NDMC cycle tracks
-			pt_accessibility: 56, // 7,102 stops / 1,483 km² — RRTS adds outskirt coverage
-			pm25_annual: 99, // CPCB 2023 — worst in India
-			no2_annual: 60, // CPCB 2023 — worst in India
-			congestion_level: 44, // TomTom 2023
-			noise_pollution: 75, // CPCB NANMN — highest, traffic + construction
-			carbon_emission_intensity: 1.2, // UrbanEmissions APnA + IITK study — sprawl + car dependence
-			fuel_consumption: 200, // PPAC Delhi + DPDA — highest, sprawl
-			green_cover: null, // ISFR 2023 reports 20 m²/person but inflated by Ridge Forest in NCT boundary — not representative
-			sustainable_mode_share: 43, // Census/DMP: walk+cycle+bus+metro
-			road_density: 18.0 // Dense road network, 1,483 km² NCT
+			traffic_fatalities: 12, // Regional: NCT ~2,400 deaths + satellite ~400 (UP/Haryana highway corridors); ~2,800 / 2.7 cr. Satellite cities have higher highway fatality rates
+			walking_share: 15, // Regional pop-weighted: Delhi 16%, Gurugram ~8% (car/cab city), Noida ~10%, Ghaziabad ~12%
+			cycling_share: 5, // Regional pop-weighted: Delhi 6%, Gurugram ~1% (zero cycle infra), Noida ~2%, Ghaziabad ~4%
+			vru_fatality_share: 59, // Regional: satellite highway corridors have more vehicle-vehicle crashes, lowering VRU share vs Delhi's 62%
+			footpath_coverage: 22, // Regional: Delhi 25% (DIMTS audit), Gurugram ~10% (notoriously poor pedestrian infra), Noida ~15%, Ghaziabad ~10%
+			rail_transit_km: 448, // DMRC 393 + RRTS/Namo Bharat 55 — already regional (metro extends into Noida, Gurugram, Ghaziabad)
+			bus_fleet_per_lakh: 27, // Regional: DTC 3,700 + cluster 3,500 + GMCBL Gurugram 150 = 7,350; Noida 0, Ghaziabad 0 city buses; regional pop ~2.7 cr
+			transit_stop_density: 3.5, // Regional: (6800 Delhi bus + 300 Gurugram bus + 288 DMRC + 42 NMRC + 14 RRTS) / 2,128 km²
+			cycle_infra_km: 101, // OSM 2026: primarily Delhi (UTTIPEC + DDA + NDMC); Noida/Gurugram add negligible mapped infra
+			pt_accessibility: 44, // Regional: Delhi 56% but Gurugram <20%, Noida ~15%, Ghaziabad ~10% — satellite cities have negligible bus coverage
+			pm25_annual: 99, // CPCB 2023 — covers NCR airshed; satellite cities similar or worse (Ghaziabad industrial)
+			no2_annual: 60, // CPCB 2023 — NCR airshed level
+			congestion_level: 44, // TomTom 2023 — Gurugram equally congested, Noida Expressway similar
+			noise_pollution: 75, // CPCB NANMN — Delhi stations; satellite cities likely similar (construction boom)
+			carbon_emission_intensity: 1.3, // Regional: Delhi 1.2 but Gurugram/Noida more car-dependent (~1.5); pop-weighted ~1.3
+			fuel_consumption: 210, // Regional: Delhi 200, satellite cities ~250 (car-dependent suburbs); pop-weighted
+			green_cover: null, // No reliable regional figure — Delhi's ISFR 20 m²/person inflated by Ridge Forest
+			sustainable_mode_share: 40, // Regional: Delhi 43%, Gurugram ~20% (car-dominated), Noida ~25%, Ghaziabad ~30%; pop-weighted
+			road_density: 15.0 // Regional: NCT 18 km/km² but Gurugram ~8, Noida ~6, Ghaziabad ~10; area-weighted
 		}
 	},
 	{
@@ -514,83 +524,92 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 		}
 	},
 	{
+		// REGIONAL: Kolkata KMC + New Town Rajarhat
+		// Regional pop: ~65 lakh (KMC 50 + New Town ~15 lakh)
+		// Regional area: ~236 km² (KMC 206 + New Town 30)
 		cityId: 'kolkata',
 		values: {
 			// Health
-			traffic_fatalities: 3.1, // NCRB 2022: ~185 deaths / 60 lakh KMC pop
-			vru_fatality_share: 45, // NCRB 2022 WB state pattern
-			walking_share: 39, // Census 2011 — highest among metros
-			cycling_share: 10, // Census 2011 — despite 62-road ban
-			footpath_coverage: 20, // 80% pavements encroached
+			traffic_fatalities: 3.0, // Regional: KMC 3.1, New Town lower (planned city, less traffic)
+			vru_fatality_share: 45, // NCRB 2022 WB state pattern — similar across KMR
+			walking_share: 37, // Regional pop-weighted: KMC 39%, New Town ~25% (planned township, more driving)
+			cycling_share: 9, // Regional pop-weighted: KMC 10%, New Town ~5% (wider roads but less cycle culture)
+			footpath_coverage: 22, // Regional: KMC 20% (80% encroached), New Town ~30% (planned footpaths, better quality)
 			// Accessibility
-			rail_transit_km: 423, // Metro 73 + suburban ~350 (KMA)
-			bus_fleet_per_lakh: 22, // WBTC ~1,337 + private; pop ~60 lakh
-			transit_stop_density: 12, // Dense bus+metro+suburban / 206 km²
-			cycle_infra_km: 35, // New Town Rajarhat corridors
-			pt_accessibility: 70, // Dense suburban rail + bus; compact city
+			rail_transit_km: 423, // Metro 73 + suburban ~350 (KMA) — already regional
+			bus_fleet_per_lakh: 20, // Regional: WBTC ~1,337 + private; regional pop ~65 lakh (KMC 50 + New Town 15)
+			transit_stop_density: 11, // Regional: Dense bus+metro+suburban / 236 km² (KMC 206 + New Town 30)
+			cycle_infra_km: 35, // Includes New Town Rajarhat ~35 km cycle corridors (NKDA)
+			pt_accessibility: 68, // Regional: KMC 70%, New Town ~60% (metro extension helps but peripheral gaps)
 			// Environmental
-			pm25_annual: 60, // IQAir/CPCB 2023
-			no2_annual: null, // No direct measurement — CPCB estimate only
-			congestion_level: 32, // TomTom 2024
-			noise_pollution: 70, // CPCB NANMN — commercial zones high
-			carbon_emission_intensity: 0.4, // UrbanEmissions APnA — lowest, high PT + walk mode share
-			fuel_consumption: 70, // PPAC West Bengal — lowest, walk+PT dominant
-			green_cover: 2.0, // Published research — Maidan helps, otherwise dense
+			pm25_annual: 60, // IQAir/CPCB 2023 — covers KMR airshed
+			no2_annual: null, // No direct measurement across KMR
+			congestion_level: 32, // TomTom 2024 — New Town less congested but KMC dominates
+			noise_pollution: 70, // CPCB NANMN — KMC stations; New Town quieter but small share
+			carbon_emission_intensity: 0.4, // Regional: KMC 0.4, New Town slightly higher but small pop share
+			fuel_consumption: 72, // Regional: KMC 70, New Town ~80 (more car-oriented planned township)
+			green_cover: 2.5, // Regional: KMC 2.0, New Town has planned green spaces (~5 m²/person)
 			// Mobility
-			sustainable_mode_share: 80, // Census: walk 39 + cycle 10 + PT 31
-			road_density: 9.0 // 1,850 km / 206 km² KMC
+			sustainable_mode_share: 77, // Regional: KMC 80%, New Town ~65% (more private vehicle use)
+			road_density: 8.5 // Regional: ~2,000 km / 236 km² (KMC 206 + New Town 30)
 		}
 	},
 	{
+		// REGIONAL: Mumbai BMC + Thane + Navi Mumbai + Kalyan-Dombivli
+		// Regional pop: ~1.92 cr (BMC 1.34 + Thane 0.27 + NM 0.13 + KD 0.18)
+		// Regional area: ~1,050 km² (BMC 603 + Thane 147 + NM 163 + KD 137)
 		cityId: 'mumbai',
 		values: {
 			// Health
-			traffic_fatalities: 2.8, // Mumbai Road Safety Report 2022 (Bloomberg BIGRS): 365 deaths, pop ~1.3 cr
-			vru_fatality_share: 44, // Pedestrians 44% of fatalities; cyclist share ~2-3%
-			walking_share: 27, // CMP/Census estimates for work trips
-			cycling_share: 3, // Very low — geography, climate, road conditions
-			footpath_coverage: 35, // MCGM Pedestrian First policy — arterials have footpaths but poor quality
+			traffic_fatalities: 3.8, // Regional: BMC 365 + satellite ~370 (Thane/NM/KD highway corridors — Eastern Express, NH-8); ~735 / 1.92 cr
+			vru_fatality_share: 43, // Regional: BMC 44%, satellite highway corridors have more vehicle-vehicle crashes, slightly lower VRU share
+			walking_share: 25, // Regional pop-weighted: BMC 27%, Thane ~20%, NM ~15% (planned city, car-oriented), KD ~20%
+			cycling_share: 3, // Uniformly low across MMR — geography, climate
+			footpath_coverage: 31, // Regional: BMC 35% (MCGM Pedestrian First), Thane ~25%, NM ~30% (planned), KD ~15%
 			// Accessibility
-			rail_transit_km: 545, // Metro 80 + suburban railway 465
-			bus_fleet_per_lakh: 22, // BEST ~2,900 buses, pop ~1.3 cr
-			transit_stop_density: 7.8, // (4500 bus + 69 metro + 125 suburban) / 603 km²
-			cycle_infra_km: 23, // OSM 2026: scattered tracks including coastal road segments
-			pt_accessibility: 75, // Suburban rail spine + BEST bus coverage; gaps in eastern suburbs
+			rail_transit_km: 545, // Metro 80 + suburban railway 465 — already regional (suburban spans Thane/KD/NM)
+			bus_fleet_per_lakh: 21, // Regional: BEST 2,900 + TMT 400 + NMMT 550 + KDMT 141 = 3,991; regional pop ~1.92 cr
+			transit_stop_density: 6.7, // Regional: (4500 BEST + 500 TMT + 1493 NMMT + 300 KDMT + 69 metro + 125 suburban) / 1,050 km²
+			cycle_infra_km: 23, // OSM 2026: primarily BMC area; NM has some planned tracks but minimal built
+			pt_accessibility: 63, // Regional: BMC ~75%, Thane ~55%, NM ~50%, KD ~35% — peripheral areas poorly served
 			// Environmental
-			pm25_annual: 38, // CPCB/IQAir estimates — industrial + port activity
-			no2_annual: null, // No direct measurement — CPCB estimate only
-			congestion_level: 53, // TomTom 2023 — one of India's worst
-			noise_pollution: 72, // CPCB NANMN — 10 stations continuous
-			carbon_emission_intensity: 0.6, // UrbanEmissions APnA — suburban rail keeps this low
-			fuel_consumption: 110, // PPAC Maharashtra — rail commuting reduces this
-			green_cover: 1.2, // CSCAF research — Sanjay Gandhi NP in boundary
+			pm25_annual: 38, // CPCB/IQAir — covers MMR airshed; Thane industrial belt similar
+			no2_annual: null, // No direct measurement across MMR
+			congestion_level: 53, // TomTom 2023 — Eastern Express/Western Express serve MMR commuters
+			noise_pollution: 72, // CPCB NANMN — BMC stations; Thane/NM likely similar (construction, highways)
+			carbon_emission_intensity: 0.7, // Regional: BMC 0.6 (suburban rail), satellite cities ~0.8 (more car-dependent); pop-weighted
+			fuel_consumption: 120, // Regional: BMC 110 (rail commuting), satellite cities ~140 (more car use); pop-weighted
+			green_cover: 1.2, // CSCAF — primarily BMC boundary; Sanjay Gandhi NP inflates this
 			// Mobility
-			sustainable_mode_share: 58, // Walk 27% + cycle 3% + bus 15% + rail 15% + metro 1%
-			road_density: 8.3 // ~5,000 km roads / 603 km² (BMC area)
+			sustainable_mode_share: 51, // Regional: BMC 58% (suburban rail + BEST), Thane ~40%, NM ~30%, KD ~35%; pop-weighted
+			road_density: 9.0 // Regional: BMC 5,000 + satellite ~4,500 = ~9,500 km / 1,050 km²
 		}
 	},
 	{
+		// REGIONAL: Pune PMC + Pimpri-Chinchwad PCMC
+		// Regional pop: ~78 lakh (PMC 42 + PCMC 25 + growth); PMPML already serves both
+		// Regional area: ~512 km² (PMC 331 + PCMC 181)
 		cityId: 'pune',
 		values: {
-			traffic_fatalities: 7.1, // NCRB 2022 — lowest of the 6
-			walking_share: 25, // Census
-			cycling_share: 15, // Census (high — flat terrain, cycle culture)
-			vru_fatality_share: 53, // NCRB 2022: (210+85)/555 = 53%
-			footpath_coverage: 40, // PMC footpath survey
-			rail_transit_km: 97, // Metro 33.3 + suburban rail ~64 (Pune-Lonavala)
-			bus_fleet_per_lakh: 25, // PMPML ~2,000 buses, pop ~78 lakh
-			transit_stop_density: 10.8, // (3500 bus + 30 metro + 17 suburban) / 330 km²
-			cycle_infra_km: 10, // OSM 2026: JM Road + Satara Road + University Road tracks — 300 km planned, mostly unbuilt
-			pt_accessibility: 57, // 3,547 stops / 330 km² — suburban rail corridor adds coverage
-			pm25_annual: 36, // CPCB 2023
-			no2_annual: 32, // CPCB 2023 annual average
-			congestion_level: 41, // TomTom 2023
-			noise_pollution: 66, // MPCB campaign — moderate
-			carbon_emission_intensity: 0.7, // UrbanEmissions APnA — two-wheeler heavy
-			fuel_consumption: 140, // PPAC Maharashtra — two-wheeler heavy
-			green_cover: 1.4, // CSCAF — low despite green image
-			sustainable_mode_share: 50, // Census/CMP: walk+cycle+bus
-			road_density: 9.8 // PMC area ~330 km²
+			traffic_fatalities: 7.5, // Regional: PMC 7.1 but PCMC industrial highway belt (NH-48, old Mumbai-Pune Hwy) has higher rates
+			walking_share: 23, // Regional pop-weighted: PMC 25%, PCMC ~18% (industrial township, longer commutes)
+			cycling_share: 13, // Regional pop-weighted: PMC 15%, PCMC ~8% (industrial traffic makes cycling unsafe)
+			vru_fatality_share: 52, // Regional: PCMC highway corridors have slightly more vehicle-vehicle crashes
+			footpath_coverage: 35, // Regional: PMC 40% (footpath survey), PCMC ~25% (industrial zones, poor pedestrian infra)
+			rail_transit_km: 97, // Metro 33.3 + suburban rail ~64 (Pune-Lonavala) — serves both cities
+			bus_fleet_per_lakh: 25, // PMPML ~2,000 buses, pop ~78 lakh (PMC + PCMC — already regional)
+			transit_stop_density: 6.9, // Regional: (3500 bus + 30 metro + 17 suburban) / 512 km² (PMC 331 + PCMC 181)
+			cycle_infra_km: 10, // OSM 2026: primarily PMC (JM Road, Satara Road); PCMC has minimal cycle infra
+			pt_accessibility: 48, // Regional: PMC ~57% but PCMC ~35% — industrial areas poorly served by PMPML
+			pm25_annual: 36, // CPCB 2023 — covers Pune urban airshed
+			no2_annual: 32, // CPCB 2023 — PCMC industrial zones may be higher but not separately monitored
+			congestion_level: 41, // TomTom 2023 — Hinjewadi-Wakad corridor in PCMC equally congested
+			noise_pollution: 66, // MPCB campaign — PCMC industrial areas may be louder but not separately monitored
+			carbon_emission_intensity: 0.7, // UrbanEmissions APnA — PCMC similar (two-wheeler + industrial)
+			fuel_consumption: 145, // Regional: PMC 140, PCMC ~155 (industrial commuters, more car use)
+			green_cover: 1.2, // Regional: PMC 1.4, PCMC ~0.8 (industrial land use, less green cover)
+			sustainable_mode_share: 47, // Regional: PMC 50%, PCMC ~40% (industrial township, more private vehicles)
+			road_density: 9.8 // Regional: ~5,000 km roads / 512 km² (PMC + PCMC)
 		}
 	}
 ];
