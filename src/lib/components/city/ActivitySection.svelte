@@ -144,73 +144,8 @@
       </div>
     {/if}
 
-    <!-- Trip Chaining: Multimodal Journey Detection -->
-    {#if activity.tripChaining && activity.tripChaining.chainedJourneys > 0}
-      <div class="mt-4 rounded-xl border border-border bg-surface-card p-5 shadow-sm">
-        <div class="mb-4 flex items-center gap-3">
-          <i class="fa-solid fa-arrows-split-up-and-left text-lg text-altmo-700"></i>
-          <div>
-            <p class="text-sm font-semibold text-text-primary">Multimodal Journey Detection</p>
-            <p class="text-xs text-text-secondary">Users chaining cycling/walking with transit (inferred from sequential trips near stations)</p>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div class="rounded-lg bg-altmo-50 p-3 text-center">
-            <p class="text-xl font-bold text-altmo-900">{formatNumber(activity.tripChaining.chainedJourneys)}</p>
-            <p class="text-xs text-text-secondary">Chained journeys</p>
-          </div>
-          <div class="rounded-lg bg-altmo-50 p-3 text-center">
-            <p class="text-xl font-bold text-altmo-900">{formatNumber(activity.tripChaining.uniqueChainedUsers)}</p>
-            <p class="text-xs text-text-secondary">Multimodal users</p>
-          </div>
-          <div class="rounded-lg bg-altmo-50 p-3 text-center">
-            <p class="text-xl font-bold text-altmo-900">{formatNumber(activity.tripChaining.repeatedCommuteUsers)}</p>
-            <p class="text-xs text-text-secondary">Repeat commuters</p>
-          </div>
-          <div class="rounded-lg bg-altmo-50 p-3 text-center">
-            <p class="text-xl font-bold text-altmo-900">{formatNumber(activity.tripChaining.weekendTransitTrips)}</p>
-            <p class="text-xs text-text-secondary">Weekend transit trips</p>
-          </div>
-        </div>
-
-        <!-- Top multimodal corridors -->
-        {#if activity.tripChaining.topMultimodalCorridors.length > 0}
-          <div class="mt-4">
-            <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">Top Multimodal Corridors</p>
-            <div class="space-y-1.5">
-              {#each activity.tripChaining.topMultimodalCorridors.slice(0, 5) as corridor}
-                <div class="flex items-center justify-between rounded-md bg-surface px-3 py-2 text-sm">
-                  <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-train text-xs text-purple-600"></i>
-                    <span class="text-text-primary">{corridor.fromStation}</span>
-                    <i class="fa-solid fa-arrow-right text-xs text-text-secondary"></i>
-                    <span class="text-text-primary">{corridor.toStation}</span>
-                  </div>
-                  <span class="text-xs font-medium text-text-secondary">{corridor.count} trips</span>
-                </div>
-              {/each}
-            </div>
-          </div>
-        {/if}
-
-        <!-- Top chained stations -->
-        {#if activity.tripChaining.topChainedStations.length > 0}
-          <div class="mt-4">
-            <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">Most-Used Transit Stations</p>
-            <div class="flex flex-wrap gap-2">
-              {#each activity.tripChaining.topChainedStations.slice(0, 8) as station}
-                <span class="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-text-primary">
-                  <i class="fa-solid {station.type === 'metro' ? 'fa-train-subway' : station.type === 'rail' ? 'fa-train' : 'fa-bus'}" style="font-size: 0.6rem; color: {station.type === 'metro' ? '#9333ea' : station.type === 'rail' ? '#dc2626' : '#2563eb'};"></i>
-                  {station.name}
-                  <span class="text-text-secondary">({station.asOrigin + station.asDestination})</span>
-                </span>
-              {/each}
-            </div>
-          </div>
-        {/if}
-      </div>
-    {/if}
+    <!-- TODO: Multimodal Journey Detection — hidden pending verification of trip chaining algorithm -->
+    <!-- Keep the data pipeline (getTripChaining) running so we can validate server-side -->
   {:else}
     <div class="rounded-xl border border-border bg-surface-card p-6 text-center">
       <i class="fa-solid fa-chart-bar text-2xl text-text-secondary"></i>
