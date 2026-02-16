@@ -4,12 +4,13 @@
     value: string;
     trend?: number;
     icon?: string;
+    tooltip?: string;
   }
 
-  let { label, value, trend, icon }: Props = $props();
+  let { label, value, trend, icon, tooltip }: Props = $props();
 </script>
 
-<div class="rounded-xl border border-border bg-surface-card p-6 shadow-sm">
+<div class="rounded-xl border border-border bg-surface-card p-6 shadow-sm" title={tooltip ?? ''}>
   <div class="flex items-center justify-between">
     <p class="text-sm font-medium text-text-secondary">{label}</p>
     {#if icon}

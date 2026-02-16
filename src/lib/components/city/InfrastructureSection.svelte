@@ -32,6 +32,8 @@
     lat: number;
     lon: number;
     type: string;
+    totalActivities?: number;
+    activeUsers?: number;
   }
 
   interface Props {
@@ -94,7 +96,11 @@
       features: markers.map(m => ({
         type: 'Feature' as const,
         geometry: { type: 'Point' as const, coordinates: [m.lon, m.lat] },
-        properties: { id: m.id, name: m.name, marker_type: m.type }
+        properties: {
+          id: m.id, name: m.name, marker_type: m.type,
+          totalActivities: m.totalActivities ?? 0,
+          activeUsers: m.activeUsers ?? 0
+        }
       }))
     };
   }
@@ -121,6 +127,7 @@
   function onMapReady(map: maplibregl.Map) {
     mapInstance = map;
 
+    try {
     // ── Catchment ring sources (empty initially, populated on toggle) ──
     map.addSource('catchment-walk-400', { type: 'geojson', data: emptyFC });
     map.addSource('catchment-walk-800', { type: 'geojson', data: emptyFC });
@@ -187,7 +194,44 @@
       });
     }
 
-    // ── Commuter destinations (companies/campuses) ──
+    // ── Activity heatmap (H3 hex polygons) ──
+    if (densityCount > 0) {
+      const hexGeoJSON = densityToGeoJSON(densityCells);
+      // Use sorted percentiles for color stops — avoids outlier skew
+      const sorted = densityCells.map(c => c.total).sort((a, b) => a - b);
+      const pRaw = (pct: number) => sorted[Math.min(Math.floor(sorted.length * pct), sorted.length - 1)];
+      // Deduplicate stops — MapLibre requires strictly increasing values
+      const stops: Array<[number, string]> = [
+        [1, '#d4e8c2'],                   // pale sage — lowest
+        [pRaw(0.5), '#8cc63f'],           // altmo green — median
+        [pRaw(0.75), '#eab308'],          // amber — above average
+        [pRaw(0.9), '#FF7B27'],           // tangerine — high
+        [pRaw(0.99), '#dc2626']           // red — hotspot
+      ];
+      // Remove stops with duplicate values (keep last color for each value)
+      const deduped: Array<[number, string]> = [];
+      for (const stop of stops) {
+        if (deduped.length > 0 && deduped[deduped.length - 1][0] >= stop[0]) continue;
+        deduped.push(stop);
+      }
+
+      map.addSource('activity-heatmap', { type: 'geojson', data: hexGeoJSON });
+      map.addLayer({
+        id: 'activity-heatmap', type: 'fill', source: 'activity-heatmap',
+        paint: {
+          'fill-color': deduped.length >= 2
+            ? ['interpolate', ['linear'], ['get', 'total'], ...deduped.flat()]
+            : deduped[0]?.[1] ?? '#8cc63f',
+          'fill-opacity': 0.55
+        },
+      });
+      map.addLayer({
+        id: 'activity-heatmap-border', type: 'line', source: 'activity-heatmap',
+        paint: { 'line-color': '#666666', 'line-width': 0.3, 'line-opacity': 0.2 }
+      });
+    }
+
+    // ── Commuter destinations (companies/campuses) — added after heatmap so dots render on top ──
     if (companyCount > 0) {
       map.addSource('companies', { type: 'geojson', data: markersToGeoJSON(companyMarkers) });
       map.addLayer({
@@ -196,61 +240,62 @@
         layout: { visibility: 'none' }
       });
     }
-
-    // ── Activity heatmap (H3 hex polygons) ──
-    if (densityCount > 0) {
-      const hexGeoJSON = densityToGeoJSON(densityCells);
-      // Compute max for color interpolation
-      const maxTotal = Math.max(...densityCells.map(c => c.total), 1);
-
-      map.addSource('activity-heatmap', { type: 'geojson', data: hexGeoJSON });
-      map.addLayer({
-        id: 'activity-heatmap', type: 'fill', source: 'activity-heatmap',
-        paint: {
-          'fill-color': [
-            'interpolate', ['linear'], ['get', 'total'],
-            1, '#c6dbef',
-            Math.round(maxTotal * 0.25), '#6baed6',
-            Math.round(maxTotal * 0.5), '#2171b5',
-            maxTotal, '#08306b'
-          ],
-          'fill-opacity': 0.5
-        },
-      });
-      map.addLayer({
-        id: 'activity-heatmap-border', type: 'line', source: 'activity-heatmap',
-        paint: { 'line-color': '#2171b5', 'line-width': 0.5, 'line-opacity': 0.3 }
-      });
+    } catch (err) {
+      console.error('[map] Error setting up layers:', err);
     }
 
-    // ── Click popups ──
-    const popupLayers = [
-      { id: 'bus-stops', template: (p: Record<string, unknown>) => `<strong>${p.name}</strong><br/>${p.routeCount} routes` },
-      { id: 'metro-stations', template: (p: Record<string, unknown>) => `<strong>${p.name}</strong><br/>${p.line} line` },
-      { id: 'rail-stations', template: (p: Record<string, unknown>) => `<strong>${p.name}</strong><br/>${p.line} line` },
-      { id: 'companies', template: (p: Record<string, unknown>) => `<strong>${p.name}</strong><br/>${p.marker_type}<br/><em style="font-size:0.75em;color:#999">via Altmo</em>` },
-      { id: 'activity-heatmap', template: (p: Record<string, unknown>) => `<strong>${p.total} trips</strong><br/>Rides: ${p.rides}, Walks: ${p.walks}<br/><em style="font-size:0.75em;color:#999">via Altmo</em>` }
+    // ── Click popups — single handler, priority-ordered layers ──
+    const popupLayerDefs: Array<{ id: string; template: (p: Record<string, unknown>) => string }> = [
+      { id: 'companies', template: (p) => {
+        const acts = Number(p.totalActivities || 0);
+        const users = Number(p.activeUsers || 0);
+        const stats = acts > 0 ? `<br/>${acts.toLocaleString()} activities` + (users > 0 ? ` · ${users.toLocaleString()} users` : '') : '';
+        return `<strong>${p.name}</strong>${stats}<br/><em style="font-size:0.75em;color:#999">via Altmo</em>`;
+      }},
+      { id: 'bus-stops', template: (p) => `<strong>${p.name}</strong><br/>${p.routeCount} routes` },
+      { id: 'metro-stations', template: (p) => `<strong>${p.name}</strong><br/>${p.line} line` },
+      { id: 'rail-stations', template: (p) => `<strong>${p.name}</strong><br/>${p.line} line` },
+      { id: 'activity-heatmap', template: (p) => `<strong>${p.total} trips</strong><br/>Rides: ${p.rides}, Walks: ${p.walks}<br/><em style="font-size:0.75em;color:#999">via Altmo</em>` }
     ];
 
-    for (const layer of popupLayers) {
-      if (!map.getLayer(layer.id)) continue;
-      map.on('click', layer.id, (e) => {
-        if (!e.features?.[0]) return;
-        const geometry = e.features[0].geometry;
+    // Only include layers that actually exist on the map
+    const activeLayerIds = popupLayerDefs.filter(l => map.getLayer(l.id)).map(l => l.id);
+    const templateLookup: Record<string, (p: Record<string, unknown>) => string> = {};
+    for (const l of popupLayerDefs) templateLookup[l.id] = l.template;
+
+    let activePopup: maplibregl.Popup | null = null;
+
+    // Single map-wide click handler — queries layers in priority order, first match wins
+    map.on('click', (e) => {
+      if (activePopup) { activePopup.remove(); activePopup = null; }
+
+      for (const layerId of activeLayerIds) {
+        const features = map.queryRenderedFeatures(e.point, { layers: [layerId] });
+        if (!features.length) continue;
+
+        const feature = features[0];
+        const geometry = feature.geometry;
         let coords: [number, number];
         if (geometry.type === 'Point') {
           coords = geometry.coordinates.slice() as [number, number];
         } else {
           coords = [e.lngLat.lng, e.lngLat.lat];
         }
-        const props = e.features[0].properties ?? {};
-        new maplibregl.Popup({ closeButton: false, maxWidth: '200px' })
+        const props = feature.properties ?? {};
+        const template = templateLookup[layerId];
+        activePopup = new maplibregl.Popup({ closeButton: false, maxWidth: '220px' })
           .setLngLat(coords)
-          .setHTML(layer.template(props))
+          .setHTML(template(props))
           .addTo(map);
-      });
-      map.on('mouseenter', layer.id, () => { map.getCanvas().style.cursor = 'pointer'; });
-      map.on('mouseleave', layer.id, () => { map.getCanvas().style.cursor = ''; });
+        activePopup.on('close', () => { activePopup = null; });
+        return; // first match wins — don't check lower-priority layers
+      }
+    });
+
+    // Cursor changes for interactive layers
+    for (const layerId of activeLayerIds) {
+      map.on('mouseenter', layerId, () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', layerId, () => { map.getCanvas().style.cursor = ''; });
     }
   }
 

@@ -228,20 +228,41 @@ export const load: PageServerLoad = async ({ params }) => {
 		? geoMarkers.filter((m) => m.cityId !== null && railsCityIds.includes(m.cityId))
 		: [];
 
-	// ── Phase 9: Company presence from geo markers ──
+	// ── Phase 9: Company presence from geo markers (with activity stats) ──
 
-	// Count facilities per company — more facilities suggests larger presence
-	const companyCounts = new Map<string, number>();
+	// Aggregate per-company stats (a company may have multiple geo_markers / facilities)
+	const companyAgg = new Map<string, { totalActivities: number; activeUsers: number; totalKm: number; lat: number; lon: number; facilities: number }>();
 	for (const m of cityGeoMarkers) {
 		if (m.type !== 'Company') continue;
 		const name = m.name?.trim();
 		if (!name) continue;
-		companyCounts.set(name, (companyCounts.get(name) ?? 0) + 1);
+		const existing = companyAgg.get(name);
+		if (existing) {
+			existing.totalActivities = Math.max(existing.totalActivities, m.totalActivities ?? 0);
+			existing.activeUsers = Math.max(existing.activeUsers, m.activeUsers ?? 0);
+			existing.totalKm = Math.max(existing.totalKm, m.totalKm ?? 0);
+			existing.facilities += 1;
+		} else {
+			companyAgg.set(name, {
+				totalActivities: m.totalActivities ?? 0,
+				activeUsers: m.activeUsers ?? 0,
+				totalKm: m.totalKm ?? 0,
+				lat: m.lat,
+				lon: m.lon,
+				facilities: 1
+			});
+		}
 	}
-	// Sort by facility count (desc), then alphabetically for ties
-	const uniqueCompanyNames = [...companyCounts.entries()]
-		.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-		.map(([name]) => name);
+	// Sort by activity count (desc), then alphabetically for ties
+	const topCompanies = [...companyAgg.entries()]
+		.sort((a, b) => b[1].totalActivities - a[1].totalActivities || a[0].localeCompare(b[0]))
+		.slice(0, 15)
+		.map(([name, stats]) => ({
+			name,
+			totalActivities: stats.totalActivities,
+			activeUsers: stats.activeUsers,
+			totalKm: stats.totalKm
+		}));
 
 	// ── Return consolidated data ──
 
@@ -304,8 +325,8 @@ export const load: PageServerLoad = async ({ params }) => {
 
 		// Company presence
 		companies: {
-			count: uniqueCompanyNames.length,
-			names: uniqueCompanyNames.slice(0, 15) // Top 15 for display
+			count: companyAgg.size,
+			top: topCompanies
 		},
 
 		// Scenario engine

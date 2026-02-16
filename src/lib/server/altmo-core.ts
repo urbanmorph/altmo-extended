@@ -19,7 +19,7 @@ const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 // ── Types ──
 
 export interface GlobalStats {
-	people: number;
+	activeUsers: number;
 	activitiesCount: number;
 	distanceKm: number;
 	co2Offset: number;
@@ -35,6 +35,10 @@ export interface GeoMarker {
 	type: string;
 	associableId: number;
 	cityId: number | null;
+	totalActivities?: number;
+	activeUsers?: number;
+	totalKm?: number;
+	empCount?: number;
 }
 
 // ── Cache ──
@@ -45,7 +49,6 @@ interface CacheEntry<T> {
 }
 
 const statsCache: { entry: CacheEntry<GlobalStats> | null } = { entry: null };
-const geoMarkersCache: { entry: CacheEntry<GeoMarker[]> | null } = { entry: null };
 
 function isFresh<T>(entry: CacheEntry<T> | null | undefined): entry is CacheEntry<T> {
 	return !!entry && Date.now() - entry.timestamp < CACHE_TTL;
@@ -75,7 +78,7 @@ export async function getGlobalStats(): Promise<GlobalStats | null> {
 
 		const s = raw.overall_statistics;
 		const data: GlobalStats = {
-			people: s.people ?? 0,
+			activeUsers: s.people ?? 0,
 			activitiesCount: s.activitiesCount ?? 0,
 			distanceKm: Math.round((s.distance ?? 0) / 1000),
 			co2Offset: Math.round(s.co2Offset ?? 0),
@@ -98,50 +101,13 @@ export async function getGlobalStats(): Promise<GlobalStats | null> {
 }
 
 /**
- * GET /geo_markers → company/campus/transit point locations
- * Tries live Rails API first (with 24h cache), falls back to static JSON.
+ * Geo markers from static JSON (enriched with activity stats by refresh-core-data-db).
+ * Static JSON is the canonical source — it includes totalActivities, activeUsers, etc.
+ * that the Rails API does not provide.
  */
 export async function getGeoMarkers(): Promise<GeoMarker[] | null> {
-	if (isFresh(geoMarkersCache.entry)) return geoMarkersCache.entry.data;
-
-	try {
-		const raw = await railsApi<{
-			success: boolean;
-			data: {
-				geo_markers: Array<{
-					id: number;
-					associable_type: string;
-					associable_id: number;
-					associable_name: string;
-					lat: number;
-					lon: number;
-					layer_type: string | null;
-					city_id: number | null;
-				}>;
-			};
-		}>('/geo_markers');
-
-		const data: GeoMarker[] = (raw.data?.geo_markers ?? []).map((m) => ({
-			id: m.id,
-			name: m.associable_name ?? '',
-			lat: m.lat,
-			lon: m.lon,
-			type: m.associable_type ?? '',
-			associableId: m.associable_id,
-			cityId: m.city_id
-		}));
-
-		geoMarkersCache.entry = { data, timestamp: Date.now() };
-		return data;
-	} catch (err) {
-		console.error('[altmo-core] Failed to fetch geo markers:', err);
-		// Fall back to static data if available
-		const markers = staticGeoMarkers as GeoMarker[];
-		if (markers.length > 0) {
-			console.log('[altmo-core] Using static geo markers fallback');
-			return markers;
-		}
-		return null;
-	}
+	const markers = staticGeoMarkers as unknown as GeoMarker[];
+	if (markers.length > 0) return markers;
+	return null;
 }
 

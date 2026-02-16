@@ -43,7 +43,7 @@
 
   interface CompanyData {
     count: number;
-    names: string[];
+    top: Array<{ name: string; totalActivities: number; activeUsers: number; totalKm: number }>;
   }
 
   interface Props {
@@ -87,13 +87,47 @@
     Activity & Impact
   </h2>
 
-  <!-- Activity metrics -->
+  <!-- Activity impact metrics -->
   {#if activity}
+    {@const healthcareValue = Math.round(activity.totalDistance * 1.75)}
+    {@const fatBurnKg = activity.totalDistance * 35 / 7700}
+    {@const cityTrafficDelay = congestion && congestion.avgCurrentSpeed > 0 && congestion.avgFreeFlowSpeed > 0
+      ? (1 / congestion.avgCurrentSpeed - 1 / congestion.avgFreeFlowSpeed) : null}
+    {@const trafficHoursSaved = cityTrafficDelay ? Math.round(activity.totalDistance * cityTrafficDelay) : null}
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <MetricCard label="Total Rides" value={formatCompact(activity.totalRides)} icon="fa-solid fa-bicycle" />
-      <MetricCard label="Total Walks" value={formatCompact(activity.totalWalks)} icon="fa-solid fa-person-walking" />
-      <MetricCard label="Distance" value="{formatCompact(activity.totalDistance)} km" icon="fa-solid fa-route" />
-      <MetricCard label="CO2 Offset" value="{formatCompact(activity.co2Offset)} kg" icon="fa-solid fa-leaf" />
+      <MetricCard
+        label="CO2 Avoided"
+        value="{formatCompact(activity.co2Offset)} kg"
+        icon="fa-solid fa-leaf"
+        tooltip="Distance (km) x 0.25 kg/km avg car emission factor"
+      />
+      <MetricCard
+        label="Healthcare Value"
+        value="₹{formatCompact(healthcareValue)}"
+        icon="fa-solid fa-heart-pulse"
+        tooltip="WHO HEAT method: distance (km) x ₹1.75/km monetised mortality reduction from active mobility"
+      />
+      <MetricCard
+        label="Fat Burn"
+        value="{fatBurnKg >= 10 ? formatCompact(Math.round(fatBurnKg)) : fatBurnKg.toFixed(1)} kg"
+        icon="fa-solid fa-fire-flame-curved"
+        tooltip="Distance (km) x 35 kcal/km (blended cycling/walking avg) / 7,700 kcal per kg body fat"
+      />
+      {#if trafficHoursSaved !== null}
+        <MetricCard
+          label="Traffic Hours Saved"
+          value="{formatCompact(trafficHoursSaved)} hrs"
+          icon="fa-solid fa-hourglass-half"
+          tooltip="Hours not stuck in traffic = distance (km) x (1/{congestion?.avgCurrentSpeed.toFixed(0)} - 1/{congestion?.avgFreeFlowSpeed.toFixed(0)}) using TomTom city speeds"
+        />
+      {:else}
+        <MetricCard
+          label="Total Trips"
+          value={formatCompact(activity.totalRides + activity.totalWalks)}
+          icon="fa-solid fa-route"
+          tooltip="Total rides + walks logged in this city"
+        />
+      {/if}
     </div>
 
     {#if activity.transitProximityPct > 0}
@@ -276,19 +310,75 @@
           <p class="text-xs text-text-secondary">Organisations with employees logging rides and walks on Altmo</p>
         </div>
       </div>
-      <div class="flex flex-wrap gap-2">
-        {#each companies.names as name}
-          <span class="inline-flex items-center rounded-md border border-border bg-surface px-2.5 py-1 text-xs font-medium text-text-primary">
-            <i class="fa-solid fa-building-user mr-1.5 text-text-secondary" style="font-size: 0.65rem;"></i>
-            {name}
-          </span>
-        {/each}
-        {#if companies.count > companies.names.length}
-          <span class="inline-flex items-center rounded-md border border-border bg-earth-50 px-2.5 py-1 text-xs font-medium text-text-secondary">
-            +{companies.count - companies.names.length} more
-          </span>
+      {#if companies.top.some(c => c.totalActivities > 0)}
+        {@const congestionDelay = congestion && congestion.avgCurrentSpeed > 0 && congestion.avgFreeFlowSpeed > 0
+          ? (1 / congestion.avgCurrentSpeed - 1 / congestion.avgFreeFlowSpeed)
+          : null}
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-border text-left text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                <th class="pb-2 pr-3 w-8">#</th>
+                <th class="pb-2 pr-3">Company</th>
+                <th class="pb-2 pr-3 text-right" title="Distinct users who logged at least one ride or walk">Users</th>
+                <th class="pb-2 pr-3 text-right" title="CO2 emissions avoided = distance (km) x 0.25 kg/km (avg car emission factor)">
+                  <i class="fa-solid fa-leaf mr-1" style="font-size: 0.55rem;"></i>CO2 Avoided
+                </th>
+                <th class="pb-2 pr-3 text-right" title="Monetised mortality reduction from active mobility (WHO HEAT method) = distance (km) x ₹1.75/km">
+                  <i class="fa-solid fa-heart-pulse mr-1" style="font-size: 0.55rem;"></i>Healthcare Value
+                </th>
+                <th class="pb-2 pr-3 text-right" title="Equivalent body fat burned = distance (km) x 35 kcal/km (blended cycling/walking avg) / 7,700 kcal per kg fat">
+                  <i class="fa-solid fa-fire-flame-curved mr-1" style="font-size: 0.55rem;"></i>Fat Burn
+                </th>
+                {#if congestionDelay}
+                  <th class="pb-2 text-right" title="Hours not spent in traffic = distance (km) x (1/congested_speed - 1/free_flow_speed). Uses city avg speeds from TomTom: {congestion?.avgCurrentSpeed.toFixed(0)} km/h congested, {congestion?.avgFreeFlowSpeed.toFixed(0)} km/h free flow.">
+                    <i class="fa-solid fa-hourglass-half mr-1" style="font-size: 0.55rem;"></i>Traffic Hours Saved
+                  </th>
+                {/if}
+              </tr>
+            </thead>
+            <tbody>
+              {#each companies.top as company, i}
+                {@const co2Kg = Math.round(company.totalKm * 0.25)}
+                {@const healthValue = Math.round(company.totalKm * 1.75)}
+                {@const fatBurnKg = (company.totalKm * 35 / 7700)}
+                {@const trafficHours = congestionDelay ? Math.round(company.totalKm * congestionDelay) : null}
+                <tr class="border-b border-border/50 last:border-0">
+                  <td class="py-2 pr-3 text-xs text-text-secondary">{i + 1}</td>
+                  <td class="py-2 pr-3 font-medium text-text-primary">
+                    <i class="fa-solid fa-building-user mr-1.5 text-text-secondary" style="font-size: 0.65rem;"></i>
+                    {company.name}
+                  </td>
+                  <td class="py-2 pr-3 text-right tabular-nums text-text-primary">{formatNumber(company.activeUsers)}</td>
+                  <td class="py-2 pr-3 text-right tabular-nums text-text-primary">{formatCompact(co2Kg)} kg</td>
+                  <td class="py-2 pr-3 text-right tabular-nums text-text-primary">₹{formatCompact(healthValue)}</td>
+                  <td class="py-2 pr-3 text-right tabular-nums text-text-primary">{fatBurnKg >= 10 ? formatCompact(Math.round(fatBurnKg)) : fatBurnKg.toFixed(1)} kg</td>
+                  {#if trafficHours !== null}
+                    <td class="py-2 text-right tabular-nums text-text-primary">{formatCompact(trafficHours)} hrs</td>
+                  {/if}
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+        {#if companies.count > companies.top.length}
+          <p class="mt-3 text-xs text-text-secondary">+{companies.count - companies.top.length} more companies</p>
         {/if}
-      </div>
+      {:else}
+        <div class="flex flex-wrap gap-2">
+          {#each companies.top as company}
+            <span class="inline-flex items-center rounded-md border border-border bg-surface px-2.5 py-1 text-xs font-medium text-text-primary">
+              <i class="fa-solid fa-building-user mr-1.5 text-text-secondary" style="font-size: 0.65rem;"></i>
+              {company.name}
+            </span>
+          {/each}
+          {#if companies.count > companies.top.length}
+            <span class="inline-flex items-center rounded-md border border-border bg-earth-50 px-2.5 py-1 text-xs font-medium text-text-secondary">
+              +{companies.count - companies.top.length} more
+            </span>
+          {/if}
+        </div>
+      {/if}
     </div>
   {/if}
 </section>
