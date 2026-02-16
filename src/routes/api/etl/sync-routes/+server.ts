@@ -838,7 +838,11 @@ function processTripChaining(trips: UserTrip[]): TripChainAgg {
 			const sameSystem = stationA.type === stationB.type;
 			if (!sameLine && !sameSystem) continue;
 
-			// This is a chained journey
+			// Same-station pairs are round trips, not multimodal journeys.
+			// True multimodal = cycle to station A, transit to station B, cycle from station B.
+			if (stationA.name === stationB.name) continue;
+
+			// This is a chained journey (different stations on same line/system)
 			agg.chainedJourneys++;
 			agg.uniqueChainedUsers.add(userId);
 
