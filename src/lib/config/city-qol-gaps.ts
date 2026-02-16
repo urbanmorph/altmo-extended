@@ -139,11 +139,15 @@ function generateGapSentence(worstDim: DimensionScore): string {
 
 /**
  * Generate a recommendation based on the worst indicator.
+ * For multi-city regions, appends satellite city context explaining
+ * why the indicator is dragged down by constituent cities.
  */
-function generateRecommendation(worstInd: { key: string; value: number | null }): string {
+function generateRecommendation(cityId: string, worstInd: { key: string; value: number | null }): string {
 	if (worstInd.value === null) return 'Improving data availability would enable targeted recommendations';
 	const template = RECOMMENDATION_TEMPLATES[worstInd.key];
-	return template ? template(worstInd.value) : 'Targeted investment in this area would improve the city\'s overall quality of life score';
+	const base = template ? template(worstInd.value) : 'Targeted investment in this area would improve the city\'s overall quality of life score';
+	const regionalCtx = REGIONAL_RECOMMENDATION_CONTEXT[cityId]?.[worstInd.key] ?? '';
+	return base + regionalCtx;
 }
 
 interface IndicatorImprovement {
@@ -308,13 +312,56 @@ const DATA_UNLOCK: Record<string, string> = {
 	ahmedabad: 'Publishing AMTS GTFS feeds and walking infrastructure data enables corridor-level access analysis',
 	bengaluru: 'Publishing walking/cycling infrastructure GIS data enables corridor-level gap analysis',
 	chennai: 'Publishing walking/cycling infrastructure data enables corridor-level safety analysis',
-	delhi: 'Publishing walking/cycling infrastructure data enables corridor-level air quality impact analysis',
+	delhi: 'Noida and Ghaziabad publish no city bus data (zero dedicated services), Gurugram lacks pedestrian audit data, and none of the satellite cities publish open GTFS feeds or walking infrastructure data',
 	hyderabad: 'Publishing walking/cycling infrastructure data would enable complete active mobility assessment',
 	indore: 'Publishing bus frequency and walking infrastructure data enables transit coverage gap analysis',
 	kochi: 'Publishing safety and NMT infrastructure data unlocks health dimension scoring',
-	kolkata: 'Publishing WBTC GTFS feeds, lifting cycling ban data, and mapping walking infrastructure enables corridor-level NMT analysis',
-	mumbai: 'Publishing BEST GTFS feeds and walking infrastructure data enables corridor-level gap analysis',
-	pune: 'Publishing ridership, safety, and NMT infrastructure data enables full multi-modal analysis'
+	kolkata: 'New Town Rajarhat lacks published bus route and walking infrastructure data; WBTC publishing GTFS feeds and KMC mapping footpath encroachment would enable corridor-level NMT analysis',
+	mumbai: 'TMT, NMMT, and KDMT do not publish GTFS feeds, making satellite city transit coverage hard to verify; no OpenAQ sensors are configured for the MMR, and walking infrastructure data is unavailable across all four constituent cities',
+	pune: 'PMPML does not publish separate ridership data for PMC vs PCMC zones, making it impossible to assess whether Pimpri-Chinchwad gets proportional bus service; PCMC lacks pedestrian audit data'
+};
+
+/**
+ * Regional context: for multi-city regions, appended to the generic recommendation
+ * to explain WHY the region scores poorly (satellite city deficiencies).
+ */
+const REGIONAL_RECOMMENDATION_CONTEXT: Record<string, Record<string, string>> = {
+	delhi: {
+		bus_fleet_per_lakh: ' \u2014 critically, Noida and Ghaziabad have zero dedicated city bus services, and Gurugram (GMCBL) operates only 150 buses',
+		transit_stop_density: ' \u2014 satellite cities (Noida, Gurugram, Ghaziabad) add 645 km\u00B2 of area with negligible bus stop coverage',
+		pt_accessibility: ' \u2014 Gurugram has <20% PT coverage, Noida ~15%, Ghaziabad ~10%; satellite cities drag the regional average from 56% to 44%',
+		footpath_coverage: ' \u2014 Gurugram has ~10% footpath coverage (notoriously poor pedestrian infrastructure) vs Delhi\'s 25%',
+		walking_share: ' \u2014 Gurugram (~8%) and Noida (~10%) are car-dependent satellite cities with minimal pedestrian culture',
+		cycling_share: ' \u2014 Gurugram has near-zero cycling infrastructure; satellite cities average ~2% cycling share',
+		sustainable_mode_share: ' \u2014 Gurugram (~20%) and Noida (~25%) are car-dominated; the region drops from Delhi\'s 43% to 40%',
+		road_density: ' \u2014 satellite cities have sparser road networks (Gurugram ~8, Noida ~6 km/km\u00B2) vs Delhi\'s 18',
+		carbon_emission_intensity: ' \u2014 satellite cities are more car-dependent (~1.5 t CO\u2082/cap/yr) vs Delhi proper (1.2)',
+		fuel_consumption: ' \u2014 car-dependent satellite suburbs consume ~250 L/cap/yr vs Delhi\'s 200'
+	},
+	mumbai: {
+		bus_fleet_per_lakh: ' \u2014 TMT (400), NMMT (550), and KDMT (141) add satellite city coverage but regional per-lakh drops from 22 to 21',
+		traffic_fatalities: ' \u2014 satellite cities on highway corridors (Eastern Express, NH-8) nearly double the fatality count vs BMC alone',
+		walking_share: ' \u2014 satellite cities are less walkable: Navi Mumbai (~15%, planned car-oriented city), Thane and KD (~20%)',
+		footpath_coverage: ' \u2014 Kalyan-Dombivli (~15%) and Thane (~25%) have worse footpath coverage than BMC (35%)',
+		sustainable_mode_share: ' \u2014 satellite cities are car-dependent: Navi Mumbai ~30%, Thane ~40%, KD ~35% vs BMC\'s 58%',
+		pt_accessibility: ' \u2014 Kalyan-Dombivli has only ~35% PT coverage; peripheral areas of Thane and Navi Mumbai are underserved',
+		carbon_emission_intensity: ' \u2014 satellite cities average ~0.8 t CO\u2082/cap/yr vs Mumbai island\'s 0.6 (less suburban rail usage)',
+		fuel_consumption: ' \u2014 satellite city commuters rely more on private vehicles (~140 L/cap/yr vs Mumbai\'s 110)'
+	},
+	pune: {
+		transit_stop_density: ' \u2014 PCMC adds 181 km\u00B2 of industrial area with sparser PMPML coverage than PMC',
+		pt_accessibility: ' \u2014 PCMC industrial zones (~35% coverage) drag the region from PMC\'s 57% to 48%',
+		walking_share: ' \u2014 PCMC\'s industrial township layout means longer commutes and less walking (~18% vs PMC\'s 25%)',
+		cycling_share: ' \u2014 PCMC\'s industrial traffic makes cycling unsafe (~8% vs PMC\'s 15%)',
+		footpath_coverage: ' \u2014 PCMC industrial zones have ~25% footpath coverage vs PMC\'s 40%',
+		sustainable_mode_share: ' \u2014 PCMC\'s industrial commuters rely more on private vehicles (~40% vs PMC\'s 50%)',
+		green_cover: ' \u2014 PCMC industrial land use (~0.8 m\u00B2/person) drags the region from PMC\'s 1.4'
+	},
+	kolkata: {
+		walking_share: ' \u2014 New Town\'s planned township layout favours driving over walking (~25% vs KMC\'s 39%)',
+		sustainable_mode_share: ' \u2014 New Town residents use more private vehicles (~65% sustainable) vs KMC\'s 80%',
+		bus_fleet_per_lakh: ' \u2014 New Town adds 15 lakh population with limited WBTC bus service extension'
+	}
 };
 
 /**
@@ -341,7 +388,7 @@ export function computeCityGap(cityId: string, overrides?: QoLOverrides): CityGa
 		worstDimension: worstDim.label,
 		worstIndicator: worstInd.label,
 		gapSentence: generateGapSentence(worstDim),
-		recommendation: generateRecommendation(worstInd),
+		recommendation: generateRecommendation(cityId, worstInd),
 		upgradeSentence: generateUpgradeSentence(cityId, qol.composite, qol.grade, qol.dimensions, overrides),
 		dataUnlockSentence: DATA_UNLOCK[cityId] ?? 'Publishing open transport and infrastructure data enables comprehensive analysis'
 	};
