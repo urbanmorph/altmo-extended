@@ -22,7 +22,17 @@
     'Grading transport quality in',
     'Surveying rail networks in',
     'Tallying active commuters in',
-    'Benchmarking infrastructure for'
+    'Benchmarking infrastructure for',
+    'Calculating CO2 avoided in',
+    'Scoring road safety in',
+    'Loading company leaderboard for',
+    'Fetching OpenAQ sensors in',
+    'Reading TomTom congestion for',
+    'Building scenario models for',
+    'Parsing transit GeoJSON for',
+    'Aggregating trip corridors in',
+    'Evaluating healthcare impact for',
+    'Profiling mode substitution in'
   ];
 
   const GENERIC_VERBS = [
@@ -30,36 +40,69 @@
     'Fetching transport data...',
     'Assembling the scorecard...',
     'Ranking cities...',
-    'Loading intelligence...'
+    'Loading intelligence...',
+    'Querying open data sources...',
+    'Computing ETQOLI dimensions...',
+    'Connecting to sensor networks...',
+    'Aggregating activity traces...',
+    'Building the dashboard...'
   ];
 
-  // Extract city name from destination URL if navigating to /city/{id}
-  const loadingMessage = $derived.by(() => {
-    const nav = $navigating;
-    if (!nav?.to?.url) return GENERIC_VERBS[Math.floor(Math.random() * GENERIC_VERBS.length)];
+  // Rotating message state — cycles every 3s during long loads
+  let messageIndex = $state(0);
+  let rotationTimer: ReturnType<typeof setInterval> | null = null;
 
-    const match = nav.to.url.pathname.match(/^\/city\/([^/]+)/);
+  // Pick a shuffled set of messages for the current navigation
+  let shuffledMessages = $state<string[]>([]);
+
+  function pickMessages(nav: typeof $navigating): string[] {
+    const match = nav?.to?.url?.pathname.match(/^\/city\/([^/]+)/);
     if (match) {
       const city = CITIES.find(c => c.id === match[1]);
       if (city) {
-        const verb = CITY_VERBS[Math.floor(Math.random() * CITY_VERBS.length)];
-        return `${verb} ${city.name}...`;
+        // Shuffle city verbs and attach city name
+        const shuffled = [...CITY_VERBS].sort(() => Math.random() - 0.5);
+        return shuffled.map(v => `${v} ${city.name}...`);
       }
     }
+    if (nav?.to?.url?.pathname === '/benchmark') {
+      return ['Preparing city comparison...', 'Loading radar charts...', 'Ranking across dimensions...', 'Comparing infrastructure data...'];
+    }
+    if (nav?.to?.url?.pathname === '/data-sources') {
+      return ['Loading data provenance...', 'Cataloguing 100+ sources...', 'Indexing open datasets...'];
+    }
+    if (nav?.to?.url?.pathname === '/') {
+      return ['Ranking cities...', 'Scoring transport quality...', 'Computing leaderboard...', 'Loading city grades...'];
+    }
+    // Shuffle generic verbs
+    return [...GENERIC_VERBS].sort(() => Math.random() - 0.5);
+  }
 
-    if (nav.to.url.pathname === '/benchmark') return 'Preparing city comparison...';
-    if (nav.to.url.pathname === '/data-sources') return 'Loading data provenance...';
-    if (nav.to.url.pathname === '/') return 'Ranking cities...';
-
-    return GENERIC_VERBS[Math.floor(Math.random() * GENERIC_VERBS.length)];
+  // Start/stop rotation when navigation state changes
+  $effect(() => {
+    const nav = $navigating;
+    if (nav) {
+      shuffledMessages = pickMessages(nav);
+      messageIndex = 0;
+      rotationTimer = setInterval(() => {
+        messageIndex = (messageIndex + 1) % shuffledMessages.length;
+      }, 3000);
+    } else {
+      if (rotationTimer) { clearInterval(rotationTimer); rotationTimer = null; }
+    }
+    return () => { if (rotationTimer) { clearInterval(rotationTimer); rotationTimer = null; } };
   });
+
+  const loadingMessage = $derived(shuffledMessages[messageIndex] ?? 'Loading...');
 </script>
 
 {#if $navigating}
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-surface/80 backdrop-blur-sm">
     <div class="flex flex-col items-center gap-3">
-      <i class="fa-solid fa-spinner fa-spin text-3xl text-altmo-700"></i>
-      <p class="text-sm font-medium text-text-secondary">{loadingMessage}</p>
+      <i class="fa-solid fa-dharmachakra fa-spin text-3xl text-altmo-700"></i>
+      {#key loadingMessage}
+        <p class="text-sm font-medium text-text-secondary animate-fade-in">{loadingMessage}</p>
+      {/key}
     </div>
   </div>
 {/if}
