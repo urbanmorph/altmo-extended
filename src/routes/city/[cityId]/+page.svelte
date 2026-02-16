@@ -201,6 +201,7 @@
       congestion={data.environmental?.congestion}
       companies={data.companies ?? null}
       cityName={data.cityName}
+      co2Factor={data.co2Factor}
     />
 
     <ScenariosSection

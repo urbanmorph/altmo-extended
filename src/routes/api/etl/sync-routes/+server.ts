@@ -8,6 +8,7 @@ import { getGeoMarkers } from '$lib/server/altmo-core';
 import { getStaticTransitData } from '$lib/server/transit-static';
 import { getCityById } from '$lib/config/cities';
 import { latLngToCell } from 'h3-js';
+import { getRailsPool } from '$lib/server/rails-db';
 
 /**
  * Actual response shape from Rails /routes/bulk endpoint (verified 2026-02-14):
@@ -953,6 +954,164 @@ function tripChainingToJson(agg: TripChainAgg): Record<string, unknown> {
 	};
 }
 
+// ── Direct DB helpers (used when ?source=db) ──
+
+/**
+ * Parse Rails YAML-serialized path array into [lat, lng][] pairs.
+ * Rails `serialize :path, Array` produces simple nested YAML that we can
+ * parse without a full YAML library.
+ */
+function parseYamlPath(yaml: string | null): [number, number][] | null {
+	if (!yaml || yaml.trim() === '---' || yaml.trim() === '') return null;
+	const points: [number, number][] = [];
+	// Split into coordinate pairs on `\n- -` boundaries
+	const chunks = yaml.split(/\n- -\s*/);
+	for (const chunk of chunks) {
+		// Extract all numbers from the chunk
+		const nums = chunk.match(/-?\d+\.?\d*/g);
+		if (nums && nums.length >= 2) {
+			const lat = parseFloat(nums[0]);
+			const lng = parseFloat(nums[1]);
+			if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+				points.push([lat, lng]);
+			}
+		}
+	}
+	return points.length > 0 ? points : null;
+}
+
+/** Map Rails integer direction enum to string for normalizeDirection(). */
+function mapDbDirection(dir: number | null): string | null {
+	if (dir === 0) return 'to_destination';
+	if (dir === 1) return 'from_destination';
+	return null;
+}
+
+/**
+ * Parse native_providers.route_coordinates JSONB into [lat, lng][] pairs.
+ * Format: [{latitude, longitude, accuracy, timestamp, currentSpeed}, ...]
+ */
+function parseNativeCoordinates(coords: unknown): [number, number][] | null {
+	if (!Array.isArray(coords) || coords.length === 0) return null;
+	const points: [number, number][] = [];
+	for (const pt of coords) {
+		if (pt && typeof pt.latitude === 'number' && typeof pt.longitude === 'number') {
+			points.push([pt.latitude, pt.longitude]);
+		}
+	}
+	return points.length > 0 ? points : null;
+}
+
+/**
+ * Fetch routes directly from Rails production DB using cursor-based streaming.
+ * Pulls from both Strava (activity_routes) and native app (native_providers).
+ * Returns RawRoute[] in the same shape as the API response, so all downstream
+ * aggregation code works unchanged.
+ */
+async function fetchRoutesFromDb(startDate: string, endDate: string): Promise<RawRoute[]> {
+	const pool = getRailsPool();
+	const client = await pool.connect();
+	const routes: RawRoute[] = [];
+
+	try {
+		await client.query('BEGIN');
+
+		// ── Cursor 1: Strava activities with activity_routes ──
+		await client.query(
+			`DECLARE strava_cursor CURSOR FOR
+			 SELECT a.id, a.activity_type, a.start_date, a.distance, a.moving_time,
+			        a.start_latitude, a.start_longitude, a.end_latitude, a.end_longitude,
+			        a.direction, a.company_id, a.city_id, a.user_id,
+			        ar.path
+			 FROM activities a
+			 INNER JOIN activity_routes ar ON ar.activity_id = a.id
+			 WHERE a.start_date >= $1 AND a.start_date <= $2
+			 ORDER BY a.start_date DESC`,
+			[startDate, endDate]
+		);
+
+		while (true) {
+			const { rows } = await client.query('FETCH 2000 FROM strava_cursor');
+			if (rows.length === 0) break;
+
+			for (const row of rows) {
+				routes.push({
+					activity_id: row.id,
+					activity_type: row.activity_type,
+					start_date: row.start_date ? new Date(row.start_date).toISOString() : null,
+					distance: row.distance ? parseFloat(row.distance) : null,
+					moving_time: row.moving_time,
+					start_lat: row.start_latitude ? parseFloat(row.start_latitude) : null,
+					start_lng: row.start_longitude ? parseFloat(row.start_longitude) : null,
+					end_lat: row.end_latitude ? parseFloat(row.end_latitude) : null,
+					end_lng: row.end_longitude ? parseFloat(row.end_longitude) : null,
+					direction: mapDbDirection(row.direction),
+					company_id: row.company_id,
+					city_id: row.city_id,
+					user_id: row.user_id,
+					path: parseYamlPath(row.path)
+				});
+			}
+			console.log(`[sync-routes] Strava cursor: ${routes.length} routes so far...`);
+		}
+		await client.query('CLOSE strava_cursor');
+
+		const stravaCount = routes.length;
+
+		// ── Cursor 2: Native app activities with native_providers ──
+		await client.query(
+			`DECLARE native_cursor CURSOR FOR
+			 SELECT a.id, a.activity_type, a.start_date, a.distance, a.moving_time,
+			        a.start_latitude, a.start_longitude, a.end_latitude, a.end_longitude,
+			        a.direction, a.company_id, a.city_id, a.user_id,
+			        np.route_coordinates
+			 FROM activities a
+			 INNER JOIN native_providers np ON np.id = a.provider_id
+			 WHERE a.provider_type = 'NativeProvider'
+			   AND a.start_date >= $1 AND a.start_date <= $2
+			 ORDER BY a.start_date DESC`,
+			[startDate, endDate]
+		);
+
+		while (true) {
+			const { rows } = await client.query('FETCH 2000 FROM native_cursor');
+			if (rows.length === 0) break;
+
+			for (const row of rows) {
+				routes.push({
+					activity_id: row.id,
+					activity_type: row.activity_type,
+					start_date: row.start_date ? new Date(row.start_date).toISOString() : null,
+					distance: row.distance ? parseFloat(row.distance) : null,
+					moving_time: row.moving_time,
+					start_lat: row.start_latitude ? parseFloat(row.start_latitude) : null,
+					start_lng: row.start_longitude ? parseFloat(row.start_longitude) : null,
+					end_lat: row.end_latitude ? parseFloat(row.end_latitude) : null,
+					end_lng: row.end_longitude ? parseFloat(row.end_longitude) : null,
+					direction: mapDbDirection(row.direction),
+					company_id: row.company_id,
+					city_id: row.city_id,
+					user_id: row.user_id,
+					path: parseNativeCoordinates(row.route_coordinates)
+				});
+			}
+			console.log(`[sync-routes] Native cursor: ${routes.length - stravaCount} native routes...`);
+		}
+		await client.query('CLOSE native_cursor');
+
+		console.log(`[sync-routes] DB total: ${stravaCount} Strava + ${routes.length - stravaCount} native = ${routes.length} routes`);
+
+		await client.query('COMMIT');
+	} catch (err) {
+		await client.query('ROLLBACK').catch(() => {});
+		throw err;
+	} finally {
+		client.release();
+	}
+
+	return routes;
+}
+
 // ── Main handler ──
 
 export const GET: RequestHandler = async ({ request, url }) => {
@@ -966,6 +1125,7 @@ export const GET: RequestHandler = async ({ request, url }) => {
 	try {
 		// Default: sync last 90 days, overridable via ?days=N or ?all=1 for full history (back to 2019)
 		const fetchAll = url.searchParams.get('all') === '1';
+		const source = url.searchParams.get('source');
 		const endDate = new Date().toISOString().split('T')[0];
 
 		// Build company->city lookup from geo_markers
@@ -975,29 +1135,7 @@ export const GET: RequestHandler = async ({ request, url }) => {
 		const stationsByCity = buildCityStations();
 		console.log(`[sync-routes] Loaded transit stations for ${stationsByCity.size} cities`);
 
-		// ── Step 1+2: Fetch routes in yearly windows and aggregate in-memory ──
-		// Rails API enforces max 365-day windows. Process each window's routes
-		// immediately to avoid holding all raw route paths in memory at once.
-		const dateWindows: { start: string; end: string }[] = [];
-		if (url.searchParams.get('all') === '1') {
-			const earliest = new Date('2019-01-01');
-			const latest = new Date(endDate);
-			let windowStart = earliest;
-			while (windowStart < latest) {
-				const windowEnd = new Date(Math.min(windowStart.getTime() + 364 * 86_400_000, latest.getTime()));
-				dateWindows.push({
-					start: windowStart.toISOString().split('T')[0],
-					end: windowEnd.toISOString().split('T')[0]
-				});
-				windowStart = new Date(windowEnd.getTime() + 86_400_000);
-			}
-		} else {
-			const days = parseInt(url.searchParams.get('days') ?? '90', 10);
-			dateWindows.push({
-				start: new Date(Date.now() - days * 86_400_000).toISOString().split('T')[0],
-				end: endDate
-			});
-		}
+		// ── Step 1+2: Fetch routes and aggregate in-memory ──
 
 		const densityMap = new Map<string, { city_id: number; total: number; rides: number; walks: number }>();
 		const monthlyMap = new Map<string, { city_id: number; month: string; agg: MonthlyAgg }>();
@@ -1010,20 +1148,10 @@ export const GET: RequestHandler = async ({ request, url }) => {
 		let transitConnected = 0;
 		let tripChainingCount = 0;
 
-		for (const window of dateWindows) {
-			let page = 1;
-			while (true) {
-				const resp = await railsApi<BulkRoutesResponse>(
-					`/routes/bulk?start_date=${window.start}&end_date=${window.end}&page=${page}&per_page=500`
-				);
+		const useDb = source === 'db';
 
-				const routes = resp.data?.routes ?? [];
-				totalPages++;
-				if (routes.length === 0) break;
-				totalRoutes += routes.length;
-
-				// Process this batch immediately, then discard raw routes
-				for (const r of routes) {
+		/** Process a single route into the aggregation maps (shared by API and DB paths). */
+		function processRoute(r: RawRoute): void {
 			// Resolve city_id: Rails city_id first, then company lookup, then coordinates
 			let cityId: number | null = r.city_id ?? null;
 			if (!cityId) {
@@ -1035,7 +1163,7 @@ export const GET: RequestHandler = async ({ request, url }) => {
 			}
 			if (!cityId) {
 				noCityCount++;
-				continue;
+				return;
 			}
 			citiesMapped++;
 
@@ -1056,7 +1184,7 @@ export const GET: RequestHandler = async ({ request, url }) => {
 				hour = d.getHours();
 				dayOfWeek = d.getDay();
 			}
-			if (!monthKey) continue;
+			if (!monthKey) return;
 
 			// ── H3 density (only routes with a path) ──
 			if (r.path && Array.isArray(r.path) && r.path.length > 0) {
@@ -1215,13 +1343,82 @@ export const GET: RequestHandler = async ({ request, url }) => {
 				if (existing) existing.push(userTrip);
 				else userTripsMap.set(mKey, [userTrip]);
 			}
-				} // end for (const r of routes)
+		} // end processRoute
 
-				if (!resp.data?.paginationMeta?.hasNextPage) break;
-				page++;
-			} // end while (pagination)
-			console.log(`[sync-routes] Window ${window.start}→${window.end}: ${totalRoutes} routes total so far`);
-		} // end for (const window of dateWindows)
+		// Track date range for response
+		let dateRangeStart = '';
+		let dateRangeEnd = endDate;
+		let dateWindowCount = 0;
+
+		if (useDb) {
+			// ── DB source: single query, no pagination needed ──
+			const days = parseInt(url.searchParams.get('days') ?? '90', 10);
+			const dbStartDate = fetchAll
+				? '2019-01-01'
+				: new Date(Date.now() - days * 86_400_000).toISOString().split('T')[0];
+
+			dateRangeStart = dbStartDate;
+			dateWindowCount = 1;
+
+			console.log(`[sync-routes] Fetching from DB: ${dbStartDate} → ${endDate}`);
+			const dbRoutes = await fetchRoutesFromDb(dbStartDate, endDate);
+			totalRoutes = dbRoutes.length;
+			console.log(`[sync-routes] DB returned ${totalRoutes} routes`);
+
+			for (const r of dbRoutes) {
+				processRoute(r);
+			}
+		} else {
+			// ── API source: paginated fetch with yearly windows ──
+			// Rails API enforces max 365-day windows. Process each window's routes
+			// immediately to avoid holding all raw route paths in memory at once.
+			const dateWindows: { start: string; end: string }[] = [];
+			if (fetchAll) {
+				const earliest = new Date('2019-01-01');
+				const latest = new Date(endDate);
+				let windowStart = earliest;
+				while (windowStart < latest) {
+					const windowEnd = new Date(Math.min(windowStart.getTime() + 364 * 86_400_000, latest.getTime()));
+					dateWindows.push({
+						start: windowStart.toISOString().split('T')[0],
+						end: windowEnd.toISOString().split('T')[0]
+					});
+					windowStart = new Date(windowEnd.getTime() + 86_400_000);
+				}
+			} else {
+				const days = parseInt(url.searchParams.get('days') ?? '90', 10);
+				dateWindows.push({
+					start: new Date(Date.now() - days * 86_400_000).toISOString().split('T')[0],
+					end: endDate
+				});
+			}
+
+			dateRangeStart = dateWindows[0]?.start ?? '';
+			dateWindowCount = dateWindows.length;
+
+			for (const window of dateWindows) {
+				let page = 1;
+				while (true) {
+					const resp = await railsApi<BulkRoutesResponse>(
+						`/routes/bulk?start_date=${window.start}&end_date=${window.end}&page=${page}&per_page=500`
+					);
+
+					const routes = resp.data?.routes ?? [];
+					totalPages++;
+					if (routes.length === 0) break;
+					totalRoutes += routes.length;
+
+					// Process this batch immediately, then discard raw routes
+					for (const r of routes) {
+						processRoute(r);
+					}
+
+					if (!resp.data?.paginationMeta?.hasNextPage) break;
+					page++;
+				} // end while (pagination)
+				console.log(`[sync-routes] Window ${window.start}→${window.end}: ${totalRoutes} routes total so far`);
+			} // end for (const window of dateWindows)
+		}
 
 		// ── Step 3: Upsert route_density ──
 		// Collect affected city_ids for bulk delete
@@ -1340,6 +1537,7 @@ export const GET: RequestHandler = async ({ request, url }) => {
 
 		return json({
 			success: true,
+			source: useDb ? 'db' : 'api',
 			routes_fetched: totalRoutes,
 			cities_mapped: citiesMapped,
 			no_city_skipped: noCityCount,
@@ -1348,8 +1546,8 @@ export const GET: RequestHandler = async ({ request, url }) => {
 			transit_connected: transitConnected,
 			trip_chaining_journeys: tripChainingCount,
 			pages_fetched: totalPages,
-			date_windows: dateWindows.length,
-			date_range: { start: dateWindows[0]?.start, end: dateWindows[dateWindows.length - 1]?.end }
+			date_windows: dateWindowCount,
+			date_range: { start: dateRangeStart, end: dateRangeEnd }
 		});
 	} catch (err) {
 		const message = err instanceof Error ? err.message : typeof err === 'string' ? err : JSON.stringify(err);

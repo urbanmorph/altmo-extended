@@ -51,6 +51,7 @@ import {
 	DATA_LAYERS
 } from '$lib/config/data-readiness';
 import { computeMetrics } from '$lib/utils/transit';
+import { getCityEmissionFactor } from '$lib/config/emission-factors';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const { cityId } = params;
@@ -273,6 +274,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		regionCities: city.regionCities ?? null,
 		cityCenter: [city.lng, city.lat] as [number, number],
 		cityZoom: city.zoom,
+		co2Factor: getCityEmissionFactor(cityId),
 
 		// QoL scoring
 		qolScore,

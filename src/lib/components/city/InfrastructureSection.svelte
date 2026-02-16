@@ -194,21 +194,24 @@
       });
     }
 
-    // ── Activity heatmap (H3 hex polygons) ──
+    // ── Activity heatmap (H3 hex polygons — top 25% corridors only) ──
     if (densityCount > 0) {
-      const hexGeoJSON = densityToGeoJSON(densityCells);
-      // Use sorted percentiles for color stops — avoids outlier skew
+      // Filter to cells above p75 — removes long tail noise, keeps heavy corridors
       const sorted = densityCells.map(c => c.total).sort((a, b) => a - b);
-      const pRaw = (pct: number) => sorted[Math.min(Math.floor(sorted.length * pct), sorted.length - 1)];
+      const p75 = sorted[Math.min(Math.floor(sorted.length * 0.75), sorted.length - 1)];
+      const corridorCells = densityCells.filter(c => c.total >= p75);
+      const hexGeoJSON = densityToGeoJSON(corridorCells);
+
+      // Color stops across the visible (above-p75) range
+      const corridorSorted = corridorCells.map(c => c.total).sort((a, b) => a - b);
+      const pRaw = (pct: number) => corridorSorted[Math.min(Math.floor(corridorSorted.length * pct), corridorSorted.length - 1)];
       // Deduplicate stops — MapLibre requires strictly increasing values
       const stops: Array<[number, string]> = [
-        [1, '#d4e8c2'],                   // pale sage — lowest
-        [pRaw(0.5), '#8cc63f'],           // altmo green — median
-        [pRaw(0.75), '#eab308'],          // amber — above average
-        [pRaw(0.9), '#FF7B27'],           // tangerine — high
-        [pRaw(0.99), '#dc2626']           // red — hotspot
+        [p75, '#8cc63f'],                  // altmo green — corridor threshold
+        [pRaw(0.5), '#eab308'],            // amber — median corridor
+        [pRaw(0.75), '#FF7B27'],           // tangerine — heavy corridor
+        [pRaw(0.95), '#dc2626']            // red — hotspot
       ];
-      // Remove stops with duplicate values (keep last color for each value)
       const deduped: Array<[number, string]> = [];
       for (const stop of stops) {
         if (deduped.length > 0 && deduped[deduped.length - 1][0] >= stop[0]) continue;
@@ -394,7 +397,7 @@
                   <i class="fa-solid fa-bolt mr-1"></i> Altmo Activity
                 </p>
                 <div class="space-y-1">
-                  <MapLayerToggle label="Trip Heatmap (Altmo)" color="#2171b5" count={densityCount} bind:checked={showActivityHeatmap} />
+                  <MapLayerToggle label="Activity Corridors (Altmo)" color="#8cc63f" count={densityCount} bind:checked={showActivityHeatmap} />
                 </div>
               {/if}
             </div>

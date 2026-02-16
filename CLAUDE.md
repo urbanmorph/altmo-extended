@@ -37,27 +37,35 @@ All components use Svelte 5 runes: `$props()`, `$state()`, `$effect()`, `$derive
 Transit data is fetched on-demand from open-source GitHub repositories (TransitRouter, namma-metro, BMRCL ridership), transformed server-side, and cached in-memory with 24h TTL. No transit data is stored in the database in Phase 1.
 
 ### Static Data Files & Refresh Scripts
-Some data is pre-fetched and stored as static JSON files for instant cold starts on Vercel (no runtime Overpass/Rails API calls needed). Static files are git-tracked and live in `src/lib/data/`:
+Some data is pre-fetched and stored as static JSON files for instant cold starts on Vercel (no runtime Overpass calls needed). Static files are git-tracked and live in `src/lib/data/`:
 
 - `src/lib/data/transit/{cityId}.json` — Transit data (bus stops, metro, rail) per city
-- `src/lib/data/geo-markers.json` — Company/campus locations from Rails API
-- `src/lib/data/global-stats.json` — Global impact totals from Rails API
+- `src/lib/data/geo-markers.json` — Company/campus locations from production DB
+- `src/lib/data/global-stats.json` — Global impact totals from production DB
 
-**Refresh scripts** (run with dev server active in another terminal):
+**Refresh scripts:**
 ```bash
-bash scripts/refresh-transit-data.sh   # Re-fetches all 9 cities from Overpass/GitHub
-bash scripts/refresh-core-data.sh      # Re-fetches geo markers + global stats from Rails API
+bash scripts/refresh-transit-data.sh      # Re-fetches all 9 cities from Overpass/GitHub (needs dev server)
+bash scripts/refresh-core-data-db.sh      # Re-fetches geo markers + global stats via direct DB (needs SSH tunnel, no dev server)
+bash scripts/refresh-core-data.sh         # (Legacy) Same as above but via dev server + Rails API
 ```
 
-The app prefers static data when available and falls back to live API calls. After running refresh scripts, commit the updated JSON files. Run refresh scripts when:
+The app prefers static data when available. After running refresh scripts, commit the updated JSON files. Run refresh scripts when:
 - A new city is added
 - Transit network data changes (new metro line, etc.)
-- Rails API data changes significantly
+- Production database data changes significantly
 
 ### ETL Routes
-- Located at `src/routes/api/etl/`
+- Located at `src/routes/api/etl/` — 3 routes: `sync-routes`, `sync-external`, `sync-safety`
 - Use Bearer token auth via `CRON_SECRET` env var
 - All ETL routes create `supabaseAdmin` client inside the handler (not at module level)
+- `sync-routes` supports `?source=db` to fetch directly from Rails production DB (via SSH tunnel) instead of the Rails API. The DB path is faster and avoids API timeouts. Requires `ssh altmo-db-tunnel -N -f`. Without `?source=db`, falls back to the paginated Rails API (used by Vercel cron).
+
+### Direct DB Access (rails-db.ts)
+- `src/lib/server/rails-db.ts` provides a read-only pg connection pool to the Rails production DB
+- Only works locally (requires SSH tunnel) — Vercel production cannot reach the DB
+- Used by `sync-routes?source=db` and `scripts/refresh-core-data-db.ts`
+- All connections use `default_transaction_read_only=on` for safety
 
 ### City Switching
 The primary city experience is the deep-dive page at `/city/{cityId}` (e.g., `/city/bengaluru`). A city selector dropdown within the deep-dive page navigates between cities using `goto()`. The `/benchmark` and `/data-sources` pages have their own local city selectors.
@@ -65,7 +73,7 @@ The primary city experience is the deep-dive page at `/city/{cityId}` (e.g., `/c
 ### Adding or Modifying Cities
 When adding a new city or changing city-specific config, follow the checklist in `supporting-docs/NEW_CITY_READY_RECKONER.md`. That reckoner lists every config file that needs a city entry (cities.ts, city-qol-data.ts, scenarios.ts, air-quality.ts, traffic-flow.ts, data-readiness.ts, city-qol-gaps.ts, data-sources.json, etc.) and the verification steps. **Update the reckoner itself** if you add new city-scoped config files or change the onboarding process.
 
-**Note:** `src/lib/server/altmo-core.ts` is the shared Rails API data layer (global stats, challenges, geo_markers, company detail). It does NOT need per-city config. However, the geo_markers it fetches are city-scoped via the `city_id` field on each marker, so new cities added in the Rails app will automatically appear in the city deep-dive Infrastructure tab's companies layer without any config changes in this project.
+**Note:** `src/lib/server/altmo-core.ts` is the shared data layer for production DB data (global stats, challenges, geo_markers, company detail). It does NOT need per-city config. The geo_markers are city-scoped via the `city_id` field on each marker, so new cities added in the production DB will automatically appear in the city deep-dive Infrastructure tab's companies layer without any config changes in this project.
 
 ### Live Data & QoL Overrides
 `src/lib/server/qol-overrides.ts` (`buildQoLOverrides()`) is the **single source of truth** for all live data that feeds into ETQOLI scoring. Every page that displays QoL scores calls this function. When adding a new live data source:
@@ -79,10 +87,10 @@ When adding a new city or changing city-specific config, follow the checklist in
 Current live sources: safety (Supabase), PM2.5 + NO2 (OpenAQ), congestion (TomTom), rail transit km (static JSON via Overpass, with live fallback).
 
 ### Activity Route Data
-`src/lib/server/activity-data.ts` queries the `activity_routes` Supabase table (synced from Rails `/routes/bulk` via the ETL sync-routes endpoint). It maps app city slugs to Rails integer city_ids internally. Functions: `getActivitySummary()`, `getActivityByHour()`, `getActivityByDayOfWeek()`, `getTopCorridors()`, `getActivityTrends()`, `getDistanceDistribution()`. Uses 1h cache (shorter than transit's 24h since activity data updates more frequently).
+`src/lib/server/activity-data.ts` queries the `city_activity_monthly` Supabase table (synced from production DB via the ETL sync-routes endpoint). It maps app city slugs to Rails integer city_ids internally. Functions: `getActivitySummary()`, `getActivityByHour()`, `getActivityByDayOfWeek()`, `getTopCorridors()`, `getActivityTrends()`, `getDistanceDistribution()`, `getTripChaining()`. Uses 1h cache (shorter than transit's 24h since activity data updates more frequently).
 
 ### Data Provenance
-`static/data/data-sources.json` is the canonical registry of all data sources, organized by city and category. **Update it** whenever you add, remove, or change a data source (new API endpoint, new OpenAQ sensor, new transit GeoJSON, etc.). Each entry tracks the source name, URL, license, update frequency, and confidence level. The `/data-sources` page renders this file directly.
+`static/data/data-sources.json` is the canonical registry of all data sources, organized by city and category. **Update it** whenever you add, remove, or change a data source (new data feed, new OpenAQ sensor, new transit GeoJSON, etc.). Each entry tracks the source name, URL, license, update frequency, and confidence level. The `/data-sources` page renders this file directly.
 
 ## Design System & UI Rules
 
@@ -120,7 +128,7 @@ src/
     impact/            — Redirect → /city/{cityId}#activity (legacy)
     forecast/          — Redirect → /city/{cityId}#scenarios (legacy)
     routes/            — Redirect → /city/{cityId}#activity (legacy)
-    api/etl/           — 5 ETL server routes (sync-routes, sync-stats, sync-facilities, sync-external, sync-safety)
+    api/etl/           — 3 ETL server routes (sync-routes, sync-external, sync-safety)
     api/internal/      — Dev-only data dump endpoints (dump-transit, dump-core-data)
   lib/
     components/        — Svelte components (Nav, Map, Chart, MetricCard, DataTable, etc.)
@@ -140,70 +148,55 @@ supporting-docs/       — Analysis docs (gitignored, not deployed)
 | [Namma Metro](https://github.com/geohacker/namma-metro) | Public | Bengaluru metro stations & line geometry |
 | [BMRCL Ridership](https://github.com/Vonter/bmrcl-ridership-hourly) | CC BY 4.0 | Hourly station-wise metro ridership (Bengaluru) |
 | DULT CMP 2020 | Government | Comprehensive Mobility Plan (Bengaluru) |
-| Altmo Core API (Rails) | Internal | Activity routes, facilities, companies, leaderboards, city stats |
+| Altmo Core DB (Rails) | Internal | Activity routes, companies, leaderboards, city stats (direct DB read-only) |
 | [OpenAQ v3](https://api.openaq.org/v3) | CC BY 4.0 | Real-time PM2.5 from CPCB stations (7 cities) |
 | [TomTom Traffic Flow](https://developer.tomtom.com/traffic-api) | TomTom License | Real-time congestion data (5-8 junctions per city) |
 | NCRB / MoRTH | Government | Traffic fatality rates per city |
 | [UrbanEmissions APnA](https://urbanemissions.info/india-apna/) | Academic | PM2.5 source apportionment per city |
 
-### Altmo Core API (Rails app — `rails-web-app`)
+### Altmo Core (Rails app — `rails-web-app`)
 
 > **IMPORTANT: The `rails-web-app` repository is READ-ONLY from this project's perspective.
-> NEVER modify, create, or suggest changes to files in that repository. All integration with the
-> Rails backend MUST go through its existing REST API endpoints listed below. If an endpoint is
-> missing or returns an unexpected shape, document the gap and flag it — do NOT add or change
-> Rails controllers, models, routes, or views.**
+> NEVER modify, create, or suggest changes to files in that repository.**
 
 The Rails app is the primary activity data backend. Stack: Ruby 3.1.2, Rails 7.0, PostgreSQL + PostGIS, Devise auth, Strava OAuth integration.
 
-**Auth:** All `/api/v1/` endpoints require `?access_token=<token>` query param, validated via `ApiUser.find_by_token` in `BaseController`. The `railsApi()` helper in `src/lib/rails-api.ts` appends this automatically using the `RAILS_API_ACCESS_TOKEN` env var.
+#### Data Access — Direct Database (READ-ONLY)
 
-**API Base URL:** `https://www.altmo.app/api/v1/`
-**API Docs:** `https://altmo.app/api/docs`
+- SSH tunnel to production Postgres (13.7 + PostGIS 3.2) via `ssh altmo-db-tunnel -N -f`
+- Connect: `/usr/local/Cellar/libpq/18.2/bin/psql -h localhost -p 5433 -U postgres -d cycletowork`
+- Credentials in `~/.pgpass` — passwordless once tunnel is up
+- **READ-ONLY** — NEVER INSERT, UPDATE, DELETE, or run DDL against the production database
+- Full access details: `~/.claude/projects/-Users-sathya-Documents-GitHub-altmo-extended/memory/server-access.md`
+- Database: 68 tables, 575K activities, 9.2K users, 137K routes
 
-**Full API reference:** See `supporting-docs/ALTMO_API_REFERENCE.md` for complete endpoint docs, test results, and bug report.
+**Key tables:**
 
-> **Setup:** Run `scripts/migrations/001-create-etl-tables.sql` against Supabase before first ETL run.
+| Table | What it holds |
+|---|---|
+| `activities` | Strava-sourced GPS activities (rides, walks, runs) |
+| `activity_routes` | Decoded polyline lat/lng path arrays |
+| `users` | User accounts (Strava OAuth) |
+| `companies` | Facilities / employers |
+| `user_companies` | User ↔ company membership |
+| `geo_markers` | PostGIS point/polygon boundaries |
+| `transit_entities` | Transit operators (BMRCL, etc.) |
+| `transit_points` | Transit stations/stops |
+| `histories` | Daily leaderboard snapshots |
+| `challenges` | Gamification events |
+| `cities` | City registry (113 cities) |
 
-**Verified Rails API endpoints (tested 2026-02-14, post-Apipie fix):**
-
-*All endpoints require `access_token` query param. Internal endpoints also require `role: "internal"` on the ApiUser.*
-
-*Working endpoints:*
-- `GET /cities` — 200, 3.5s. 113 cities, name→numeric_id map
-- `GET /statistics/overall` — 200, 4.6s. Returns `{ success, overall_statistics: { people, activitiesCount, distance(metres), co2Offset(kg), fuelSaved(L), moneySaved(INR) } }`. Note: `city_id` filter has no effect
-- `GET /campuses` — 200, 3.8s. 6 campuses, name→id map
-- `GET /challenges` — 200, 4.6s. 13 challenges with scope, dates, status, eligibleEntities
-- `GET /challenges/:id` — 200, 0.1s. Challenge detail with leaderboard (no `success` wrapper). Some IDs return 404
-- `GET /companies/:id` — 200, 18.0s. Company detail with stats, campusNames, campusIds. Very slow
-- `GET /countries` — 200, 5.2s. 12 countries
-- `GET /states?country_id=1` — 200, 5.1s. Fixed by Apipie PR (was 422). Returns empty array
-- `GET /geo_markers` — 200, 9.2s, 1.2MB. 2,111 markers (internal-only). Returns `{ success, data: { geo_markers: [{ id, associable_type, associable_id, associable_name, lat, lon, layer_type, city_id }] } }`
-- `GET /geo_markers?city_id=18326` — 200, 7.3s. City filter now works (was 422). Fixed by Apipie PR
-- `GET /routes/bulk?start_date=...&end_date=...` — 200, 14.6s, 4.5MB. Returns `{ success, data: { routes: [{ activity_id, activity_type, start_date, distance, moving_time, start_lat, start_lng, end_lat, end_lng, direction, company_id, path }] } }`. 500 routes. Fixed by Apipie PR. Requires date params (500 without them)
-
-*Broken — Rails controller bugs (NOT Apipie — these fail even after the type validator fix):*
-- `GET /activities/summary` — 500 server error regardless of params (controller bug)
-- `GET /transit_activities` — 500 server error regardless of params (internal-only, controller bug)
-- `GET /routes/bulk` (without dates) — 500 (requires start_date + end_date params)
-- `GET /campuses/:id` — 400, empty response body (controller bug)
-
-*Performance issues:*
-- `GET /companies` (list, no filter) — Timeout (>38 min, 987 companies, no pagination)
+#### Server Access
+- **SSH:** `ssh deploy@157.245.101.5` (passwordless SSH key auth)
+- **Production app:** `/home/deploy/websites/capified_altmo_production/current`
+- **Logs:** `/home/deploy/websites/capified_altmo_production/shared/log/`
+- Full access details: `~/.claude/projects/-Users-sathya-Documents-GitHub-altmo-extended/memory/server-access.md`
 
 *Key city IDs:* Bengaluru=18326, Chennai=18586, Delhi=18215, Hyderabad=18629, Indore=18396, Kochi=18363, Mumbai=18445, Pune=18455, Ahmedabad=18220
 
-**Key Rails data models:**
-- **Activity**: Strava-sourced GPS rides (≥1km, company-linked), direction (to/from work), distance, speed, CO2/fuel/money saved
-- **ActivityRoute**: Decoded polyline → lat/lng path array
-- **TransitActivity**: First/last-mile rides near transit points (geofence or 150m radius), with approval workflow
-- **Company/Group**: Facilities (Company) and organizations (Group) with leaderboard aggregations
-- **GeoMarker**: PostGIS point/polygon boundaries for companies, transit points, campuses
-- **Challenge**: Gamification events (F2WCR, transit challenges) with eligibility and moderation
-- **History**: Daily snapshots of leaderboard data (riders, rides, distance, co2_credits, rank)
-- **ApiUser**: Token-based auth — `access_token` query param validated via `find_by_token`
-
 **Formulas:** CO2 = distance(km) × 0.25 kg, Petrol = distance(km) × 0.108 L, Money = petrol × ₹101
+
+> **Setup:** Run `scripts/migrations/001-create-etl-tables.sql` against Supabase before first ETL run.
 
 ## Environment Notes
 - Node 20 required — local machine defaults to v16, run `nvm use 20` before dev/build

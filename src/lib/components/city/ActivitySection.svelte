@@ -1,6 +1,6 @@
 <script lang="ts">
   import MetricCard from '$lib/components/MetricCard.svelte';
-  import { formatCompact, formatNumber, formatPercent } from '$lib/utils/format';
+  import { formatCompact, formatNumber, formatPercent, formatINR, formatWeight, formatIndianCompact, formatHours } from '$lib/utils/format';
   import { getPM25Category } from '$lib/config/air-quality';
 
   interface TripChainingData {
@@ -53,9 +53,10 @@
     congestion: CongestionData | null;
     companies: CompanyData | null;
     cityName: string;
+    co2Factor: number;
   }
 
-  let { activity, pm25, safety, congestion, companies, cityName }: Props = $props();
+  let { activity, pm25, safety, congestion, companies, cityName, co2Factor }: Props = $props();
 
   // PM2.5 category
   const pm25Category = $derived(pm25 ? getPM25Category(pm25.pm25Avg) : null);
@@ -89,6 +90,7 @@
 
   <!-- Activity impact metrics -->
   {#if activity}
+    {@const cityCO2 = Math.round(activity.totalDistance * co2Factor)}
     {@const healthcareValue = Math.round(activity.totalDistance * 1.75)}
     {@const fatBurnKg = activity.totalDistance * 35 / 7700}
     {@const cityTrafficDelay = congestion && congestion.avgCurrentSpeed > 0 && congestion.avgFreeFlowSpeed > 0
@@ -97,33 +99,33 @@
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <MetricCard
         label="CO2 Avoided"
-        value="{formatCompact(activity.co2Offset)} kg"
+        value={formatWeight(cityCO2)}
         icon="fa-solid fa-leaf"
-        tooltip="Distance (km) x 0.25 kg/km avg car emission factor"
+        tooltip="Distance x {co2Factor} kg/km (city-specific mode substitution factor from CMP/Census data)"
       />
       <MetricCard
         label="Healthcare Value"
-        value="₹{formatCompact(healthcareValue)}"
+        value={formatINR(healthcareValue)}
         icon="fa-solid fa-heart-pulse"
         tooltip="WHO HEAT method: distance (km) x ₹1.75/km monetised mortality reduction from active mobility"
       />
       <MetricCard
         label="Fat Burn"
-        value="{fatBurnKg >= 10 ? formatCompact(Math.round(fatBurnKg)) : fatBurnKg.toFixed(1)} kg"
+        value={formatWeight(fatBurnKg)}
         icon="fa-solid fa-fire-flame-curved"
         tooltip="Distance (km) x 35 kcal/km (blended cycling/walking avg) / 7,700 kcal per kg body fat"
       />
       {#if trafficHoursSaved !== null}
         <MetricCard
           label="Traffic Hours Saved"
-          value="{formatCompact(trafficHoursSaved)} hrs"
+          value="{formatHours(trafficHoursSaved)}"
           icon="fa-solid fa-hourglass-half"
           tooltip="Hours not stuck in traffic = distance (km) x (1/{congestion?.avgCurrentSpeed.toFixed(0)} - 1/{congestion?.avgFreeFlowSpeed.toFixed(0)}) using TomTom city speeds"
         />
       {:else}
         <MetricCard
           label="Total Trips"
-          value={formatCompact(activity.totalRides + activity.totalWalks)}
+          value={formatIndianCompact(activity.totalRides + activity.totalWalks)}
           icon="fa-solid fa-route"
           tooltip="Total rides + walks logged in this city"
         />
@@ -256,7 +258,7 @@
                 <th class="pb-2 pr-3 w-8">#</th>
                 <th class="pb-2 pr-3">Company</th>
                 <th class="pb-2 pr-3 text-right" title="Distinct users who logged at least one ride or walk">Users</th>
-                <th class="pb-2 pr-3 text-right" title="CO2 emissions avoided = distance (km) x 0.25 kg/km (avg car emission factor)">
+                <th class="pb-2 pr-3 text-right" title="CO2 avoided = distance (km) x {co2Factor} kg/km (city-specific mode substitution factor)">
                   <i class="fa-solid fa-leaf mr-1" style="font-size: 0.55rem;"></i>CO2 Avoided
                 </th>
                 <th class="pb-2 pr-3 text-right" title="Monetised mortality reduction from active mobility (WHO HEAT method) = distance (km) x ₹1.75/km">
@@ -274,7 +276,7 @@
             </thead>
             <tbody>
               {#each companies.top as company, i}
-                {@const co2Kg = Math.round(company.totalKm * 0.25)}
+                {@const co2Kg = Math.round(company.totalKm * co2Factor)}
                 {@const healthValue = Math.round(company.totalKm * 1.75)}
                 {@const fatBurnKg = (company.totalKm * 35 / 7700)}
                 {@const trafficHours = congestionDelay ? Math.round(company.totalKm * congestionDelay) : null}
@@ -285,11 +287,11 @@
                     {company.name}
                   </td>
                   <td class="py-2 pr-3 text-right tabular-nums text-text-primary">{formatNumber(company.activeUsers)}</td>
-                  <td class="py-2 pr-3 text-right tabular-nums text-text-primary">{formatCompact(co2Kg)} kg</td>
-                  <td class="py-2 pr-3 text-right tabular-nums text-text-primary">₹{formatCompact(healthValue)}</td>
-                  <td class="py-2 pr-3 text-right tabular-nums text-text-primary">{fatBurnKg >= 10 ? formatCompact(Math.round(fatBurnKg)) : fatBurnKg.toFixed(1)} kg</td>
+                  <td class="py-2 pr-3 text-right tabular-nums text-text-primary">{formatWeight(co2Kg)}</td>
+                  <td class="py-2 pr-3 text-right tabular-nums text-text-primary">{formatINR(healthValue)}</td>
+                  <td class="py-2 pr-3 text-right tabular-nums text-text-primary">{formatWeight(fatBurnKg)}</td>
                   {#if trafficHours !== null}
-                    <td class="py-2 text-right tabular-nums text-text-primary">{formatCompact(trafficHours)} hrs</td>
+                    <td class="py-2 text-right tabular-nums text-text-primary">{formatHours(trafficHours)}</td>
                   {/if}
                 </tr>
               {/each}
