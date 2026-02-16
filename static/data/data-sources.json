@@ -144,9 +144,9 @@
     {
       "name": "UrbanEmissions.info — APnA City Program",
       "url": "https://urbanemissions.info/india-apna/",
-      "description": "City-level PM2.5 source apportionment using WRF-CAMx dispersion modelling (Guttikunda et al. 2019). Provides sector-wise emission shares: transport, industry, dust, waste burning, residential, DG sets.",
+      "description": "City-level PM2.5 source apportionment and transport CO2 emission estimates using WRF-CAMx dispersion modelling (Guttikunda et al. 2019). Provides sector-wise emission shares: transport, industry, dust, waste burning, residential, DG sets. Also used for transport carbon emission intensity per capita estimates.",
       "category": "energy",
-      "indicators": ["pm25_annual"],
+      "indicators": ["pm25_annual", "carbon_emission_intensity"],
       "dataType": "research",
       "confidence": "medium",
       "year": "2019",
@@ -184,6 +184,42 @@
       "confidence": "high",
       "year": "2009",
       "license": "Government of India"
+    },
+    {
+      "name": "CPCB NANMN (National Ambient Noise Monitoring Network)",
+      "url": "https://cpcb.nic.in/noise-monitoring-data/",
+      "description": "Continuous 24x7 ambient noise monitoring at 10 stations per city across 7 major Indian cities. Provides Leq (equivalent continuous noise level) for day, night, and 24-hour periods. Transport noise derived from commercial/traffic zone stations. Data from 2019-2024.",
+      "category": "energy",
+      "indicators": ["noise_pollution"],
+      "dataType": "static",
+      "confidence": "high",
+      "year": "2024",
+      "license": "Government of India",
+      "notes": "Supplemented by state PCB campaign data for cities without NANMN coverage (Ahmedabad/GPCB, Kochi/KSPCB, Pune/MPCB)"
+    },
+    {
+      "name": "PPAC District-Level Fuel Sales",
+      "url": "https://ppac.gov.in/",
+      "description": "Petroleum Planning and Analysis Cell (MoPNG) district-level fuel sales data. Transport fuel consumption derived as 100% petrol + 60% diesel sales (transport share). Converted to per-capita litres petrol-equivalent per year using Census/projected population.",
+      "category": "energy",
+      "indicators": ["fuel_consumption"],
+      "dataType": "static",
+      "confidence": "medium",
+      "year": "2023",
+      "license": "Government of India",
+      "notes": "State-level data disaggregated to city using urban population share. Diesel transport share (60%) from MoRTH fuel consumption surveys"
+    },
+    {
+      "name": "ISFR / HUGSI / CSCAF — Urban Green Cover",
+      "url": "https://fsi.nic.in/forest-report-2023",
+      "description": "Per-capita urban green cover from multiple sources: India State of Forest Report 2023 (ISFR, Forest Survey of India) for 7 mega cities, Husqvarna Urban Green Space Index (HUGSI) satellite-derived green cover percentages, and CSCAF/EoLI (Climate Smart Cities Assessment Framework / Ease of Living Index) municipal self-reported data.",
+      "category": "infrastructure",
+      "indicators": ["green_cover"],
+      "dataType": "static",
+      "confidence": "medium",
+      "year": "2023",
+      "license": "Government of India / Academic",
+      "notes": "Delhi figure (20 m2/person) inflated by Ridge Forest within NCT boundary. Indore and Kochi lack reliable data (null). Cross-validated across ISFR, HUGSI, and published research where available"
     }
   ],
   "cities": {

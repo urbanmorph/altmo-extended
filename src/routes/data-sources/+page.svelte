@@ -79,10 +79,10 @@
 
   // ETQOLI dimensions
   const dimensions = [
-    { name: 'Health', weight: 43, icon: 'fa-solid fa-heart-pulse', color: 'text-red-600', bg: 'bg-red-50', indicators: ['PM2.5', 'NO2', 'Traffic fatalities', 'VRU fatality share'] },
-    { name: 'Accessibility', weight: 23, icon: 'fa-solid fa-route', color: 'text-blue-600', bg: 'bg-blue-50', indicators: ['Rail transit km', 'Bus fleet per lakh', 'PT accessibility', 'Transit stop density'] },
-    { name: 'Environmental', weight: 18, icon: 'fa-solid fa-leaf', color: 'text-green-600', bg: 'bg-green-50', indicators: ['Congestion level', 'Grid renewables share', 'Transport emission share'] },
-    { name: 'Mobility', weight: 16, icon: 'fa-solid fa-person-walking', color: 'text-purple-600', bg: 'bg-purple-50', indicators: ['Walking share', 'Cycling share', 'Sustainable mode share', 'Footpath coverage', 'Cycle infra km', 'Road density'] }
+    { name: 'Health', weight: 43, icon: 'fa-solid fa-heart-pulse', color: 'text-red-600', bg: 'bg-red-50', indicators: ['Traffic fatalities', 'VRU fatality share', 'Walking share', 'Cycling share', 'Footpath coverage'] },
+    { name: 'Accessibility', weight: 23, icon: 'fa-solid fa-route', color: 'text-blue-600', bg: 'bg-blue-50', indicators: ['Rail transit km', 'Bus fleet per lakh', 'Transit stop density', 'Cycle infra km', 'PT accessibility'] },
+    { name: 'Environmental', weight: 18, icon: 'fa-solid fa-leaf', color: 'text-green-600', bg: 'bg-green-50', indicators: ['PM2.5', 'NO2', 'Congestion', 'Noise', 'CO2 emissions', 'Fuel consumption', 'Green cover'] },
+    { name: 'Mobility', weight: 16, icon: 'fa-solid fa-person-walking', color: 'text-purple-600', bg: 'bg-purple-50', indicators: ['Sustainable mode share', 'Road density'] }
   ];
 
   // Grade scale
@@ -149,7 +149,7 @@
     </h1>
     <p class="mt-2 max-w-3xl text-sm leading-relaxed text-text-secondary">
       Altmo Intelligence scores cities using the ETQOLI (Enhanced Transportation Quality of Life Index) framework
-      -- a research-backed model with 15 indicators across 4 dimensions. Every data point is traceable to a
+      -- a research-backed model with 19 indicators across 4 dimensions. Every data point is traceable to a
       published source. This page explains how we score and lists every data source we use.
     </p>
   </div>
@@ -244,7 +244,7 @@
           Confidence Tiers
         </h3>
         <p class="mb-3 text-xs leading-relaxed text-text-secondary">
-          Each city's score is accompanied by a confidence tier indicating what percentage of its 15 indicators
+          Each city's score is accompanied by a confidence tier indicating what percentage of its 19 indicators
           are backed by measured (non-estimated) data.
         </p>
         <div class="space-y-2.5">
@@ -260,7 +260,7 @@
         </div>
         <div class="mt-4 rounded bg-altmo-50 px-3 py-2 text-[0.65rem] leading-relaxed text-primary">
           <i class="fa-solid fa-info-circle mr-1"></i>
-          15 indicators total. Cities with more live data feeds (OpenAQ, TomTom, GTFS) earn higher confidence.
+          19 indicators total. Cities with more live data feeds (OpenAQ, TomTom, GTFS) earn higher confidence.
         </div>
       </div>
     </div>

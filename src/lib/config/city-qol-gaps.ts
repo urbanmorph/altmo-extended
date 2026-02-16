@@ -47,6 +47,10 @@ const GAP_TEMPLATES: Record<string, (val: number) => string> = {
 	pm25_annual: (v) => `PM2.5 at ${Math.round(v)} \u00B5g/m\u00B3 \u2014 ${(v / 15).toFixed(1)}x the WHO guideline`,
 	no2_annual: (v) => `NO\u2082 at ${Math.round(v)} \u00B5g/m\u00B3 \u2014 ${(v / 10).toFixed(1)}x the WHO guideline`,
 	congestion_level: (v) => `${Math.round(v)}% extra travel time due to congestion`,
+	noise_pollution: (v) => `Daytime noise at ${Math.round(v)} dB(A) \u2014 ${Math.round(v) > 55 ? `${Math.round(v - 55)} dB above` : 'within'} the WHO guideline`,
+	carbon_emission_intensity: (v) => `Transport CO\u2082 at ${v.toFixed(1)} tonnes per capita per year`,
+	fuel_consumption: (v) => `Transport fuel consumption at ${Math.round(v)} litres per capita per year`,
+	green_cover: (v) => `Green cover at only ${v.toFixed(1)} m\u00B2 per person \u2014 ${v < 9 ? 'below WHO minimum of 9 m\u00B2' : 'above WHO minimum'}`,
 	sustainable_mode_share: (v) => `Sustainable mode share at only ${Math.round(v)}%`,
 	road_density: (v) => `Road density of only ${v.toFixed(1)} km/km\u00B2`
 };
@@ -69,6 +73,12 @@ const RECOMMENDATION_TEMPLATES: Record<string, (val: number) => string> = {
 	pm25_annual: () => 'Fleet electrification + congestion pricing could cut transport-related PM2.5 by 30%',
 	no2_annual: () => 'Transitioning bus fleets to electric and expanding metro capacity would reduce NO\u2082 levels',
 	congestion_level: () => 'Metro expansion + bus priority lanes could reduce peak-hour congestion significantly',
+	noise_pollution: () => 'Electric vehicle adoption + noise barriers on expressways could bring levels closer to WHO guidelines',
+	carbon_emission_intensity: () => 'Fleet electrification + metro expansion + congestion pricing could cut transport CO\u2082 by 40%',
+	fuel_consumption: () => 'Modal shift to public transit + EV adoption could halve per-capita fuel consumption',
+	green_cover: (v) => v < 2
+		? 'Urban greening programme with street trees + pocket parks could triple per-capita green cover'
+		: 'Expanding urban forests + greening transport corridors could significantly improve per-capita green cover',
 	sustainable_mode_share: () => 'Investing in NMT infrastructure and public transit would shift trips from private vehicles',
 	road_density: () => 'Improving road connectivity in peri-urban areas would reduce congestion on arterials'
 };
@@ -90,6 +100,10 @@ const UPGRADE_DESCRIPTIONS: Record<string, (from: number, to: number) => string>
 	pm25_annual: (from, to) => `reducing PM2.5 from ${Math.round(from)} to ${Math.round(to)} \u00B5g/m\u00B3`,
 	no2_annual: (from, to) => `reducing NO\u2082 from ${Math.round(from)} to ${Math.round(to)} \u00B5g/m\u00B3`,
 	congestion_level: (from, to) => `reducing congestion from ${Math.round(from)}% to ${Math.round(to)}% extra time`,
+	noise_pollution: (from, to) => `reducing noise from ${Math.round(from)} to ${Math.round(to)} dB(A)`,
+	carbon_emission_intensity: (from, to) => `reducing transport CO\u2082 from ${from.toFixed(1)} to ${to.toFixed(1)} t/cap/yr`,
+	fuel_consumption: (from, to) => `reducing fuel consumption from ${Math.round(from)} to ${Math.round(to)} L/cap/yr`,
+	green_cover: (from, to) => `increasing green cover from ${from.toFixed(1)} to ${to.toFixed(1)} m\u00B2/person`,
 	sustainable_mode_share: (from, to) => `increasing sustainable mode share from ${Math.round(from)}% to ${Math.round(to)}%`,
 	road_density: (from, to) => `improving road density from ${from.toFixed(1)} to ${to.toFixed(1)} km/km\u00B2`
 };

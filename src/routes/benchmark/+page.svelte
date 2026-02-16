@@ -76,13 +76,17 @@
 
   // Key indicators to show in the comparison table
   const KEY_INDICATORS = [
-    { key: 'pm25_annual', label: 'PM2.5', unit: 'ug/m3', dimension: 'environmental' },
-    { key: 'congestion_level', label: 'Congestion', unit: '% extra time', dimension: 'environmental' },
-    { key: 'traffic_fatalities', label: 'Safety Fatalities', unit: 'per lakh pop.', dimension: 'health' },
-    { key: 'rail_transit_km', label: 'Rail Transit', unit: 'km', dimension: 'accessibility' },
-    { key: 'transit_stop_density', label: 'Transit Stop Density', unit: 'stops/km2', dimension: 'accessibility' },
+    { key: 'traffic_fatalities', label: 'Traffic Fatalities', unit: 'per lakh pop.', dimension: 'health' },
     { key: 'walking_share', label: 'Walking Share', unit: '% trips', dimension: 'health' },
     { key: 'cycling_share', label: 'Cycling Share', unit: '% trips', dimension: 'health' },
+    { key: 'rail_transit_km', label: 'Rail Transit', unit: 'km', dimension: 'accessibility' },
+    { key: 'transit_stop_density', label: 'Transit Stop Density', unit: 'stops/km2', dimension: 'accessibility' },
+    { key: 'pm25_annual', label: 'PM2.5', unit: 'ug/m3', dimension: 'environmental' },
+    { key: 'congestion_level', label: 'Congestion', unit: '% extra time', dimension: 'environmental' },
+    { key: 'noise_pollution', label: 'Noise', unit: 'dB(A)', dimension: 'environmental' },
+    { key: 'carbon_emission_intensity', label: 'CO2 Emissions', unit: 't CO2/cap/yr', dimension: 'environmental' },
+    { key: 'fuel_consumption', label: 'Fuel Consumption', unit: 'L/cap/yr', dimension: 'environmental' },
+    { key: 'green_cover', label: 'Green Cover', unit: 'm2/person', dimension: 'environmental' },
     { key: 'sustainable_mode_share', label: 'Sustainable Modes', unit: '% trips', dimension: 'mobility' }
   ];
 

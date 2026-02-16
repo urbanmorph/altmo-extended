@@ -15,6 +15,10 @@
  *   - Metro rail corporation data (network length)
  *   - TomTom Traffic Index (congestion levels)
  *   - CPCB / OpenAQ (NO2 annual averages)
+ *   - CPCB NANMN (noise pollution — National Ambient Noise Monitoring Network)
+ *   - UrbanEmissions APnA (transport CO2 per capita)
+ *   - PPAC district-level fuel sales (transport fuel consumption per capita)
+ *   - ISFR / HUGSI / CSCAF (per-capita green cover)
  *   - City CMP/Smart City/DULT reports (footpath coverage, cycle infra)
  *   - TransitRouter + metro station data (PT accessibility estimates)
  */
@@ -56,6 +60,10 @@ export const INDICATOR_BENCHMARKS: Record<string, IndicatorBenchmark> = {
 	pm25_annual:            { worstRef: 100, target: 15,  source: 'Delhi-level / WHO 2021 guideline' },
 	no2_annual:             { worstRef: 80,  target: 10,  source: 'Delhi peak / WHO 2021 guideline' },
 	congestion_level:       { worstRef: 60,  target: 15,  source: 'Severe congestion / near free-flow' },
+	noise_pollution:        { worstRef: 80,  target: 55,  source: 'Noisy Indian city / WHO 2018 guideline' },
+	carbon_emission_intensity: { worstRef: 1.5, target: 0.3, source: 'Car-sprawl city / Copenhagen-class' },
+	fuel_consumption:       { worstRef: 250, target: 50,  source: 'Car-dependent / high-PT European city' },
+	green_cover:            { worstRef: 0.5, target: 20,  source: 'Dense built-up / European best practice' },
 	sustainable_mode_share: { worstRef: 20,  target: 70,  source: 'Car-dependent / Dutch-class' },
 	road_density:           { worstRef: 3,   target: 20,  source: 'Sparse / well-connected grid' }
 };
@@ -83,10 +91,18 @@ export const GRADE_BOUNDARIES = [
 export type ConfidenceTier = 'gold' | 'silver' | 'bronze';
 
 /**
- * Full TQOLI paper defines ~18 indicators across 4 dimensions.
- * We currently implement 15. Confidence is now a multi-factor weighted score.
+ * Based on the Allirani & Verma (2025) paper which defines 18 indicators
+ * across 4 dimensions. Our framework adapts these into policy-measurable
+ * proxies (e.g. PA → walking_share + cycling_share, TRNC → rail_transit_km
+ * + transit_stop_density + pt_accessibility) and adds 3 Altmo enhancements:
+ *
+ *   - vru_fatality_share (Health) — pedestrian + cyclist deaths as % of traffic fatalities
+ *   - no2_annual (Environmental) — NO2 annual average from CPCB/OpenAQ
+ *   - green_cover (Environmental) — per-capita green cover from ISFR/HUGSI/CSCAF
+ *
+ * Total: 19 indicators (paper-adapted base + 3 Altmo enhancements).
  */
-export const TQOLI_FULL_INDICATOR_COUNT = 18;
+export const TQOLI_FULL_INDICATOR_COUNT = 19;
 
 export interface ConfidenceBreakdown {
 	tier: ConfidenceTier;
@@ -254,6 +270,38 @@ export const QOL_DIMENSIONS: QoLDimension[] = [
 				effect: 'negative',
 				source: 'TomTom 2023',
 				description: 'Average extra travel time due to congestion'
+			},
+			{
+				key: 'noise_pollution',
+				label: 'Noise',
+				unit: 'dB(A)',
+				effect: 'negative',
+				source: 'CPCB NANMN',
+				description: 'Average daytime transport noise level'
+			},
+			{
+				key: 'carbon_emission_intensity',
+				label: 'CO\u2082 Emissions',
+				unit: 't CO\u2082/cap/yr',
+				effect: 'negative',
+				source: 'UrbanEmissions APnA',
+				description: 'Transport carbon dioxide emissions per capita per year'
+			},
+			{
+				key: 'fuel_consumption',
+				label: 'Fuel Consumption',
+				unit: 'L petrol-eq/cap/yr',
+				effect: 'negative',
+				source: 'PPAC',
+				description: 'Transport fuel consumption per capita in petrol-equivalent litres'
+			},
+			{
+				key: 'green_cover',
+				label: 'Green Cover',
+				unit: 'm\u00B2/person',
+				effect: 'positive',
+				source: 'ISFR/HUGSI/CSCAF',
+				description: 'Per-capita urban green cover area'
 			}
 		]
 	},
@@ -304,6 +352,10 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			pm25_annual: 55, // CPCB/GPCB 2023 — industrial + vehicular
 			no2_annual: 35, // CPCB 2023 — moderate
 			congestion_level: 49, // TomTom 2023
+			noise_pollution: 72, // GPCB campaign data — industrial zones push avg up
+			carbon_emission_intensity: 0.8, // UrbanEmissions APnA — moderate, BRT helps
+			fuel_consumption: 150, // PPAC Gujarat + CEPT — moderate car ownership
+			green_cover: 7.5, // HUGSI 2024 (18% green / 6.5M pop) — BRT corridor greenery
 			// Mobility
 			sustainable_mode_share: 43, // CEPT CTTS: walk 24% + cycle 8% + bus ~8% + metro ~3%
 			road_density: 5.5 // ~2,550 km roads / 464 km² (AMC area)
@@ -328,6 +380,10 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			pm25_annual: 34, // CPCB 2023 annual average
 			no2_annual: 30, // CPCB 2023 annual average
 			congestion_level: 51, // TomTom 2023
+			noise_pollution: 68, // CPCB NANMN — 10 stations continuous
+			carbon_emission_intensity: 0.9, // UrbanEmissions APnA + CMP 2020 — high IT-sector car use
+			fuel_consumption: 180, // PPAC Karnataka — high IT-sector car use
+			green_cover: 2.2, // CSCAF research — Garden City declining rapidly
 			// Mobility
 			sustainable_mode_share: 48, // CMP 2020: walk+cycle+bus+metro
 			road_density: 10.2 // ~7,800 km roads / 764 km² (BBMP area)
@@ -349,6 +405,10 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			pm25_annual: 31, // CPCB 2023
 			no2_annual: 25, // CPCB 2023 annual average
 			congestion_level: 39, // TomTom 2023
+			noise_pollution: 65, // CPCB NANMN — 10 stations continuous
+			carbon_emission_intensity: 0.7, // UrbanEmissions APnA — strong suburban rail reduces this
+			fuel_consumption: 130, // PPAC Tamil Nadu — strong PT share
+			green_cover: 0.8, // CSCAF/EoLI — very low, dense built-up
 			sustainable_mode_share: 52, // CTTS: walk+cycle+bus+metro
 			road_density: 12.5 // ~2,200 km roads / 176 km² (Chennai Corp)
 		}
@@ -369,6 +429,10 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			pm25_annual: 99, // CPCB 2023 — worst in India
 			no2_annual: 60, // CPCB 2023 — worst in India
 			congestion_level: 44, // TomTom 2023
+			noise_pollution: 75, // CPCB NANMN — highest, traffic + construction
+			carbon_emission_intensity: 1.2, // UrbanEmissions APnA + IITK study — sprawl + car dependence
+			fuel_consumption: 200, // PPAC Delhi + DPDA — highest, sprawl
+			green_cover: null, // ISFR 2023 reports 20 m²/person but inflated by Ridge Forest in NCT boundary — not representative
 			sustainable_mode_share: 43, // Census/DMP: walk+cycle+bus+metro
 			road_density: 18.0 // Dense road network, 1,483 km² NCT
 		}
@@ -389,6 +453,10 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			pm25_annual: 37, // CPCB 2023
 			no2_annual: 28, // CPCB 2023 annual average
 			congestion_level: 36, // TomTom 2023
+			noise_pollution: 67, // CPCB NANMN — 10 stations continuous
+			carbon_emission_intensity: 0.8, // UrbanEmissions APnA — moderate
+			fuel_consumption: 160, // PPAC Telangana — moderate
+			green_cover: 8.2, // Published research — improved with GHMC green drives
 			sustainable_mode_share: 46, // CMP: walk+cycle+bus+metro
 			road_density: 8.5 // GHMC area 650 km²
 		}
@@ -410,8 +478,12 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			pt_accessibility: 35, // 1,200 stops / 269 km² — limited network
 			// Environmental
 			pm25_annual: 56, // UrbanEmissions model + IQAir estimates
-			no2_annual: 35, // CPCB 2023 estimate
-			congestion_level: 33, // Estimated (TomTom data not available for Indore)
+			no2_annual: null, // No direct measurement — CPCB estimate only
+			congestion_level: null, // No TomTom data available for Indore
+			noise_pollution: null, // No data — estimate needed
+			carbon_emission_intensity: 0.6, // UrbanEmissions estimate — lower, smaller city
+			fuel_consumption: 100, // PPAC MP estimate — lower, less VKT
+			green_cover: null, // No reliable data
 			// Mobility
 			sustainable_mode_share: 37, // CMP: walk 22% + cycle 5% + bus ~10%
 			road_density: 8.8 // IMC area 269 km²
@@ -433,6 +505,10 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			pm25_annual: 27, // CPCB 2023 — cleanest of the 6
 			no2_annual: 18, // CPCB 2023 — lowest
 			congestion_level: 29, // TomTom 2023 — lowest
+			noise_pollution: 62, // KSPCB campaign — lowest, compact city
+			carbon_emission_intensity: 0.5, // UrbanEmissions estimate — compact, low VKT
+			fuel_consumption: 90, // PPAC Kerala — compact, low VKT
+			green_cover: null, // No reliable data
 			sustainable_mode_share: 42, // CMP: walk+cycle+bus+metro
 			road_density: 7.2 // Kochi Corp ~95 km²
 		}
@@ -454,8 +530,12 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			pt_accessibility: 70, // Dense suburban rail + bus; compact city
 			// Environmental
 			pm25_annual: 60, // IQAir/CPCB 2023
-			no2_annual: 28, // CPCB 2023 estimate
+			no2_annual: null, // No direct measurement — CPCB estimate only
 			congestion_level: 32, // TomTom 2024
+			noise_pollution: 70, // CPCB NANMN — commercial zones high
+			carbon_emission_intensity: 0.4, // UrbanEmissions APnA — lowest, high PT + walk mode share
+			fuel_consumption: 70, // PPAC West Bengal — lowest, walk+PT dominant
+			green_cover: 2.0, // Published research — Maidan helps, otherwise dense
 			// Mobility
 			sustainable_mode_share: 80, // Census: walk 39 + cycle 10 + PT 31
 			road_density: 9.0 // 1,850 km / 206 km² KMC
@@ -478,8 +558,12 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			pt_accessibility: 75, // Suburban rail spine + BEST bus coverage; gaps in eastern suburbs
 			// Environmental
 			pm25_annual: 38, // CPCB/IQAir estimates — industrial + port activity
-			no2_annual: 32, // CPCB 2023 estimate
+			no2_annual: null, // No direct measurement — CPCB estimate only
 			congestion_level: 53, // TomTom 2023 — one of India's worst
+			noise_pollution: 72, // CPCB NANMN — 10 stations continuous
+			carbon_emission_intensity: 0.6, // UrbanEmissions APnA — suburban rail keeps this low
+			fuel_consumption: 110, // PPAC Maharashtra — rail commuting reduces this
+			green_cover: 1.2, // CSCAF research — Sanjay Gandhi NP in boundary
 			// Mobility
 			sustainable_mode_share: 58, // Walk 27% + cycle 3% + bus 15% + rail 15% + metro 1%
 			road_density: 8.3 // ~5,000 km roads / 603 km² (BMC area)
@@ -501,6 +585,10 @@ export const CITY_QOL_DATA: CityQoLValues[] = [
 			pm25_annual: 36, // CPCB 2023
 			no2_annual: 32, // CPCB 2023 annual average
 			congestion_level: 41, // TomTom 2023
+			noise_pollution: 66, // MPCB campaign — moderate
+			carbon_emission_intensity: 0.7, // UrbanEmissions APnA — two-wheeler heavy
+			fuel_consumption: 140, // PPAC Maharashtra — two-wheeler heavy
+			green_cover: 1.4, // CSCAF — low despite green image
 			sustainable_mode_share: 50, // Census/CMP: walk+cycle+bus
 			road_density: 9.8 // PMC area ~330 km²
 		}
@@ -579,7 +667,7 @@ function computeConfidence(
 	overrides?: QoLOverrides
 ): ConfidenceBreakdown {
 	// Factor 1: Indicator coverage (20%)
-	const indicatorCoverage = Math.round((indicatorsAvailable / 15) * 100);
+	const indicatorCoverage = Math.round((indicatorsAvailable / TQOLI_FULL_INDICATOR_COUNT) * 100);
 
 	// Factor 2: Live data freshness (25%)
 	const liveCount = overrides?.[cityId] ? Object.keys(overrides[cityId]).length : 0;
@@ -679,14 +767,15 @@ export function computeCityQoL(cityId: string, overrides?: QoLOverrides): CityQo
 			};
 		});
 
-		const validScores = indicators
-			.map((i) => i.normalized)
-			.filter((n): n is number => n !== null);
-		const dimScore = validScores.length > 0
-			? validScores.reduce((a, b) => a + b, 0) / validScores.length
+		// Null penalty: missing indicators score 0 (worst-case) rather than
+		// being excluded from the average. This incentivises cities to publish
+		// data — even bad data beats the worst-case assumption.
+		const allScores = indicators.map((i) => i.normalized ?? 0);
+		const dimScore = allScores.length > 0
+			? allScores.reduce((a, b) => a + b, 0) / allScores.length
 			: 0;
 
-		const availableCount = validScores.length;
+		const availableCount = indicators.filter((i) => i.normalized !== null).length;
 		const totalCount = indicators.length;
 		totalAvailable += availableCount;
 		totalDefined += totalCount;
